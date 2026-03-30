@@ -1,13 +1,9 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     function isOwner() {
-      return isSignedIn()
-        && firestore.exists(/databases/(default)/documents/owners/$(request.auth.uid));
+      return request.auth != null
+        && request.auth.token.backoffice_owner == true;
     }
 
     match /products/{productId}/{allPaths=**} {

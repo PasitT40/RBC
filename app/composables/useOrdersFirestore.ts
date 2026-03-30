@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, increment, limit, orderBy, query, runTransaction, serverTimestamp, startAfter, where, type QueryConstraint } from "firebase/firestore";
+import { Timestamp, collection, doc, getDocs, increment, limit, query, runTransaction, serverTimestamp, startAfter, where, type QueryConstraint } from "firebase/firestore";
 import type { ConfirmSaleInput, OrderRecord, OrderStatus, PageCursor, PageResult, ProductRecord, ProductStatus, ReportPageInput } from "./firestore/types";
 import { assertSellableProduct, getProductStatus } from "./firestore/products";
 import { globalRef, monthKey } from "./firestore/utils";
@@ -7,6 +7,22 @@ export function useOrdersFirestore() {
   const { $db } = useNuxtApp() as { $db: any };
   const { track } = useGlobalLoading();
 
+  const buildLedgerPayload = (type: "SALE_APPLIED" | "SALE_REVERTED", orderId: string, productId: string) => ({
+    type,
+    ref_id: orderId,
+    entity_type: "order",
+    entity_id: orderId,
+    operation_key: `${type}_${orderId}`,
+    product_id: productId,
+    created_at: serverTimestamp(),
+  });
+
+  const normalizeSoldAt = (value?: Date) => {
+    const soldAt = value instanceof Date ? value : new Date();
+    if (Number.isNaN(soldAt.getTime())) throw new Error("Invalid sold date");
+    return soldAt;
+  };
+
   const getReportPage = async (input: ReportPageInput = {}): Promise<PageResult<OrderRecord>> => {
     const pageSize = input.pageSize ?? 20;
     const constraints: QueryConstraint[] = [];
@@ -14,19 +30,28 @@ export function useOrdersFirestore() {
     const status = input.status ?? "CONFIRMED";
     constraints.push(where("status", "==", status));
 
-    const month = input.month ?? monthKey();
-    constraints.push(where("sold_yyyymm", "==", month));
+    if (input.month) {
+      constraints.push(where("sold_yyyymm", "==", input.month));
+    }
 
     if (input.brandId) constraints.push(where("brand_id", "==", input.brandId));
     if (input.soldChannel) constraints.push(where("sold_channel", "==", input.soldChannel));
-
-    constraints.push(orderBy("sold_at", "desc"));
     constraints.push(limit(pageSize));
     if (input.cursor) constraints.push(startAfter(input.cursor));
 
     const q = query(collection($db, "orders"), ...constraints);
     const snap = await getDocs(q);
-    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() } as OrderRecord));
+    const items = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() } as OrderRecord))
+      .sort((a, b) => {
+        const aTime = typeof (a.sold_at as { toDate?: () => Date })?.toDate === "function"
+          ? (a.sold_at as { toDate: () => Date }).toDate().getTime()
+          : new Date(a.sold_at as string | number | Date | undefined ?? 0).getTime();
+        const bTime = typeof (b.sold_at as { toDate?: () => Date })?.toDate === "function"
+          ? (b.sold_at as { toDate: () => Date }).toDate().getTime()
+          : new Date(b.sold_at as string | number | Date | undefined ?? 0).getTime();
+        return bTime - aTime;
+      });
     const nextCursor: PageCursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
 
     return {
@@ -39,6 +64,9 @@ export function useOrdersFirestore() {
   const confirmSale = async (payload: ConfirmSaleInput) => {
     const orderId = payload.idempotencyKey || undefined;
     const orderRef = orderId ? doc($db, "orders", orderId) : doc(collection($db, "orders"));
+    const soldAt = normalizeSoldAt(payload.sold_at);
+    const soldAtTimestamp = Timestamp.fromDate(soldAt);
+    const soldMonthKey = monthKey(soldAt);
 
     return runTransaction($db, async (tx) => {
       const ledgerRef = doc($db, "stats_ledger", `SALE_APPLIED_${orderRef.id}`);
@@ -64,8 +92,7 @@ export function useOrdersFirestore() {
       const prevStatus = getProductStatus(product);
       const soldPrice = Number(payload.sold_price);
       const costAtSale = Number(product.cost_price ?? 0);
-      const fee = Number(payload.fee ?? 0);
-      const profit = soldPrice - costAtSale - fee;
+      const profit = soldPrice - costAtSale;
 
       tx.set(orderRef, {
         status: "CONFIRMED",
@@ -76,11 +103,10 @@ export function useOrdersFirestore() {
         brand_name: product.brand_name,
         sold_channel: payload.sold_channel,
         sold_price: soldPrice,
-        sold_yyyymm: monthKey(),
+        sold_yyyymm: soldMonthKey,
         cost_price_at_sale: costAtSale,
-        fee,
         profit,
-        sold_at: serverTimestamp(),
+        sold_at: soldAtTimestamp,
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
         product_snapshot: {
@@ -96,7 +122,7 @@ export function useOrdersFirestore() {
         status: "SOLD",
         is_sellable: false,
         last_status_before_sold: prevStatus,
-        sold_at: serverTimestamp(),
+        sold_at: soldAtTimestamp,
         sold_price: soldPrice,
         sold_channel: payload.sold_channel,
         sold_ref: orderRef.id,
@@ -132,7 +158,7 @@ export function useOrdersFirestore() {
         { merge: true }
       );
 
-      tx.set(ledgerRef, { type: "SALE_APPLIED", ref_id: orderRef.id, created_at: serverTimestamp() }, { merge: true });
+      tx.set(ledgerRef, buildLedgerPayload("SALE_APPLIED", orderRef.id, payload.productId), { merge: true });
 
       return { orderId: orderRef.id, applied: true };
     });
@@ -206,7 +232,7 @@ export function useOrdersFirestore() {
         { merge: true }
       );
 
-      tx.set(ledgerRef, { type: "SALE_REVERTED", ref_id: orderId, created_at: serverTimestamp() }, { merge: true });
+      tx.set(ledgerRef, buildLedgerPayload("SALE_REVERTED", orderId, String(order.product_id)), { merge: true });
 
       return { orderId, reverted: true };
     });

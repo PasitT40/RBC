@@ -4,6 +4,7 @@ Project: Camera Marketplace Backoffice / Public Catalog
 
 ## Current access model
 - Backoffice writes are owner-only.
+- Backoffice reads are also owner-only except the owner self-read path needed to resolve allowlist status.
 - `owners/{uid}` is the allowlist source for backoffice access.
 - Public catalog should prefer a server/API read layer rather than direct browser reads to private collections.
 
@@ -34,16 +35,21 @@ Expected write path:
 
 ## Rules status
 - [`firestore.rules`](../firestore.rules) restrict reads and writes to owner accounts for all backoffice collections except the owner self-read path.
-- [`storage.rules`](../storage.rules) restrict writes to signed-in owners and allow public reads only for product/category/brand media paths.
+- [`storage.rules`](../storage.rules) restrict writes to users with Firebase Auth custom claim `backoffice_owner=true` and allow public reads only for product/category/brand media paths.
+- [`app/middleware/auth.global.ts`](../app/middleware/auth.global.ts) and [`app/composables/useOwnerAccess.ts`](../app/composables/useOwnerAccess.ts) enforce the same `owners/{uid}` allowlist in the browser before normal backoffice navigation continues.
+
+## Public catalog boundary
+- The current backoffice should not be treated as a public-read surface.
+- Public catalog reads should move through server routes or another controlled backend layer before any direct browser access is considered.
+- Until that read contract exists, keep product, category, brand, order, dashboard, and ledger Firestore documents private to owners in Security Rules.
 
 ## Important operational note
-- The app currently uses a named Firestore database in development (`ratchaburi-camera-dev`).
-- `storage.rules` owner checks reference Firestore via `firestore.exists(...)`, which is typically evaluated against the default Firestore database in Storage Rules.
-- If owner allowlist documents only exist in the named database and not in the default database, Storage writes can fail even for valid owners.
+- `storage.rules` do not depend on a Firestore database id anymore.
+- Storage write authorization is controlled by Firebase Auth custom claim `backoffice_owner=true`.
+- Firestore owner allowlist and Storage owner claim are separate controls:
+  - Firestore browser access uses `owners/{uid}`
+  - Storage writes use the auth claim
 
-Recommended production resolution:
-- either keep the owner allowlist mirrored in the default Firestore database for Storage Rules checks
-- or move Storage write authorization to a server/admin path
-- or replace the owner-check mechanism with an auth claim based policy
-
-Do not treat Storage Rules as production-ready until this named-database interaction is explicitly verified.
+Operational guidance:
+- after granting or revoking the storage-owner claim, force the user to refresh their auth session by signing out and signing in again
+- use [`scripts/set-storage-owner-claim.cjs`](../scripts/set-storage-owner-claim.cjs) to manage the claim from a trusted admin environment

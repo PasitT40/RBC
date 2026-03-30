@@ -5,21 +5,27 @@ import { getStorage } from "firebase/storage";
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig();
+  const firestoreDatabaseId = config.public.firestoreDatabaseId || "(default)";
+  const selectedStorageBucket = firestoreDatabaseId === "(default)"
+    ? (config.public.firebaseStorageBucketProd || config.public.firebaseStorageBucket)
+    : (config.public.firebaseStorageBucketDev || config.public.firebaseStorageBucket);
+  const normalizedStorageBucket = selectedStorageBucket?.replace(/^gs:\/\//, "") || "";
+  const storageBucketUrl = normalizedStorageBucket ? `gs://${normalizedStorageBucket}` : "";
 
   const firebaseConfig = {
     apiKey: config.public.firebaseApiKey,
     authDomain: config.public.firebaseAuthDomain,
     projectId: config.public.firebaseProjectId,
-    storageBucket: config.public.firebaseStorageBucket,
+    storageBucket: normalizedStorageBucket,
     messagingSenderId: config.public.firebaseMessagingSenderId,
     appId: config.public.firebaseAppId,
     measurementId: config.public.firebaseMeasurementId,
   };
 
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  const db = getFirestore(app, config.public.firestoreDatabaseId || "(default)");
+  const db = getFirestore(app, firestoreDatabaseId);
   const auth = getAuth(app);
-  const storage = getStorage(app);
+  const storage = storageBucketUrl ? getStorage(app, storageBucketUrl) : getStorage(app);
   const authUser = useState("auth:user", () => null);
   const authReady = useState("auth:ready", () => false);
   const authInitialized = useState("auth:initialized", () => false);

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 const { logout } = useAuthFirebase();
+const runtimeConfig = useRuntimeConfig();
+const firestoreDatabaseId = computed(() => String(runtimeConfig.public.firestoreDatabaseId || ""));
 const menu = ref([
   {
     title: "Dashboard",
@@ -20,6 +22,11 @@ const menu = ref([
     title:"Reports",
     icon: "mdi-poll",
     to: "/report",
+  },
+  {
+    title:"Settings",
+    icon: "mdi-image-multiple",
+    to: "/settings",
   }
 ]);
 </script>
@@ -48,10 +55,27 @@ const menu = ref([
           </template>
         </v-list-item>
       </v-list>
+      <div class="tw:mt-6 tw:px-2">
+        <v-btn
+          block
+          color="error"
+          variant="tonal"
+          rounded="lg"
+          class="tw:font-semibold tw:normal-case"
+          @click="logout()"
+        >
+          <v-icon start>mdi-logout</v-icon>
+          Log out
+        </v-btn>
+      </div>
     </v-navigation-drawer>
 
     <v-main class="d-flex align-start justify-center tw:min-h-screen tw:bg-gray-100">
       <v-container>
+        <v-alert type="info" variant="tonal" class="tw:mb-4">
+          Firestore database: <strong>{{ firestoreDatabaseId }}</strong>
+          Storage uploads ต้องใช้ Firebase Auth custom claim `backoffice_owner=true`
+        </v-alert>
         <v-sheet
           color="white"
           height="100%"

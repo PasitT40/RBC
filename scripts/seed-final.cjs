@@ -1,11 +1,24 @@
 // seed-final.cjs
-// NOTE: reads serviceAccountKey.json from project root and FIRESTORE_DATABASE_ID from .env.development
+// NOTE: reads serviceAccountKey.json from project root and FIRESTORE_DATABASE_ID from .env
 const admin = require("firebase-admin");
+const { getFirestore } = require("firebase-admin/firestore");
 const fs = require("fs");
 const path = require("path");
 
 const projectRoot = path.resolve(__dirname, "..");
-const envPath = path.join(projectRoot, ".env.development");
+function resolveEnvPath(rootDir) {
+  const appEnv = process.env.APP_ENV || process.env.NODE_ENV || "development";
+  const candidates = appEnv === "production"
+    ? [".env.production", ".env"]
+    : [".env.development", ".env"];
+  for (const name of candidates) {
+    const fullPath = path.join(rootDir, name);
+    if (fs.existsSync(fullPath)) return fullPath;
+  }
+  return path.join(rootDir, ".env");
+}
+
+const envPath = resolveEnvPath(projectRoot);
 const serviceAccount = require(path.join(projectRoot, "serviceAccountKey.json"));
 
 function parseEnvFile(filePath) {
@@ -30,7 +43,7 @@ function parseEnvFile(filePath) {
 const env = parseEnvFile(envPath);
 const databaseId = env.FIRESTORE_DATABASE_ID || "(default)";
 const app = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-const db = databaseId === "(default)" ? admin.firestore(app) : admin.firestore(app, databaseId);
+const db = getFirestore(app, databaseId);
 const TS = admin.firestore.FieldValue.serverTimestamp;
 
 function slugify(s){return String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')}
@@ -38,6 +51,17 @@ function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
 function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
 function money(v){return Math.round(v)}
 function yyyymmNow(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+function buildLedgerPayload(type, orderId, productId){
+  return {
+    type,
+    ref_id: orderId,
+    entity_type: "order",
+    entity_id: orderId,
+    operation_key: `${type}_${orderId}`,
+    product_id: productId,
+    created_at: TS(),
+  };
+}
 
 async function commitInChunks(ops, size=450){
   for(let i=0;i<ops.length;i+=size){
@@ -197,9 +221,9 @@ async function seed(){
       };
       orders.push(o);
       ops.push(b=>b.set(oref,o,{merge:true}));
-      ops.push(b=>b.set(db.collection("stats_ledger").doc(`SALE_APPLIED_${oid}`),{type:"SALE_APPLIED",ref_id:oid,created_at:TS()},{merge:true}));
+      ops.push(b=>b.set(db.collection("stats_ledger").doc(`SALE_APPLIED_${oid}`),buildLedgerPayload("SALE_APPLIED", oid, pref.id),{merge:true}));
       if(orderStatus==="CANCELLED"){
-        ops.push(b=>b.set(db.collection("stats_ledger").doc(`SALE_REVERTED_${oid}`),{type:"SALE_REVERTED",ref_id:oid,created_at:TS()},{merge:true}));
+        ops.push(b=>b.set(db.collection("stats_ledger").doc(`SALE_REVERTED_${oid}`),buildLedgerPayload("SALE_REVERTED", oid, pref.id),{merge:true}));
       }
     }
 

@@ -15,7 +15,7 @@ Reasoning:
 
 ## Required files
 
-- `.env.production`
+- `.env`
 - `.firebaserc`
 - `firebase.json`
 - `firestore.rules`
@@ -27,8 +27,17 @@ Reasoning:
 1. Copy `.firebaserc.example` to `.firebaserc`.
 2. Set the default Firebase project id.
 3. Bind hosting target `backoffice` to the intended Firebase Hosting site.
-4. Fill `.env.production` with production Firebase values.
+4. Fill `.env` with the real Firebase values for the single environment.
 5. Make sure the production owner allowlist exists in `owners/{uid}`.
+6. If `NUXT_PUBLIC_FIRESTORE_DATABASE_ID` is not `(default)`, plan a real owner upload smoke test before release because Storage Rules still check `owners/{uid}` in `(default)`.
+7. Set storage bucket envs to match the Firestore database policy:
+   - `(default)` Firestore -> `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD`
+   - named Firestore database -> `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV`
+
+Recommended values for this project:
+- Firebase project id: `ratchaburi-camera`
+- Firestore database id: `(default)`
+- Storage bucket: `ratchaburi-camera`
 
 Example target binding:
 
@@ -39,7 +48,7 @@ firebase target:apply hosting backoffice your-hosting-site-id
 ## Build
 
 ```bash
-yarn generate:prod
+yarn generate:hosting
 ```
 
 Expected output:
@@ -72,8 +81,9 @@ yarn deploy:backoffice
 After deploy, verify:
 - hosting site loads without console build errors
 - owner login succeeds
+- non-owner login is rejected and redirected back to `/login?denied=1`
 - category list loads
-- brand/subcategory list loads
+- brand list loads and the backoffice `subcategory` view still resolves from global `brands` plus `category_brands`
 - product list loads
 - create/edit product works
 - toggle show works
@@ -83,7 +93,9 @@ After deploy, verify:
 
 ## Important caveat
 
-If production uses a named Firestore database instead of `(default)`, verify Storage Rules owner checks carefully.
+This rollout should prefer Firestore `(default)` for the current project to minimize rule and integration risk.
+
+If the single environment uses a named Firestore database instead of `(default)`, verify Storage Rules owner checks carefully.
 
 Current Storage Rules use:
 - `firestore.exists(/databases/(default)/documents/owners/$(request.auth.uid))`

@@ -63,6 +63,27 @@ export type CategoryRecord = {
   updated_at?: unknown;
 };
 
+export type SiteBannerRecord = {
+  id: string;
+  image_url: string;
+  order: number;
+  active: boolean;
+};
+
+export type SiteCreditRecord = {
+  id: string;
+  image_url: string;
+  order: number;
+};
+
+export type SiteSettingsRecord = {
+  id: string;
+  banner_auto_slide_sec: number;
+  banners: SiteBannerRecord[];
+  credits: SiteCreditRecord[];
+  updated_at?: unknown;
+};
+
 export type BrandRecord = {
   id: string;
   name: string;
@@ -96,7 +117,7 @@ export type ConfirmSaleInput = {
   productId: string;
   sold_price: number;
   sold_channel: string;
-  fee?: number;
+  sold_at?: Date;
   idempotencyKey?: string;
 };
 
@@ -112,7 +133,6 @@ export type OrderRecord = {
   sold_price?: number;
   sold_yyyymm?: string;
   cost_price_at_sale?: number;
-  fee?: number;
   profit?: number;
   sold_at?: unknown;
   created_at?: unknown;
@@ -124,6 +144,19 @@ export type OrderRecord = {
     category_name?: string;
     brand_name?: string;
   };
+};
+
+export type StatsLedgerType = "SALE_APPLIED" | "SALE_REVERTED";
+
+export type StatsLedgerRecord = {
+  id: string;
+  type: StatsLedgerType;
+  ref_id: string;
+  entity_type: "order";
+  entity_id: string;
+  operation_key: string;
+  product_id?: string;
+  created_at?: unknown;
 };
 
 export type DashboardStatsRecord = {

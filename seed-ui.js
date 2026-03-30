@@ -39,6 +39,19 @@ function yyyymmNow() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
+
+function buildLedgerPayload(type, orderId, productId) {
+  return {
+    type,
+    ref_id: orderId,
+    entity_type: "order",
+    entity_id: orderId,
+    operation_key: `${type}_${orderId}`,
+    product_id: productId,
+    created_at: TS(),
+  };
+}
+
 async function commitInChunks(ops, chunkSize = 450) {
   const debugOps = process.env.DEBUG_SEED_OPS === "1";
 
@@ -370,11 +383,10 @@ async function seed() {
 
       ops.push((b) => b.set(oRef, orderDoc, { merge: true }));
 
-      // ledger markers (illustration)
       ops.push((b) =>
         b.set(
           db.collection("stats_ledger").doc(`SALE_APPLIED_${orderId}`),
-          { type: "SALE_APPLIED", ref_id: orderId, created_at: TS() },
+          buildLedgerPayload("SALE_APPLIED", orderId, productId),
           { merge: true }
         )
       );
@@ -383,7 +395,7 @@ async function seed() {
         ops.push((b) =>
           b.set(
             db.collection("stats_ledger").doc(`SALE_REVERTED_${orderId}`),
-            { type: "SALE_REVERTED", ref_id: orderId, created_at: TS() },
+            buildLedgerPayload("SALE_REVERTED", orderId, productId),
             { merge: true }
           )
         );

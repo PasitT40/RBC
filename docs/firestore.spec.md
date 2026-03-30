@@ -63,6 +63,7 @@ Usage:
 Semantics:
 - `order` is a global display order within categories
 - inactive categories remain stored for historical references and backoffice editing
+- normal category merchandising work should be manageable from the backoffice, including `order`
 - SEO fields are optional but recommended for production public pages
 - if `seo_image` is absent, public pages may fall back to `image_url`
 
@@ -82,6 +83,7 @@ Semantics:
 Semantics:
 - brands are global and must never be nested under categories
 - `order` is a global display order within brands
+- normal brand merchandising work should be manageable from the backoffice against `brands/{brandId}`
 - SEO fields are optional but recommended for production public pages
 - if `seo_image` is absent, public pages may fall back to `image_url`
 
@@ -102,6 +104,7 @@ Semantics:
 - this is the only source for category -> brand dropdown options
 - `order` is scoped within a single `category_id`, not globally across all mappings
 - denormalized `category_*` and `brand_*` fields are allowed for faster UI reads
+- normal category-specific brand ordering should be manageable from the backoffice against `category_brands.order`
 - a product must not be made publicly visible if its `category_id + brand_id` mapping is missing or inactive here
 
 ### products
@@ -140,8 +143,11 @@ Semantics:
 - `is_deleted = true` means the product is removed from normal listing/detail flows
 - deleted products should also have `show = false` and `is_sellable = false`
 - `last_status_before_sold` is used to restore the product on undo sale
+- product slug should be normalized deterministically from operator input into lowercase hyphenated form
+- product slug should be unique across all products before a product becomes publicly visible
 - `cover_image` should point to the primary image used in listings
 - `images[]` stores the ordered detail images currently attached to the product
+- normal product image management should be achievable from the backoffice by ordering `images[]`; the first image becomes `cover_image`
 - SEO fields are optional but recommended for production public pages
 - if `seo_image` is absent, public pages may fall back to `cover_image`
 - if `show = true`, the referenced `category_brands/{categoryId__brandId}` mapping must exist and remain active
@@ -158,7 +164,6 @@ Semantics:
 - sold_price
 - sold_yyyymm
 - cost_price_at_sale
-- fee
 - profit
 - sold_at
 - created_at
@@ -175,6 +180,8 @@ Semantics:
 Semantics:
 - `orderId` may be caller-provided for idempotency
 - `previous_product_status` is persisted so undo sale can restore state reliably even if the product document changes later
+- `sold_at` should represent the effective sale date selected by the operator
+- `sold_yyyymm` should be derived from `sold_at`
 - cancelled orders are retained for audit history
 
 ### dashboard_stats
@@ -216,11 +223,16 @@ Semantics:
 - entity_type
 - entity_id
 - operation_key
+- product_id
 - created_at
 
 Semantics:
 - used to make sell and undo sale idempotent
 - `ledgerId` should be deterministic per business operation
+- `entity_type` should currently be `order`
+- `entity_id` should be the related `orderId`
+- `operation_key` should match the deterministic business operation key
+- `product_id` is optional but recommended for faster operational tracing
 - minimum expected operations:
   - `SALE_APPLIED_{orderId}`
   - `SALE_REVERTED_{orderId}`
@@ -266,7 +278,10 @@ Steps:
    - `show = true` unless explicitly overridden
    - `is_sellable = (status == ACTIVE)`
    - `is_deleted = false`
-3. update cached dashboard counters
+3. normalize `slug` deterministically before write
+4. reject duplicate slug before write
+5. if `show == true`, enforce the minimum publishable product contract
+6. update cached dashboard counters
 
 Required effects:
 - increment `total_products`
@@ -280,8 +295,11 @@ Type:
 Steps:
 1. load current product
 2. reject if product does not exist or is soft-deleted
-3. update editable fields
-4. keep image ordering consistent with current payload
+3. normalize `slug` deterministically before write
+4. reject duplicate slug before write
+5. if current product is publicly visible, enforce the minimum publishable product contract
+6. update editable fields
+7. keep image ordering consistent with current payload
 
 Required effects:
 - must not change dashboard counters unless lifecycle fields actually change
@@ -298,6 +316,7 @@ Steps:
 
 Rules:
 - soft-deleted products must not be toggled back into frontend visibility
+- toggling to `show = true` must fail if the product does not satisfy the minimum publishable product contract
 - toggling to `show = true` must fail if the category-brand mapping is missing or inactive
 
 ### setReserved
@@ -415,6 +434,8 @@ Use rebuild when:
 - counters drift
 - migration changes business logic
 - historical data is repaired manually
+
+If historical `stats_ledger` documents predate the current idempotency contract, repair those ledger payloads separately from aggregate rebuilds using the corresponding order documents as the source of truth.
 
 ## Idempotency policy
 - sell and undo sale must be safely retryable

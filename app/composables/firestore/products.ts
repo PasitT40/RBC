@@ -21,13 +21,17 @@ export const assertSellableProduct = (product: Partial<ProductRecord> | null | u
 export const assertReservableProduct = (product: Partial<ProductRecord> | null | undefined) => {
   if (!product) throw new Error("Product not found");
   if (isSoftDeletedProduct(product)) throw new Error("Cannot reserve deleted product");
-  if (getProductStatus(product) === "SOLD") throw new Error("Cannot reserve sold product");
+  const status = getProductStatus(product);
+  if (status === "SOLD") throw new Error("Cannot reserve sold product");
+  if (status !== "ACTIVE") throw new Error("Only active products can be reserved");
 };
 
 export const assertActivatableProduct = (product: Partial<ProductRecord> | null | undefined) => {
   if (!product) throw new Error("Product not found");
   if (isSoftDeletedProduct(product)) throw new Error("Cannot activate deleted product");
-  if (getProductStatus(product) === "SOLD") throw new Error("Cannot set active for sold product");
+  const status = getProductStatus(product);
+  if (status === "SOLD") throw new Error("Cannot set active for sold product");
+  if (status !== "RESERVED") throw new Error("Only reserved products can be set active");
 };
 
 export const assertDeletableProduct = (product: Partial<ProductRecord> | null | undefined) => {

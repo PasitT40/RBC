@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, updateDoc, addDoc, limit, orderBy, query, startAfter, where, serverTimestamp, writeBatch, type QueryConstraint } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, updateDoc, addDoc, deleteDoc, limit, orderBy, query, startAfter, where, serverTimestamp, writeBatch, type QueryConstraint } from "firebase/firestore";
 import { deleteStorageFolder, deleteStorageUrl, deleteStorageUrls, uploadImageAsWebP } from "./firestore/media";
 import type { BrandRecord, CategoriesPageInput, CategoryBrandRecord, CategoryRecord, PageCursor, PageResult, SubcategoriesPageInput } from "./firestore/types";
 
@@ -67,6 +67,8 @@ export function useCategoriesFirestore() {
     return isNameDuplicate("categories", name, excludeId);
   };
 
+  // "Subcategory" is only a backoffice label. Persisted data stays in global
+  // brands/{brandId} plus category_brands/{categoryId__brandId}.
   const isSubcategoryNameDuplicate = async (name: string, excludeId?: string): Promise<boolean> => {
     return isNameDuplicate("brands", name, excludeId);
   };
@@ -111,7 +113,8 @@ export function useCategoriesFirestore() {
     return items;
   };
 
-  // paginate subcategory (brands + primary mapping from category_brands)
+  // Paginate the backoffice "subcategory" view from global brands enriched with
+  // one primary category_brands mapping for display only.
   const getSubcategoriesPage = async (input: SubcategoriesPageInput = {}): Promise<PageResult<(BrandRecord & {
     category_id: string | null;
     category_name: string | null;
@@ -275,6 +278,10 @@ export function useCategoriesFirestore() {
     let uploadedImageUrl: string | null = null;
     if (file) {
       uploadedImageUrl = await uploadImage(file, `categories/${docRef.id}`);
+      if (!uploadedImageUrl) {
+        await deleteDoc(docRef);
+        throw new Error("Category image upload failed");
+      }
     }
 
     if (uploadedImageUrl) {
@@ -302,6 +309,9 @@ export function useCategoriesFirestore() {
 
     const brandRef = doc(collection($db, "brands"));
     const imageUrl = data.file ? await uploadImage(data.file, `brands/${brandRef.id}`) : (data.image_url ?? null);
+    if (data.file && !imageUrl) {
+      throw new Error("Brand image upload failed");
+    }
     const brandPayload = {
       name,
       slug: data.slug || toSlug(name),
@@ -368,6 +378,9 @@ export function useCategoriesFirestore() {
 
     if (file) {
       uploadedImageUrl = await uploadImage(file, `categories/${id}`);
+      if (!uploadedImageUrl) {
+        throw new Error("Category image upload failed");
+      }
       firestoreData.image_url = uploadedImageUrl;
     }
     // ถ้าไม่มีรูปใหม่ + ชื่อเปลี่ยน → ไม่ต้องแตะ Storage เลย ✅ (folder = id ไม่เปลี่ยน)
@@ -417,6 +430,9 @@ export function useCategoriesFirestore() {
     const uploadedImageUrl = data.file
       ? await uploadImage(data.file, `brands/${id}`)
       : null;
+    if (data.file && !uploadedImageUrl) {
+      throw new Error("Brand image upload failed");
+    }
     const nextImageUrl = data.file
       ? uploadedImageUrl
       : (data.image_url !== undefined ? data.image_url : oldData.image_url ?? null);

@@ -1,9 +1,22 @@
 const admin = require("firebase-admin");
+const { getFirestore } = require("firebase-admin/firestore");
 const fs = require("fs");
 const path = require("path");
 
 const projectRoot = path.resolve(__dirname, "..");
-const envPath = path.join(projectRoot, ".env.development");
+function resolveEnvPath(rootDir) {
+  const appEnv = process.env.APP_ENV || process.env.NODE_ENV || "development";
+  const candidates = appEnv === "production"
+    ? [".env.production", ".env"]
+    : [".env.development", ".env"];
+  for (const name of candidates) {
+    const fullPath = path.join(rootDir, name);
+    if (fs.existsSync(fullPath)) return fullPath;
+  }
+  return path.join(rootDir, ".env");
+}
+
+const envPath = resolveEnvPath(projectRoot);
 const serviceAccountPath = path.join(projectRoot, "serviceAccountKey.json");
 
 function parseEnvFile(filePath) {
@@ -33,9 +46,7 @@ const app = admin.initializeApp({
   projectId: env.NUXT_PUBLIC_FIREBASE_PROJECT_ID || serviceAccount.project_id,
 });
 
-const db = databaseId === "(default)"
-  ? admin.firestore(app)
-  : admin.firestore(app, databaseId);
+const db = getFirestore(app, databaseId);
 
 function monthKeyFromDate(input) {
   const date = input instanceof Date ? input : new Date(input);
@@ -79,7 +90,7 @@ async function main() {
   const categoryBrands = new Map(categoryBrandsSnap.docs.map((doc) => [doc.id, { id: doc.id, ...doc.data() }]));
   const products = productsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   const orders = ordersSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  const ledgers = new Set(ledgerSnap.docs.map((doc) => doc.id));
+  const ledgers = new Map(ledgerSnap.docs.map((doc) => [doc.id, { id: doc.id, ...doc.data() }]));
   const dashboard = dashboardSnap.exists ? dashboardSnap.data() : null;
   const dashboardBrandStats = new Map(dashboardBrandStatsSnap.docs.map((doc) => [doc.id, { id: doc.id, ...doc.data() }]));
 
@@ -130,8 +141,16 @@ async function main() {
       if (!order) {
         pushIssue(issues, "error", "sold_missing_order", "Sold product references missing order", { productId: product.id, sold_ref: product.sold_ref });
       } else {
-        if (!ledgers.has(`SALE_APPLIED_${order.id}`)) {
+        const saleLedger = ledgers.get(`SALE_APPLIED_${order.id}`);
+        if (!saleLedger) {
           pushIssue(issues, "error", "missing_sale_ledger", "Confirmed/captured sale is missing stats ledger", { orderId: order.id, productId: product.id });
+        } else {
+          if (saleLedger.entity_type !== "order" || saleLedger.entity_id !== order.id) {
+            pushIssue(issues, "error", "sale_ledger_entity_mismatch", "Sale ledger entity payload is invalid", { ledgerId: saleLedger.id, orderId: order.id });
+          }
+          if (saleLedger.operation_key !== `SALE_APPLIED_${order.id}`) {
+            pushIssue(issues, "error", "sale_ledger_operation_key_mismatch", "Sale ledger operation_key is invalid", { ledgerId: saleLedger.id, orderId: order.id });
+          }
         }
       }
     }
@@ -144,11 +163,19 @@ async function main() {
     }
 
     const soldAt = toDate(order.sold_at);
-    if (order.status === "CONFIRMED" && !ledgers.has(`SALE_APPLIED_${order.id}`)) {
+    const saleLedger = ledgers.get(`SALE_APPLIED_${order.id}`);
+    const revertLedger = ledgers.get(`SALE_REVERTED_${order.id}`);
+    if (order.status === "CONFIRMED" && !saleLedger) {
       pushIssue(issues, "error", "confirmed_missing_sale_ledger", "Confirmed order is missing SALE_APPLIED ledger", { orderId: order.id });
     }
-    if (order.status === "CANCELLED" && !ledgers.has(`SALE_REVERTED_${order.id}`)) {
+    if (order.status === "CANCELLED" && !revertLedger) {
       pushIssue(issues, "warn", "cancelled_missing_revert_ledger", "Cancelled order is missing SALE_REVERTED ledger", { orderId: order.id });
+    }
+    if (saleLedger && (saleLedger.entity_type !== "order" || saleLedger.entity_id !== order.id || saleLedger.operation_key !== `SALE_APPLIED_${order.id}`)) {
+      pushIssue(issues, "error", "confirmed_sale_ledger_shape_invalid", "Confirmed order ledger payload is invalid", { ledgerId: saleLedger.id, orderId: order.id });
+    }
+    if (revertLedger && (revertLedger.entity_type !== "order" || revertLedger.entity_id !== order.id || revertLedger.operation_key !== `SALE_REVERTED_${order.id}`)) {
+      pushIssue(issues, "warn", "cancelled_revert_ledger_shape_invalid", "Cancelled order revert ledger payload is invalid", { ledgerId: revertLedger.id, orderId: order.id });
     }
     if (order.status === "CONFIRMED" && soldAt && order.sold_yyyymm !== monthKeyFromDate(soldAt)) {
       pushIssue(issues, "warn", "sold_month_mismatch", "Order sold_yyyymm does not match sold_at", { orderId: order.id, sold_yyyymm: order.sold_yyyymm });

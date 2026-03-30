@@ -2,6 +2,7 @@
 import { useForm } from "vee-validate";
 import * as yup from "yup";
 import type { ProductRecord } from "../../composables/firestore/types";
+import { getPublicProductIssues, normalizeProductSlug } from "../../composables/firestore/publication";
 
 type SelectOption = {
   title: string;
@@ -43,6 +44,7 @@ const brandMappings = ref<Record<string, any>[]>([]);
 const product = ref<ProductRecord | null>(null);
 const imageEntries = ref<ImageEntry[]>([]);
 const isHydrating = ref(false);
+const derivedCoverImageUrl = ref("");
 
 const routeId = computed(() => String(route.params.id ?? ""));
 
@@ -120,13 +122,28 @@ const existingPreviewUrls = computed(() =>
     .map((entry) => entry.url)
 );
 
-const toSlug = (value: string) =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback;
+
+const slugPreview = computed(() => normalizeProductSlug(values.name ?? ""));
+
+const derivedCoverImageLabel = computed(() => {
+  const firstEntry = imageEntries.value[0];
+  if (!firstEntry) return "";
+  return firstEntry.kind === "existing" ? firstEntry.url : firstEntry.file.name;
+});
+
+const publicReadinessIssues = computed(() =>
+  getPublicProductIssues({
+    name: values.name,
+    slug: slugPreview.value,
+    category_id: values.category_id,
+    brand_id: values.brand_id,
+    sell_price: typeof values.sell_price === "number" ? values.sell_price : Number.NaN,
+    images: imageEntries.value.map((entry) => (entry.kind === "existing" ? entry.url : entry.file.name)),
+    show: Boolean(product.value?.show),
+  })
+);
 
 const syncImageFilesField = () => {
   setFieldValue(
@@ -172,6 +189,13 @@ const removeDetailImage = (index: number) => {
   syncImageFilesField();
 };
 
+const revokeDerivedCoverImageUrl = () => {
+  if (derivedCoverImageUrl.value.startsWith("blob:")) {
+    URL.revokeObjectURL(derivedCoverImageUrl.value);
+  }
+  derivedCoverImageUrl.value = "";
+};
+
 const goBack = () => {
   router.push("/products");
 };
@@ -193,6 +217,17 @@ watch(
       if (!hasSelectedBrand) setFieldValue("brand_id", "");
     }
   }
+);
+
+watch(
+  imageEntries,
+  (entries) => {
+    revokeDerivedCoverImageUrl();
+    const firstEntry = entries[0];
+    if (!firstEntry) return;
+    derivedCoverImageUrl.value = firstEntry.kind === "existing" ? firstEntry.url : URL.createObjectURL(firstEntry.file);
+  },
+  { deep: true, immediate: true }
 );
 
 const hydrateForm = async () => {
@@ -262,7 +297,7 @@ const submit = handleSubmit(async (formValues) => {
     const imageFiles = imageEntries.value
       .filter((entry): entry is Extract<ImageEntry, { kind: "file" }> => entry.kind === "file")
       .map((entry) => entry.file);
-    const nextSlug = toSlug(formValues.name);
+    const nextSlug = slugPreview.value;
 
     await updateProduct({
       id: product.value.id,
@@ -289,7 +324,7 @@ const submit = handleSubmit(async (formValues) => {
     router.push("/products");
   } catch (error) {
     console.error("อัปเดตสินค้าไม่สำเร็จ", error);
-    appToast.error("อัปเดตสินค้าไม่สำเร็จ");
+    appToast.error(getErrorMessage(error, "อัปเดตสินค้าไม่สำเร็จ"));
   } finally {
     loading.value = false;
   }
@@ -301,6 +336,7 @@ const submit = handleSubmit(async (formValues) => {
 onMounted(hydrateForm);
 
 onBeforeUnmount(() => {
+  revokeDerivedCoverImageUrl();
   resetForm();
 });
 </script>
@@ -357,6 +393,17 @@ onBeforeUnmount(() => {
             density="comfortable"
             hide-details="auto"
           />
+
+          <div class="tw:flex tw:flex-col tw:justify-center tw:gap-1 tw:rounded-2xl tw:border tw:border-neutral-200 tw:bg-neutral-50 tw:px-4 tw:py-3">
+            <div class="tw:text-sm tw:font-semibold tw:text-neutral-900">
+              การแสดงผลหน้าเว็บ: {{ product?.show ? "เปิดอยู่" : "ซ่อนอยู่" }}
+            </div>
+            <div class="tw:text-xs tw:text-neutral-600">
+              การเปิด/ปิดหน้าเว็บใช้ flow `toggleShow` จากหน้ารายการสินค้า
+            </div>
+            <div class="tw:text-xs tw:text-neutral-500">Slug: {{ slugPreview || "-" }}</div>
+            <div class="tw:text-xs tw:text-neutral-500">SEO ว่างได้ ระบบ public จะ fallback ไปใช้ชื่อสินค้า, สรุปข้อมูลสินค้า และ cover image</div>
+          </div>
 
           <form-vee-select
             name="category_id"
@@ -421,6 +468,22 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="tw:mt-6 tw:grid tw:grid-cols-1 tw:gap-6">
+          <v-alert
+            v-if="product?.show && publicReadinessIssues.length"
+            type="warning"
+            variant="tonal"
+          >
+            สินค้านี้กำลังเผยแพร่อยู่ แต่ข้อมูล public ยังไม่ครบ: {{ publicReadinessIssues.join(", ") }}
+          </v-alert>
+
+          <v-alert
+            v-else-if="!product?.show"
+            type="info"
+            variant="tonal"
+          >
+            สินค้านี้ถูกซ่อนไว้จากหน้าเว็บอยู่ จึงยังไม่จำเป็นต้องครบตามเกณฑ์ publish
+          </v-alert>
+
           <form-vee-text-area
             name="seo_description"
             label="SEO Description"
@@ -458,6 +521,13 @@ onBeforeUnmount(() => {
 
           <div>
             <div class="tw:mb-3 tw:text-sm tw:font-semibold tw:text-neutral-800">รูปสินค้า (รายละเอียด)</div>
+            <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
+              รูปแรกในลำดับจะถูกเก็บเป็น `cover_image` อัตโนมัติ
+              <span v-if="derivedCoverImageLabel">ตอนนี้ cover image คือ {{ derivedCoverImageLabel }}</span>
+            </div>
+            <div v-if="derivedCoverImageUrl" class="tw:mb-3 tw:max-w-xs tw:overflow-hidden tw:rounded-2xl tw:border tw:border-neutral-200">
+              <img :src="derivedCoverImageUrl" alt="cover-image-preview" class="tw:h-40 tw:w-full tw:object-cover">
+            </div>
             <form-vee-file-input
               name="image_files"
               label="เลือกรูปรายละเอียดสินค้า"

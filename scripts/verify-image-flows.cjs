@@ -1,10 +1,23 @@
 const admin = require("firebase-admin");
+const { getFirestore } = require("firebase-admin/firestore");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
 const projectRoot = path.resolve(__dirname, "..");
-const envPath = path.join(projectRoot, ".env.development");
+function resolveEnvPath(rootDir) {
+  const appEnv = process.env.APP_ENV || process.env.NODE_ENV || "development";
+  const candidates = appEnv === "production"
+    ? [".env.production", ".env"]
+    : [".env.development", ".env"];
+  for (const name of candidates) {
+    const fullPath = path.join(rootDir, name);
+    if (fs.existsSync(fullPath)) return fullPath;
+  }
+  return path.join(rootDir, ".env");
+}
+
+const envPath = resolveEnvPath(projectRoot);
 const serviceAccount = require(path.join(projectRoot, "serviceAccountKey.json"));
 
 function parseEnvFile(filePath) {
@@ -28,17 +41,20 @@ function parseEnvFile(filePath) {
 
 const env = parseEnvFile(envPath);
 const databaseId = env.FIRESTORE_DATABASE_ID || "(default)";
-const bucketName = env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET || serviceAccount.storage_bucket;
+const bucketName = databaseId === "(default)"
+  ? (env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD || env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET || serviceAccount.storage_bucket)
+  : (env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV || env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET || serviceAccount.storage_bucket);
 if (!bucketName) {
   throw new Error("Missing Firebase storage bucket configuration");
 }
+const normalizedBucketName = bucketName.replace(/^gs:\/\//, "");
 
 const app = admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: bucketName,
+  storageBucket: normalizedBucketName,
 });
-const db = databaseId === "(default)" ? admin.firestore(app) : admin.firestore(app, databaseId);
-const bucket = admin.storage(app).bucket(bucketName);
+const db = getFirestore(app, databaseId);
+const bucket = admin.storage(app).bucket(normalizedBucketName);
 const TS = admin.firestore.FieldValue.serverTimestamp;
 
 function makeDownloadUrl(filePath, token) {

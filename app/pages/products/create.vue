@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useForm } from "vee-validate";
 import * as yup from "yup";
+import { getPublicProductIssues, normalizeProductSlug } from "../../composables/firestore/publication";
 
 type SelectOption = {
   title: string;
@@ -26,6 +27,7 @@ type ProductCreateFormValues = {
   defect_detail: string;
   free_gift_detail: string;
   image_files: File[];
+  show: boolean;
 };
 
 const MAX_DETAIL_IMAGES = 4;
@@ -75,7 +77,12 @@ const schema = yup.object({
     .min(0, "Shutter ต้องมากกว่าหรือเท่ากับ 0"),
   defect_detail: yup.string().nullable(),
   free_gift_detail: yup.string().nullable(),
-  image_files: yup.array().of(yup.mixed<File>()).min(1, "กรุณาอัปโหลดรูปสินค้าอย่างน้อย 1 รูป").required("กรุณาอัปโหลดรูปสินค้า"),
+  image_files: yup.array().of(yup.mixed<File>()).when("show", {
+    is: true,
+    then: (schema) => schema.min(1, "กรุณาอัปโหลดรูปสินค้าอย่างน้อย 1 รูป").required("กรุณาอัปโหลดรูปสินค้า"),
+    otherwise: (schema) => schema.default([]),
+  }),
+  show: yup.boolean().default(true),
 });
 
 const { errors, handleSubmit, setFieldValue, values, resetForm } = useForm<ProductCreateFormValues>({
@@ -94,6 +101,7 @@ const { errors, handleSubmit, setFieldValue, values, resetForm } = useForm<Produ
     defect_detail: "",
     free_gift_detail: "",
     image_files: [],
+    show: true,
   },
 });
 
@@ -113,13 +121,26 @@ const brandOptions = computed<SelectOption[]>(() =>
   }))
 );
 
-const toSlug = (value: string) =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback;
+
+const slugPreview = computed(() => normalizeProductSlug(values.name ?? ""));
+const derivedCoverImageLabel = computed(() => {
+  const firstSlot = detailImageSlots.value.find((item) => item.file);
+  return firstSlot?.file?.name || "";
+});
+
+const publicReadinessIssues = computed(() =>
+  getPublicProductIssues({
+    name: values.name,
+    slug: slugPreview.value,
+    category_id: values.category_id,
+    brand_id: values.brand_id,
+    sell_price: typeof values.sell_price === "number" ? values.sell_price : Number.NaN,
+    images: normalizeFiles(values.image_files).map((file) => file.name),
+    show: values.show,
+  })
+);
 
 const revokePreview = (url: string) => {
   if (url) URL.revokeObjectURL(url);
@@ -211,7 +232,7 @@ const submit = handleSubmit(async (formValues) => {
 
     await createProduct({
       name: formValues.name.trim(),
-      slug: toSlug(formValues.name),
+      slug: slugPreview.value,
       category_id: selectedCategory.id,
       category_name: selectedCategory.name ?? "",
       brand_id: selectedBrand.brand_id,
@@ -227,14 +248,14 @@ const submit = handleSubmit(async (formValues) => {
       free_gift_detail: formValues.free_gift_detail?.trim() ?? "",
       image_files: imageFiles,
       status: "ACTIVE",
-      show: true,
+      show: Boolean(formValues.show),
     });
 
     appToast.success("สร้างสินค้าสำเร็จ");
     router.push("/products");
   } catch (error) {
     console.error("สร้างสินค้าไม่สำเร็จ", error);
-    appToast.error("สร้างสินค้าไม่สำเร็จ");
+    appToast.error(getErrorMessage(error, "สร้างสินค้าไม่สำเร็จ"));
   } finally {
     loading.value = false;
   }
@@ -298,6 +319,23 @@ onBeforeUnmount(() => {
           density="comfortable"
           hide-details="auto"
         />
+
+        <div class="tw:flex tw:flex-col tw:justify-center tw:gap-1 tw:rounded-2xl tw:border tw:border-neutral-200 tw:bg-neutral-50 tw:px-4 tw:py-3">
+          <div class="tw:flex tw:items-center tw:justify-between tw:gap-4">
+            <div>
+              <div class="tw:text-sm tw:font-semibold tw:text-neutral-900">เผยแพร่บนหน้าเว็บ</div>
+              <div class="tw:text-xs tw:text-neutral-600">ปิดไว้ก่อนได้หากข้อมูลยังไม่พร้อมสำหรับหน้า public</div>
+            </div>
+            <form-vee-switch
+              name="show"
+              color="primary"
+              inset
+              hide-details
+            />
+          </div>
+          <div class="tw:text-xs tw:text-neutral-500">Slug: {{ slugPreview || "-" }}</div>
+          <div class="tw:text-xs tw:text-neutral-500">SEO ว่างได้ ระบบ public จะ fallback ไปใช้ชื่อสินค้า, สรุปข้อมูลสินค้า และ cover image</div>
+        </div>
 
         <form-vee-select
           name="category_id"
@@ -399,6 +437,10 @@ onBeforeUnmount(() => {
 
         <div>
           <div class="tw:mb-3 tw:text-sm tw:font-semibold tw:text-neutral-800">รูปสินค้า (รายละเอียด)</div>
+          <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
+            รูปแรกจะถูกใช้เป็น `cover_image` อัตโนมัติสำหรับหน้า list/detail
+            <span v-if="derivedCoverImageLabel">ตอนนี้รูปปกคือ {{ derivedCoverImageLabel }}</span>
+          </div>
           <form-vee-file-input
             name="image_files"
             label="เลือกรูปรายละเอียดสินค้า"
@@ -412,6 +454,24 @@ onBeforeUnmount(() => {
           />
         </div>
       </div>
+
+      <v-alert
+        v-if="values.show && publicReadinessIssues.length"
+        type="warning"
+        variant="tonal"
+        class="tw:mt-6"
+      >
+        ยังไม่พร้อมเผยแพร่: {{ publicReadinessIssues.join(", ") }}
+      </v-alert>
+
+      <v-alert
+        v-else-if="!values.show"
+        type="info"
+        variant="tonal"
+        class="tw:mt-6"
+      >
+        สินค้านี้จะถูกบันทึกแบบซ่อนจากหน้าเว็บ (`show=false`) จนกว่าจะเปิดเผยแพร่ภายหลัง
+      </v-alert>
     </v-col>
 
   </v-row>

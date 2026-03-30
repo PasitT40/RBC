@@ -8,12 +8,12 @@ import {
   getProductStatus,
   isSoftDeletedProduct,
 } from "./firestore/products";
+import { assertPublicReadyProduct, normalizeProductSlug, sanitizeProductImageUrls } from "./firestore/publication";
 import { globalRef } from "./firestore/utils";
 
 export function useProductsFirestore() {
   const { $db, $storage } = useNuxtApp() as { $db: any; $storage: any };
   const { track } = useGlobalLoading();
-  const toSlug = (value: string): string => value.toLowerCase().trim().replace(/\s+/g, "-");
 
   const uploadImage = async (rawFile: File, folderPath: string): Promise<string | null> =>
     uploadImageAsWebP($storage, rawFile, folderPath);
@@ -64,25 +64,6 @@ export function useProductsFirestore() {
     }
   };
 
-  const assertPublicReadyProduct = (product: Partial<ProductInput & ProductRecord>) => {
-    if (!product.show) return;
-
-    if (!product.name?.trim()) throw new Error("Public products require a name");
-    if (!product.slug?.trim()) throw new Error("Public products require a slug");
-    if (!product.category_id?.trim()) throw new Error("Public products require a category");
-    if (!product.brand_id?.trim()) throw new Error("Public products require a brand");
-    if (typeof product.sell_price !== "number" || Number.isNaN(product.sell_price)) {
-      throw new Error("Public products require a valid sell price");
-    }
-
-    const hasImage =
-      typeof product.cover_image === "string" && product.cover_image.trim().length > 0
-        ? true
-        : Array.isArray(product.images) && product.images.some((url) => typeof url === "string" && url.trim().length > 0);
-
-    if (!hasImage) throw new Error("Public products require at least one image");
-  };
-
   const getProductsPage = async (input: ProductsPageInput = {}): Promise<PageResult<ProductRecord>> => {
     const pageSize = input.pageSize ?? 20;
     const constraints: QueryConstraint[] = [];
@@ -130,8 +111,9 @@ export function useProductsFirestore() {
 
     const status: ProductStatus = payload.status ?? "ACTIVE";
     const show = payload.show ?? true;
+    const slug = normalizeProductSlug(payload.slug || payload.name);
     const folderPath = `products/${pRef.id}`;
-    await assertUniqueProductSlug(payload.slug, payload.id);
+    await assertUniqueProductSlug(slug, payload.id);
     if (show) {
       await assertCategoryBrandMappingExists(payload.category_id, payload.brand_id);
     }
@@ -139,10 +121,11 @@ export function useProductsFirestore() {
     const uploadedCoverImage = payload.cover_file ? await uploadImage(payload.cover_file, folderPath) : null;
     const uploadedImages = await uploadImages(payload.image_files, folderPath);
     const uploadedUrls = [uploadedCoverImage, ...uploadedImages].filter((url): url is string => Boolean(url));
-    const images = [...(payload.images ?? []), ...uploadedImages];
-    const coverImage = uploadedImages[0] ?? payload.cover_image ?? uploadedCoverImage ?? images[0] ?? "";
+    const images = sanitizeProductImageUrls([...(payload.images ?? []), ...uploadedImages]);
+    const coverImage = String(uploadedImages[0] ?? payload.cover_image ?? uploadedCoverImage ?? images[0] ?? "").trim();
     assertPublicReadyProduct({
       ...payload,
+      slug,
       status,
       show,
       images,
@@ -151,7 +134,7 @@ export function useProductsFirestore() {
 
     batch.set(pRef, {
       name: payload.name,
-      slug: payload.slug || toSlug(payload.name),
+      slug,
       category_id: payload.category_id,
       category_name: payload.category_name,
       brand_id: payload.brand_id,
@@ -200,7 +183,8 @@ export function useProductsFirestore() {
 
   const updateProduct = async (payload: ProductInput) => {
     if (!payload.id) throw new Error("Product id is required");
-    await assertUniqueProductSlug(payload.slug, payload.id);
+    const slug = normalizeProductSlug(payload.slug || payload.name);
+    await assertUniqueProductSlug(slug, payload.id);
 
     const pRef = doc($db, "products", payload.id);
     const snap = await getDoc(pRef);
@@ -218,13 +202,13 @@ export function useProductsFirestore() {
     const uploadedImages = await uploadImages(payload.image_files, folderPath);
     const uploadedUrls = [uploadedCoverImage, ...uploadedImages].filter((url): url is string => Boolean(url));
     const images = hasExplicitImages
-      ? [...(payload.images ?? []), ...uploadedImages]
-      : Array.isArray(current.images) ? current.images : [];
-    const coverImage = uploadedImages[0]
+      ? sanitizeProductImageUrls([...(payload.images ?? []), ...uploadedImages])
+      : sanitizeProductImageUrls(Array.isArray(current.images) ? current.images : []);
+    const coverImage = String(uploadedImages[0]
       ?? payload.cover_image
       ?? uploadedCoverImage
       ?? images[0]
-      ?? (hasExplicitImages ? "" : current.cover_image ?? "");
+      ?? (hasExplicitImages ? "" : current.cover_image ?? "")).trim();
     const previousImages = Array.isArray(current.images) ? current.images : [];
     const previousCoverImage = typeof current.cover_image === "string" ? current.cover_image : "";
     const nextImageUrlSet = new Set([coverImage, ...images].filter(Boolean));
@@ -232,6 +216,7 @@ export function useProductsFirestore() {
     assertPublicReadyProduct({
       ...current,
       ...payload,
+      slug,
       show: current.show,
       images,
       cover_image: coverImage,
@@ -240,7 +225,7 @@ export function useProductsFirestore() {
     const batch = writeBatch($db);
     batch.update(pRef, {
       name: payload.name,
-      slug: payload.slug || toSlug(payload.name),
+      slug,
       category_id: payload.category_id,
       category_name: payload.category_name,
       brand_id: payload.brand_id,
@@ -288,9 +273,9 @@ export function useProductsFirestore() {
       globalRef($db),
       {
         total_products: increment(-1),
-        active_products: increment(-1),
-        reserved_products: increment(0),
-        sold_products: increment(0),
+        active_products: increment(status === "ACTIVE" ? -1 : 0),
+        reserved_products: increment(status === "RESERVED" ? -1 : 0),
+        sold_products: increment(status === "SOLD" ? -1 : 0),
         visible_products: increment(show ? -1 : 0),
         updated_at: serverTimestamp(),
       },
@@ -333,7 +318,6 @@ export function useProductsFirestore() {
 
     const current = { id: snap.id, ...snap.data() } as ProductRecord;
     assertReservableProduct(current);
-    if (getProductStatus(current) === "RESERVED") return;
 
     const batch = writeBatch($db);
     batch.update(pRef, {
@@ -360,7 +344,6 @@ export function useProductsFirestore() {
 
     const current = { id: snap.id, ...snap.data() } as ProductRecord;
     assertActivatableProduct(current);
-    if (getProductStatus(current) === "ACTIVE") return;
 
     const batch = writeBatch($db);
     batch.update(pRef, {

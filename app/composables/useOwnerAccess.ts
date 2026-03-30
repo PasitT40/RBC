@@ -11,6 +11,12 @@ export function useOwnerAccess() {
     checkedUid.value = null;
   };
 
+  const isPermissionDenied = (error: unknown) =>
+    typeof error === "object"
+    && error !== null
+    && "code" in error
+    && (error as { code?: string }).code === "permission-denied";
+
   const ensureOwnerAccess = async (uidOverride?: string | null) => {
     const uid = uidOverride ?? user.value?.uid ?? null;
     if (!uid) {
@@ -22,10 +28,18 @@ export function useOwnerAccess() {
       return allowed.value;
     }
 
-    const snap = await getDoc(doc($db, "owners", uid));
-    allowed.value = snap.exists();
-    checkedUid.value = uid;
-    return allowed.value;
+    try {
+      const snap = await getDoc(doc($db, "owners", uid));
+      allowed.value = snap.exists();
+      checkedUid.value = uid;
+      return allowed.value;
+    } catch (error) {
+      clearOwnerAccess();
+      if (isPermissionDenied(error)) {
+        return false;
+      }
+      throw error;
+    }
   };
 
   return {

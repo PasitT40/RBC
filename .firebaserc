@@ -1,0 +1,22 @@
+{
+  "projects": {
+    "default": "ratchaburi-camera"
+  },
+  "targets": {
+    "ratchaburi-camera": {
+      "hosting": {
+        "backoffice": [
+          "ratchaburi-camera"
+        ]
+      },
+      "storage": {
+        "dev": [
+          "ratchaburi-camera-dev"
+        ],
+        "prod": [
+          "ratchaburi-camera-prod"
+        ]
+      }
+    }
+  }
+}

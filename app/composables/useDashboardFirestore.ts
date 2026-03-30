@@ -6,26 +6,34 @@ export function useDashboardFirestore() {
   const { $db } = useNuxtApp() as { $db: any };
   const { track } = useGlobalLoading();
 
+  const getTime = (value: unknown) => {
+    if (!value) return 0;
+    if (typeof value === "object" && value !== null && "toDate" in value && typeof (value as { toDate: () => Date }).toDate === "function") {
+      return (value as { toDate: () => Date }).toDate().getTime();
+    }
+
+    const date = new Date(value as string | number | Date);
+    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+  };
+
   const getConfirmedOrdersForDashboard = async (input: DashboardPeriodInput = {}) => {
     const period = normalizeDashboardPeriod(input);
     const constraints: QueryConstraint[] = [where("status", "==", "CONFIRMED")];
 
     if (period.kind === "month") {
       constraints.push(where("sold_yyyymm", "==", period.month));
-      constraints.push(orderBy("sold_at", "desc"));
     } else if (period.kind === "range") {
       constraints.push(where("sold_yyyymm", ">=", period.fromMonth));
       constraints.push(where("sold_yyyymm", "<=", period.toMonth));
-      constraints.push(orderBy("sold_yyyymm", "asc"));
-    } else {
-      constraints.push(orderBy("sold_at", "desc"));
     }
 
     constraints.push(limit(input.maxOrders ?? 5000));
     const snap = await getDocs(query(collection($db, "orders"), ...constraints));
     return {
       period,
-      items: snap.docs.map((d) => ({ id: d.id, ...d.data() } as OrderRecord)),
+      items: snap.docs
+        .map((d) => ({ id: d.id, ...d.data() } as OrderRecord))
+        .sort((a, b) => getTime(b.sold_at) - getTime(a.sold_at)),
     };
   };
 

@@ -14,8 +14,16 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
 
   if (user.value) {
-    const isOwner = await ensureOwnerAccess();
-    if (!isOwner) {
+    try {
+      const isOwner = await ensureOwnerAccess();
+      if (!isOwner) {
+        await signOut($auth);
+        clearOwnerAccess();
+        if (to.path !== "/login") return navigateTo("/login?denied=1");
+        return;
+      }
+    } catch (error) {
+      console.error("Owner access check failed", error);
       await signOut($auth);
       clearOwnerAccess();
       if (to.path !== "/login") return navigateTo("/login?denied=1");

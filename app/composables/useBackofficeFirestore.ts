@@ -2,12 +2,14 @@ import { useCategoriesFirestore } from "./useCategoriesFirestore";
 import { useDashboardFirestore } from "./useDashboardFirestore";
 import { useOrdersFirestore } from "./useOrdersFirestore";
 import { useProductsFirestore } from "./useProductsFirestore";
+import { useSiteSettingsFirestore } from "./useSiteSettingsFirestore";
 
 export function useBackofficeFirestore() {
   const { getCategoriesPage, getSubcategoriesPage, getCategories, getBrandsByCategory } = useCategoriesFirestore();
   const { getProductsPage, getProducts, getProductById, createProduct, updateProduct, deleteProduct, toggleShow, setReserved, setActive } = useProductsFirestore();
   const { getReportPage, confirmSale, undoSale } = useOrdersFirestore();
   const { getDashboardStats, getDashboardBrandStats } = useDashboardFirestore();
+  const { getSiteSettings, updateSiteSettings } = useSiteSettingsFirestore();
 
   return {
     // Categories & Brands
@@ -35,5 +37,9 @@ export function useBackofficeFirestore() {
     // Dashboard Stats
     getDashboardStats,
     getDashboardBrandStats,
+
+    // Site Settings
+    getSiteSettings,
+    updateSiteSettings,
   };
 }

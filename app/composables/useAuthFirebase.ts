@@ -17,6 +17,8 @@ export function useAuthFirebase() {
   const loading = ref(false);
   const error = ref("");
 
+  const deniedMessage = "This account does not have backoffice access";
+
   // คำนวณ path ที่จะเด้งกลับไปหลัง login เสร็จ (ค่าเริ่มต้นคือหน้าแรก /)
   const redirectPath = computed(() => {
     const raw = route.query.redirect;
@@ -37,7 +39,7 @@ export function useAuthFirebase() {
         if (!isOwner) {
           await signOut($auth);
           clearOwnerAccess();
-          error.value = "This account does not have backoffice access";
+          error.value = deniedMessage;
           return;
         }
         await navigateTo(redirectPath.value);
@@ -72,7 +74,7 @@ export function useAuthFirebase() {
       if (!isOwner) {
         await signOut($auth);
         clearOwnerAccess();
-        error.value = "This account does not have backoffice access";
+        error.value = deniedMessage;
         return;
       }
       await navigateTo(redirectPath.value);
@@ -108,13 +110,16 @@ export function useAuthFirebase() {
         if (!isOwner) {
           await signOut($auth);
           clearOwnerAccess();
-          error.value = "This account does not have backoffice access";
+          error.value = deniedMessage;
           return;
         }
         await navigateTo(redirectPath.value);
       }
     } catch (err: any) {
-      error.value = err?.message || "Cannot complete login";
+      const code = String(err?.code ?? "");
+      error.value = code === "permission-denied"
+        ? deniedMessage
+        : err?.message || "Cannot complete login";
     }
   };
 

@@ -11,9 +11,11 @@ const props = withDefaults(
   defineProps<{
     data: BrandPoint[];
     height?: number;
+    metric?: "qty" | "amount";
   }>(),
   {
     height: 280,
+    metric: "qty",
   }
 );
 
@@ -24,7 +26,8 @@ const renderChart = () => {
   if (!chart) return;
 
   const labels = props.data.map((item) => item.label);
-  const qtyValues = props.data.map((item) => item.qty);
+  const seriesValues = props.data.map((item) => props.metric === "amount" ? item.amount : item.qty);
+  const palette = ["#93b7f3", "#5fd7c9", "#0b0b0b", "#67aaf9", "#a784e8", "#65d98c", "#f5b45b", "#ff8d7a"];
 
   chart.setOption({
     tooltip: {
@@ -52,13 +55,24 @@ const renderChart = () => {
       splitLine: { lineStyle: { color: "#edf1f5" } },
       axisLine: { show: false },
       axisTick: { show: false },
+      axisLabel: props.metric === "amount"
+        ? {
+            formatter: (value: number) => {
+              if (value >= 1000) return `${Math.round(value / 1000)}K`;
+              return String(value);
+            },
+          }
+        : undefined,
     },
     series: [
       {
         type: "bar",
-        data: qtyValues,
+        data: seriesValues,
         barWidth: 24,
-        itemStyle: { borderRadius: [10, 10, 0, 0], color: "#4f8cff" },
+        itemStyle: {
+          borderRadius: [10, 10, 0, 0],
+          color: (params: { dataIndex: number }) => palette[params.dataIndex % palette.length],
+        },
       },
     ],
   });
@@ -74,7 +88,7 @@ onMounted(() => {
 });
 
 watch(
-  () => props.data,
+  () => [props.data, props.metric],
   () => {
     renderChart();
   },

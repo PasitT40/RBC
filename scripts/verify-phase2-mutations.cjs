@@ -94,6 +94,19 @@ function assertDelta(actual, expected, label) {
   }
 }
 
+async function expectReject(fn, expectedMessage, label) {
+  try {
+    await fn();
+  } catch (error) {
+    if (expectedMessage && !String(error?.message || error).includes(expectedMessage)) {
+      throw new Error(`${label}: expected error containing "${expectedMessage}" but got "${error?.message || error}"`);
+    }
+    return;
+  }
+
+  throw new Error(`${label}: expected rejection`);
+}
+
 async function readDashboard() {
   const snap = await db.collection("dashboard_stats").doc("global").get();
   return cloneCounters(snap.exists ? snap.data() : {});
@@ -227,8 +240,8 @@ async function setReserved(productId) {
   if (!snap.exists) throw new Error("Product not found");
   const current = snap.data();
   if (current.is_deleted) throw new Error("Cannot reserve deleted product");
-  if (current.status === "SOLD") throw new Error("Cannot reserve sold product");
-  if (current.status === "RESERVED") return;
+  if ((current.status || "ACTIVE") === "SOLD") throw new Error("Cannot reserve sold product");
+  if ((current.status || "ACTIVE") !== "ACTIVE") throw new Error("Only active products can be reserved");
   const batch = db.batch();
   batch.update(productRef, { status: "RESERVED", is_sellable: false, updated_at: TS() });
   batch.set(db.collection("dashboard_stats").doc("global"), {
@@ -245,8 +258,8 @@ async function setActive(productId) {
   if (!snap.exists) throw new Error("Product not found");
   const current = snap.data();
   if (current.is_deleted) throw new Error("Cannot activate deleted product");
-  if (current.status === "SOLD") throw new Error("Cannot set active for sold product");
-  if (current.status === "ACTIVE") return;
+  if ((current.status || "ACTIVE") === "SOLD") throw new Error("Cannot set active for sold product");
+  if ((current.status || "ACTIVE") !== "RESERVED") throw new Error("Only reserved products can be set active");
   const batch = db.batch();
   batch.update(productRef, { status: "ACTIVE", is_sellable: true, updated_at: TS() });
   batch.set(db.collection("dashboard_stats").doc("global"), {
@@ -263,7 +276,8 @@ async function deleteProduct(productId) {
   if (!snap.exists) throw new Error("Product not found");
   const current = snap.data();
   if (current.is_deleted) return;
-  if ((current.status || "ACTIVE") !== "ACTIVE") throw new Error("Only active products can be deleted");
+  const status = current.status || "ACTIVE";
+  if (status !== "ACTIVE") throw new Error("Only active products can be deleted");
   const batch = db.batch();
   batch.update(productRef, {
     is_deleted: true,
@@ -274,17 +288,20 @@ async function deleteProduct(productId) {
   });
   batch.set(db.collection("dashboard_stats").doc("global"), {
     total_products: admin.firestore.FieldValue.increment(-1),
-    active_products: admin.firestore.FieldValue.increment(-1),
-    reserved_products: admin.firestore.FieldValue.increment(0),
-    sold_products: admin.firestore.FieldValue.increment(0),
+    active_products: admin.firestore.FieldValue.increment(status === "ACTIVE" ? -1 : 0),
+    reserved_products: admin.firestore.FieldValue.increment(status === "RESERVED" ? -1 : 0),
+    sold_products: admin.firestore.FieldValue.increment(status === "SOLD" ? -1 : 0),
     visible_products: admin.firestore.FieldValue.increment(current.show ? -1 : 0),
     updated_at: TS(),
   }, { merge: true });
   await batch.commit();
 }
 
-async function confirmSale(productId, soldPrice, soldChannel, fee = 0, idempotencyKey) {
+async function confirmSale(productId, soldPrice, soldChannel, idempotencyKey, soldAtValue = new Date()) {
   const orderRef = idempotencyKey ? db.collection("orders").doc(idempotencyKey) : db.collection("orders").doc();
+  const soldAt = new Date(soldAtValue);
+  if (Number.isNaN(soldAt.getTime())) throw new Error("Invalid sold date");
+
   await db.runTransaction(async (tx) => {
     const ledgerRef = db.collection("stats_ledger").doc(`SALE_APPLIED_${orderRef.id}`);
     const ledgerSnap = await tx.get(ledgerRef);
@@ -303,11 +320,13 @@ async function confirmSale(productId, soldPrice, soldChannel, fee = 0, idempoten
     if (product.is_deleted) throw new Error("Cannot sell deleted product");
     if (product.is_sellable === false) throw new Error("Product is not sellable");
     const status = product.status || "ACTIVE";
+    if (status === "SOLD") throw new Error("Product already sold");
     if (status !== "ACTIVE" && status !== "RESERVED") throw new Error("Unsupported product status");
 
     const prevStatus = status;
     const costAtSale = Number(product.cost_price || 0);
-    const profit = Number(soldPrice) - costAtSale - Number(fee || 0);
+    const soldPriceNumber = Number(soldPrice);
+    const profit = soldPriceNumber - costAtSale;
 
     tx.set(orderRef, {
       status: "CONFIRMED",
@@ -317,12 +336,11 @@ async function confirmSale(productId, soldPrice, soldChannel, fee = 0, idempoten
       brand_id: product.brand_id,
       brand_name: product.brand_name,
       sold_channel: soldChannel,
-      sold_price: Number(soldPrice),
-      sold_yyyymm: monthKey(),
+      sold_price: soldPriceNumber,
+      sold_yyyymm: monthKey(soldAt),
       cost_price_at_sale: costAtSale,
-      fee: Number(fee || 0),
       profit,
-      sold_at: TS(),
+      sold_at: admin.firestore.Timestamp.fromDate(soldAt),
       created_at: TS(),
       updated_at: TS(),
       product_snapshot: {
@@ -337,8 +355,8 @@ async function confirmSale(productId, soldPrice, soldChannel, fee = 0, idempoten
       status: "SOLD",
       is_sellable: false,
       last_status_before_sold: prevStatus,
-      sold_at: TS(),
-      sold_price: Number(soldPrice),
+      sold_at: admin.firestore.Timestamp.fromDate(soldAt),
+      sold_price: soldPriceNumber,
       sold_channel: soldChannel,
       sold_ref: orderRef.id,
       updated_at: TS(),
@@ -348,7 +366,7 @@ async function confirmSale(productId, soldPrice, soldChannel, fee = 0, idempoten
       active_products: admin.firestore.FieldValue.increment(prevStatus === "ACTIVE" ? -1 : 0),
       reserved_products: admin.firestore.FieldValue.increment(prevStatus === "RESERVED" ? -1 : 0),
       total_sales_count: admin.firestore.FieldValue.increment(1),
-      total_sales_amount: admin.firestore.FieldValue.increment(Number(soldPrice)),
+      total_sales_amount: admin.firestore.FieldValue.increment(soldPriceNumber),
       total_cost_amount: admin.firestore.FieldValue.increment(costAtSale),
       total_profit_amount: admin.firestore.FieldValue.increment(profit),
       updated_at: TS(),
@@ -357,7 +375,7 @@ async function confirmSale(productId, soldPrice, soldChannel, fee = 0, idempoten
       brand_id: product.brand_id,
       brand_name: product.brand_name,
       sales_count: admin.firestore.FieldValue.increment(1),
-      sales_amount: admin.firestore.FieldValue.increment(Number(soldPrice)),
+      sales_amount: admin.firestore.FieldValue.increment(soldPriceNumber),
       cost_amount: admin.firestore.FieldValue.increment(costAtSale),
       profit_amount: admin.firestore.FieldValue.increment(profit),
       updated_at: TS(),
@@ -421,7 +439,7 @@ async function undoSale(orderId) {
 
 async function main() {
   const results = [];
-  const prefix = `phase1-${Date.now()}`;
+  const prefix = `phase2-${Date.now()}`;
   const mappings = await getActiveMappings();
   if (mappings.length < 2) throw new Error("Need at least two active category-brand mappings");
   const primary = mappings[0];
@@ -452,6 +470,10 @@ async function main() {
     sold_products: 0,
     visible_products: 1,
   }, "createProduct");
+  const created = (await db.collection("products").doc(createdProductId).get()).data();
+  if (created.status !== "ACTIVE" || created.show !== true || created.is_sellable !== true || created.is_deleted !== false) {
+    throw new Error("createProduct: derived lifecycle fields invalid");
+  }
   results.push({ flow: "createProduct", status: "passed", productId: createdProductId });
 
   await updateProduct(createdProductId, {
@@ -508,6 +530,15 @@ async function main() {
   if (reserved.status !== "RESERVED" || reserved.is_sellable !== false) throw new Error("setReserved: product status invalid");
   results.push({ flow: "setReserved", status: "passed", productId: createdProductId });
 
+  const beforeInvalidReserve = await readDashboard();
+  await expectReject(() => setReserved(createdProductId), "Only active products can be reserved", "setReserved invalid transition");
+  const afterInvalidReserve = await readDashboard();
+  assertDelta(diffCounters(beforeInvalidReserve, afterInvalidReserve), {
+    active_products: 0,
+    reserved_products: 0,
+  }, "setReserved invalid transition");
+  results.push({ flow: "setReservedInvalidTransition", status: "passed", productId: createdProductId });
+
   const beforeActive = await readDashboard();
   await setActive(createdProductId);
   const afterActive = await readDashboard();
@@ -515,6 +546,15 @@ async function main() {
   const active = (await db.collection("products").doc(createdProductId).get()).data();
   if (active.status !== "ACTIVE" || active.is_sellable !== true) throw new Error("setActive: product status invalid");
   results.push({ flow: "setActive", status: "passed", productId: createdProductId });
+
+  const beforeInvalidActive = await readDashboard();
+  await expectReject(() => setActive(createdProductId), "Only reserved products can be set active", "setActive invalid transition");
+  const afterInvalidActive = await readDashboard();
+  assertDelta(diffCounters(beforeInvalidActive, afterInvalidActive), {
+    active_products: 0,
+    reserved_products: 0,
+  }, "setActive invalid transition");
+  results.push({ flow: "setActiveInvalidTransition", status: "passed", productId: createdProductId });
 
   const beforeDelete = await readDashboard();
   await deleteProduct(createdProductId);
@@ -542,7 +582,7 @@ async function main() {
   });
   const beforeSale = await readDashboard();
   const orderId = `${prefix}-order`;
-  await confirmSale(saleProductId, 18000, "LINE", 500, orderId);
+  await confirmSale(saleProductId, 18000, "LINE", orderId, new Date("2026-03-30T10:00:00Z"));
   const afterSale = await readDashboard();
   assertDelta(diffCounters(beforeSale, afterSale), {
     sold_products: 1,
@@ -550,11 +590,12 @@ async function main() {
     total_sales_count: 1,
     total_sales_amount: 18000,
     total_cost_amount: 12000,
-    total_profit_amount: 5500,
+    total_profit_amount: 6000,
   }, "confirmSale");
   const soldProduct = (await db.collection("products").doc(saleProductId).get()).data();
   const orderSnap = await db.collection("orders").doc(orderId).get();
   const saleLedgerSnap = await db.collection("stats_ledger").doc(`SALE_APPLIED_${orderId}`).get();
+  const brandStatsSnap = await db.collection("dashboard_brand_stats").doc(String(primary.brand_id)).get();
   if (soldProduct.status !== "SOLD" || soldProduct.sold_ref !== orderId) throw new Error("confirmSale: product status invalid");
   if (!orderSnap.exists || orderSnap.data().status !== "CONFIRMED") throw new Error("confirmSale: order missing");
   if (!saleLedgerSnap.exists) throw new Error("confirmSale: sale ledger missing");
@@ -562,10 +603,14 @@ async function main() {
   if (saleLedger.entity_type !== "order" || saleLedger.entity_id !== orderId || saleLedger.operation_key !== `SALE_APPLIED_${orderId}`) {
     throw new Error("confirmSale: sale ledger payload invalid");
   }
+  const brandStats = brandStatsSnap.data();
+  if (!brandStatsSnap.exists || Number(brandStats.sales_count || 0) < 1) {
+    throw new Error("confirmSale: brand aggregate missing");
+  }
   results.push({ flow: "confirmSale", status: "passed", productId: saleProductId, orderId });
 
   const beforeRepeatSale = await readDashboard();
-  await confirmSale(saleProductId, 18000, "LINE", 500, orderId);
+  await confirmSale(saleProductId, 18000, "LINE", orderId, new Date("2026-03-30T10:00:00Z"));
   const afterRepeatSale = await readDashboard();
   assertDelta(diffCounters(beforeRepeatSale, afterRepeatSale), {
     sold_products: 0,
@@ -587,7 +632,7 @@ async function main() {
     total_sales_count: -1,
     total_sales_amount: -18000,
     total_cost_amount: -12000,
-    total_profit_amount: -5500,
+    total_profit_amount: -6000,
   }, "undoSale");
   const restoredProduct = (await db.collection("products").doc(saleProductId).get()).data();
   const cancelledOrder = (await db.collection("orders").doc(orderId).get()).data();

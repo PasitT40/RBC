@@ -1,9 +1,22 @@
 const admin = require("firebase-admin");
+const { getFirestore } = require("firebase-admin/firestore");
 const fs = require("fs");
 const path = require("path");
 
 const projectRoot = path.resolve(__dirname, "..");
-const envPath = path.join(projectRoot, ".env.development");
+function resolveEnvPath(rootDir) {
+  const appEnv = process.env.APP_ENV || process.env.NODE_ENV || "development";
+  const candidates = appEnv === "production"
+    ? [".env.production", ".env"]
+    : [".env.development", ".env"];
+  for (const name of candidates) {
+    const fullPath = path.join(rootDir, name);
+    if (fs.existsSync(fullPath)) return fullPath;
+  }
+  return path.join(rootDir, ".env");
+}
+
+const envPath = resolveEnvPath(projectRoot);
 const serviceAccount = require(path.join(projectRoot, "serviceAccountKey.json"));
 
 function parseEnvFile(filePath) {
@@ -28,7 +41,7 @@ function parseEnvFile(filePath) {
 const env = parseEnvFile(envPath);
 const databaseId = env.FIRESTORE_DATABASE_ID || "(default)";
 const app = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-const db = databaseId === "(default)" ? admin.firestore(app) : admin.firestore(app, databaseId);
+const db = getFirestore(app, databaseId);
 const TS = admin.firestore.FieldValue.serverTimestamp;
 
 function placeholderFor(product) {
