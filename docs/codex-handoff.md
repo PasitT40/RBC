@@ -10,6 +10,63 @@ Execute [`docs/implementation-plan.md`](./implementation-plan.md) phase by phase
 
 - Phase 6: Verification, Rebuild, And Operational Readiness
 
+## Latest session update
+
+- Confirmed local toolchain and build path are healthy on Node `v22.22.1`
+- Confirmed Firebase Hosting config is aligned for real deploy:
+  - `firebase.json` hosting target `backoffice` publishes from `.output/public`
+  - `.firebaserc` maps hosting target `backoffice` to project `ratchaburi-camera`
+- Added Prettier baseline config for the repo:
+  - `.prettierrc.json`
+  - `.prettierignore`
+  - `.editorconfig`
+  - `package.json` scripts `format` and `format:check`
+- Refactored product create/edit into a shared editor surface and fixed edit hydration issues so existing product values populate correctly
+- Aligned product validation, publish guardrails, and labels so non-SEO merchandising fields now match operator expectations
+- Allowed slug/name reuse when the previous product is soft-deleted (`is_deleted=true`)
+- Centered the global loading overlay in `app/app.vue`
+- Standardized the main backoffice surfaces toward a shared Vuetify-first desktop layout and friendlier Thai copy:
+  - dashboard
+  - products
+  - report
+  - settings
+  - login
+- Added image upload guidance and storage controls:
+  - resized WebP upload profiles tuned down to reduce storage growth
+  - file-size limits surfaced in upload UI
+  - recommended resolution hints surfaced in upload UI
+  - browser `alert()` usage replaced with existing app toast flow
+- Added dev dataset reset helpers:
+  - `scripts/cleanup-dev-dataset.cjs`
+  - `scripts/reseed-dev-dataset.cjs`
+  - package scripts:
+    - `yarn cleanup:dev-data`
+    - `yarn cleanup:dev-data:apply`
+    - `yarn reseed:dev-data`
+    - `yarn reseed:dev-data:verify`
+- Updated `scripts/seed-final.cjs` and `scripts/seed-final.js` so products without images are seeded with `show=false`, which keeps Phase 1 integrity checks clean for demo data
+
+## Latest verification status
+
+- Passed:
+  - `npm_config_cache=/tmp/rbc-npm-cache yarn -s nuxi typecheck`
+  - `yarn generate:hosting`
+  - `APP_ENV=development node scripts/verify-phase1.cjs`
+  - `APP_ENV=development node scripts/verify-phase2-mutations.cjs`
+  - `APP_ENV=development node scripts/verify-phase3-guardrails.cjs`
+  - `APP_ENV=development node scripts/verify-image-flows.cjs`
+- Current dev database after reseed:
+  - Firestore database id: `ratchaburi-camera-dev`
+  - Demo data reseeded successfully
+  - Phase 1 dev-data debt is cleared
+
+## Current deploy status
+
+- Repo is ready for Firebase Hosting deploy in build terms
+- Dev verification suite is green after reseeding the demo dataset
+- Recommended production deploy command remains:
+  - `firebase deploy --only hosting:backoffice`
+
 ## Phase 1 result
 
 - Locked the product lifecycle contract to persisted statuses `ACTIVE | RESERVED | SOLD`

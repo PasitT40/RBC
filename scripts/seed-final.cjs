@@ -167,7 +167,8 @@ async function seed(){
     if(i%6===0) status="RESERVED";
     if(i%4===0) status="SOLD";
 
-    const show=i%7!==0;
+    const hasSeedImage = false;
+    const show=hasSeedImage ? i%7!==0 : false;
     const cost=rand(4000,35000);
     const sell=money(cost*(1.15+Math.random()*0.35));
 

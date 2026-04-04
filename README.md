@@ -99,6 +99,8 @@ yarn deploy:backoffice
 
 Operational and rollout docs:
 - [`docs/implementation-plan.md`](./docs/implementation-plan.md)
+- [`docs/backoffice-user-guide.md`](./docs/backoffice-user-guide.md)
+- [`docs/backoffice-system-flows.md`](./docs/backoffice-system-flows.md)
 - [`docs/firestore.spec.md`](./docs/firestore.spec.md)
 - [`docs/public-catalog.spec.md`](./docs/public-catalog.spec.md)
 - [`docs/manual-qa-checklist.md`](./docs/manual-qa-checklist.md)

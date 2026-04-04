@@ -2,89 +2,137 @@
 const { logout } = useAuthFirebase();
 const runtimeConfig = useRuntimeConfig();
 const firestoreDatabaseId = computed(() => String(runtimeConfig.public.firestoreDatabaseId || ""));
+
 const menu = ref([
-  {
-    title: "Dashboard",
-    icon: "mdi-view-dashboard",
-    to: "/",
-  },
-  {
-    title: "Categories",
-    icon: "mdi-shape",
-    to: "/categories",
-  },
-  {
-    title:"Products",
-    icon: "mdi-sitemap",
-    to: "/products",
-  },
-  {
-    title:"Reports",
-    icon: "mdi-poll",
-    to: "/report",
-  },
-  {
-    title:"Settings",
-    icon: "mdi-image-multiple",
-    to: "/settings",
-  }
+  { title: "Dashboard", icon: "mdi-view-dashboard", to: "/" },
+  { title: "Categories", icon: "mdi-shape", to: "/categories" },
+  { title: "Products", icon: "mdi-sitemap", to: "/products" },
+  { title: "Reports", icon: "mdi-poll", to: "/report" },
+  { title: "Settings", icon: "mdi-image-multiple", to: "/settings" },
 ]);
 </script>
 
 <template>
-  <v-layout class="rounded rounded-md border" style="min-height: 100vh;">
-    <v-navigation-drawer class="tw:p-5!">
-      <v-row no-gutters > 
-       <v-col cols="3">
-        <v-img src="/img/logo.png" height="50" width="50" alt="Logo" />
-       </v-col>
-       <v-col cols="6" class="tw:flex tw:items-center tw:px-3!">
-        <span>Admin</span>
-       </v-col>
-      </v-row>
-      <v-list nav>
-        <v-list-item v-for="(item, index) in menu" :key="index" link :to="item.to">
+  <div class="backoffice-shell">
+    <aside class="backoffice-sidebar">
+      <div class="backoffice-brand">
+        <img src="/img/logo.png" alt="Logo" class="backoffice-brand__logo">
+        <div>
+          <div class="backoffice-brand__title">Admin</div>
+          <div class="backoffice-brand__subtitle">Ratchaburi Camera</div>
+        </div>
+      </div>
+
+      <v-list nav class="backoffice-nav">
+        <v-list-item v-for="(item, index) in menu" :key="index" link :to="item.to" rounded="lg">
           <template #prepend>
-           <v-icon :icon="item.icon" size="20" />
+            <v-icon :icon="item.icon" size="20" />
           </template>
-           <template #title>
-            <span>{{ item.title }}</span> 
+          <template #title>
+            <span>{{ item.title }}</span>
           </template>
           <template #append>
-            <v-icon icon="mdi-chevron-right" size="20" />
+            <v-icon icon="mdi-chevron-right" size="18" />
           </template>
         </v-list-item>
       </v-list>
-      <div class="tw:mt-6 tw:px-2">
+
+      <div class="backoffice-sidebar__footer">
         <v-btn
           block
           color="error"
           variant="tonal"
           rounded="lg"
-          class="tw:font-semibold tw:normal-case"
+          class="text-none"
           @click="logout()"
         >
           <v-icon start>mdi-logout</v-icon>
           Log out
         </v-btn>
-        <div class="tw:mt-3 tw:text-xs tw:leading-5 tw:text-slate-500">
+
+        <div class="backoffice-sidebar__meta">
           Firestore database: <strong>{{ firestoreDatabaseId || "(default)" }}</strong><br>
           Storage uploads require Firebase Auth custom claim <code>backoffice_owner=true</code>.
         </div>
       </div>
-    </v-navigation-drawer>
+    </aside>
 
-    <v-main class="d-flex align-start justify-center tw:min-h-screen tw:bg-gray-100">
-      <v-container>
-        <v-sheet
-          color="white"
-          height="100%"
-          rounded="lg"
-          width="100%"
-        >
-      <slot></slot>
-    </v-sheet>
-      </v-container>
-    </v-main>
-  </v-layout>
+    <main class="backoffice-main">
+      <div class="backoffice-page">
+        <slot />
+      </div>
+    </main>
+  </div>
 </template>
+
+<style scoped>
+.backoffice-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  background: #f4f5f7;
+}
+
+.backoffice-sidebar {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px;
+  background: #ffffff;
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.backoffice-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px 20px;
+}
+
+.backoffice-brand__logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.backoffice-brand__title {
+  font-size: 1rem;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #18181b;
+}
+
+.backoffice-brand__subtitle {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #71717a;
+}
+
+.backoffice-nav {
+  flex: 1;
+}
+
+.backoffice-sidebar__footer {
+  padding: 16px 8px 0;
+}
+
+.backoffice-sidebar__meta {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: #64748b;
+}
+
+.backoffice-main {
+  min-width: 0;
+  padding: 24px;
+}
+
+.backoffice-page {
+  min-height: calc(100vh - 48px);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+</style>
