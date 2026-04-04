@@ -5,10 +5,13 @@ import { useField } from "vee-validate"
 interface Props {
   name: string
   label?: string
+  hint?: string
   accept?: string
   multiple?: boolean
   maxSize?: number
   maxFiles?: number
+  aspectRatio?: number
+  aspectRatioLabel?: string
   previewUrl?: string   // URL รูปเดิม (ใช้ตอน edit mode)
   previewUrls?: string[]
   sortable?: boolean
@@ -21,6 +24,8 @@ const props = withDefaults(defineProps<Props>(), {
   multiple: false,
   maxSize: 2000000,
   maxFiles: 1,
+  aspectRatio: undefined,
+  aspectRatioLabel: "",
   previewUrl: undefined,
   previewUrls: () => [],
   sortable: false,
@@ -34,6 +39,7 @@ const emit = defineEmits<{
   (e: "remove-preview", index: number): void
 }>()
 
+const appToast = useAppToast()
 const { errorMessage, handleChange } = useField(() => props.name)
 
 const selectedFiles = ref<File[]>([])
@@ -59,6 +65,12 @@ const displayItems = computed(() => {
 
 const activePreviewItem = computed(() => displayItems.value[activePreviewIndex.value] ?? null)
 
+const formatBytes = (bytes: number) => {
+  if (bytes >= 1000 * 1000) return `${(bytes / (1000 * 1000)).toFixed(1)} MB`
+  if (bytes >= 1000) return `${Math.round(bytes / 1000)} KB`
+  return `${bytes} B`
+}
+
 watch(
   normalizedExistingPreviews,
   (urls) => {
@@ -77,7 +89,31 @@ function emitSelectedFiles() {
   emit("update:model-value", nextValue)
 }
 
-function handleFiles(files: File | File[] | FileList | null) {
+const getImageDimensions = (file: File): Promise<{ width: number; height: number }> =>
+  new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const image = new Image()
+
+    image.onload = () => {
+      resolve({ width: image.naturalWidth, height: image.naturalHeight })
+      URL.revokeObjectURL(objectUrl)
+    }
+
+    image.onerror = () => {
+      reject(new Error("invalid-image"))
+      URL.revokeObjectURL(objectUrl)
+    }
+
+    image.src = objectUrl
+  })
+
+const isAspectRatioAllowed = (width: number, height: number) => {
+  if (!props.aspectRatio) return true
+  const ratio = width / height
+  return Math.abs(ratio - props.aspectRatio) <= 0.03
+}
+
+async function handleFiles(files: File | File[] | FileList | null) {
   const fileArray = Array.isArray(files)
     ? files
     : files instanceof FileList
@@ -87,7 +123,7 @@ function handleFiles(files: File | File[] | FileList | null) {
         : []
 
   if (fileArray.length > props.maxFiles) {
-    alert(`Maximum ${props.maxFiles} files`)
+    appToast.error(`เลือกได้สูงสุด ${props.maxFiles} ไฟล์`)
     return
   }
 
@@ -96,10 +132,24 @@ function handleFiles(files: File | File[] | FileList | null) {
   progress.value = []
   selectedFiles.value = []
 
-  fileArray.forEach((file, index) => {
+  for (const [index, file] of fileArray.entries()) {
     if (file.size > props.maxSize) {
-      alert(`${file.name} too large`)
-      return
+      appToast.error(`${file.name} มีขนาดใหญ่เกินไป ระบบรองรับไม่เกิน ${formatBytes(props.maxSize)}`)
+      continue
+    }
+
+    if (props.aspectRatio) {
+      try {
+        const { width, height } = await getImageDimensions(file)
+        if (!isAspectRatioAllowed(width, height)) {
+          const ratioLabel = props.aspectRatioLabel || props.aspectRatio.toFixed(2)
+          appToast.error(`${file.name} สัดส่วนภาพไม่ถูกต้อง กรุณาใช้สัดส่วน ${ratioLabel}`)
+          continue
+        }
+      } catch {
+        appToast.error(`${file.name} ไม่สามารถอ่านขนาดรูปได้ กรุณาเลือกไฟล์ภาพใหม่`)
+        continue
+      }
     }
 
     selectedFiles.value.push(file)
@@ -107,7 +157,7 @@ function handleFiles(files: File | File[] | FileList | null) {
     progress.value.push(0)
 
     simulateUpload(index)
-  })
+  }
 
   emitSelectedFiles()
 }
@@ -223,6 +273,8 @@ onBeforeUnmount(() => {
   <v-file-input
     :variant="variant"
     :label="label"
+    :hint="hint"
+    :persistent-hint="Boolean(hint)"
     :accept="accept"
     :multiple="multiple"
     :error-messages="errorMessage"

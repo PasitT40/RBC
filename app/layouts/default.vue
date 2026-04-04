@@ -67,15 +67,15 @@ const menu = ref([
           <v-icon start>mdi-logout</v-icon>
           Log out
         </v-btn>
+        <div class="tw:mt-3 tw:text-xs tw:leading-5 tw:text-slate-500">
+          Firestore database: <strong>{{ firestoreDatabaseId || "(default)" }}</strong><br>
+          Storage uploads require Firebase Auth custom claim <code>backoffice_owner=true</code>.
+        </div>
       </div>
     </v-navigation-drawer>
 
     <v-main class="d-flex align-start justify-center tw:min-h-screen tw:bg-gray-100">
       <v-container>
-        <v-alert type="info" variant="tonal" class="tw:mb-4">
-          Firestore database: <strong>{{ firestoreDatabaseId }}</strong>
-          Storage uploads ต้องใช้ Firebase Auth custom claim `backoffice_owner=true`
-        </v-alert>
         <v-sheet
           color="white"
           height="100%"

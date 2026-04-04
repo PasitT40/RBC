@@ -1,6 +1,6 @@
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import type { SiteSettingsRecord } from "./firestore/types";
-import { deleteStorageUrls, uploadImageAsWebP } from "./firestore/media";
+import { IMAGE_UPLOAD_PROFILES, deleteStorageUrls, uploadImageAsWebP } from "./firestore/media";
 
 type EditableSiteBanner = {
   id?: string;
@@ -37,8 +37,11 @@ export function useSiteSettingsFirestore() {
   const { $db, $storage } = useNuxtApp() as { $db: any; $storage: any };
   const { track } = useGlobalLoading();
 
-  const uploadImage = async (rawFile: File, folderPath: string) =>
-    uploadImageAsWebP($storage, rawFile, folderPath);
+  const uploadBannerImage = async (rawFile: File, folderPath: string) =>
+    uploadImageAsWebP($storage, rawFile, folderPath, IMAGE_UPLOAD_PROFILES.siteBanner);
+
+  const uploadCreditImage = async (rawFile: File, folderPath: string) =>
+    uploadImageAsWebP($storage, rawFile, folderPath, IMAGE_UPLOAD_PROFILES.siteCredit);
 
   const cleanupUploadedUrls = async (urls: string[]) => {
     if (!urls.length) return;
@@ -87,7 +90,7 @@ export function useSiteSettingsFirestore() {
       const nextBanners = [];
       for (const [index, item] of (payload.banners ?? []).entries()) {
         const id = item.id?.trim() || `banner-${index + 1}`;
-        const uploadedUrl = item.file ? await uploadImage(item.file, `settings/site/banners/${id}`) : null;
+        const uploadedUrl = item.file ? await uploadBannerImage(item.file, `settings/site/banners/${id}`) : null;
         if (uploadedUrl) uploadedUrls.push(uploadedUrl);
 
         const imageUrl = uploadedUrl ?? item.image_url?.trim() ?? "";
@@ -104,7 +107,7 @@ export function useSiteSettingsFirestore() {
       const nextCredits = [];
       for (const [index, item] of (payload.credits ?? []).entries()) {
         const id = item.id?.trim() || `credit-${index + 1}`;
-        const uploadedUrl = item.file ? await uploadImage(item.file, `settings/site/credits/${id}`) : null;
+        const uploadedUrl = item.file ? await uploadCreditImage(item.file, `settings/site/credits/${id}`) : null;
         if (uploadedUrl) uploadedUrls.push(uploadedUrl);
 
         const imageUrl = uploadedUrl ?? item.image_url?.trim() ?? "";
@@ -145,7 +148,8 @@ export function useSiteSettingsFirestore() {
   };
 
   return {
-    getSiteSettings: () => track(() => getSiteSettings(), "Loading site settings..."),
-    updateSiteSettings: (payload: UpdateSiteSettingsInput) => track(() => updateSiteSettings(payload), "Saving site settings..."),
+    getSiteSettings: () => track(() => getSiteSettings(), "กำลังโหลดการตั้งค่าหน้าเว็บ..."),
+    updateSiteSettings: (payload: UpdateSiteSettingsInput) =>
+      track(() => updateSiteSettings(payload), "กำลังบันทึกการตั้งค่าหน้าเว็บ..."),
   };
 }

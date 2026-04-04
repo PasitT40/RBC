@@ -36,23 +36,37 @@ export function getPublicProductIssues(product: Partial<ProductInput & ProductRe
   const slug = String(product.slug ?? "").trim();
   const categoryId = String(product.category_id ?? "").trim();
   const brandId = String(product.brand_id ?? "").trim();
+  const costPrice = Number(product.cost_price);
   const sellPrice = Number(product.sell_price);
+  const condition = String(product.condition ?? "").trim();
+  const defectDetail = String(product.defect_detail ?? "").trim();
+  const freeGiftDetail = String(product.free_gift_detail ?? "").trim();
+  const shutter = Number(product.shutter);
   const coverImage = String(product.cover_image ?? "").trim();
   const images = sanitizeProductImageUrls(product.images);
   const hasImage = Boolean(coverImage) || images.length > 0;
 
-  if (!name) issues.push("Public products require a name");
+  if (!name) issues.push("กรุณาใส่ชื่อสินค้า");
   if (!slug) {
-    issues.push("Public products require a slug");
+    issues.push("ยังสร้างลิงก์สินค้าไม่สำเร็จ ลองตรวจชื่อสินค้าอีกครั้ง");
   } else if (!isValidProductSlug(slug)) {
-    issues.push("Public products require a valid slug");
+    issues.push("ลิงก์สินค้ายังไม่ถูกต้อง");
   }
-  if (!categoryId) issues.push("Public products require a category");
-  if (!brandId) issues.push("Public products require a brand");
+  if (!categoryId) issues.push("กรุณาเลือกประเภทสินค้า");
+  if (!brandId) issues.push("กรุณาเลือกแบรนด์");
+  if (typeof product.cost_price !== "number" || Number.isNaN(costPrice)) {
+    issues.push("กรุณาใส่ราคาทุน");
+  }
   if (typeof product.sell_price !== "number" || Number.isNaN(sellPrice)) {
-    issues.push("Public products require a valid sell price");
+    issues.push("กรุณาใส่ราคาขาย");
   }
-  if (!hasImage) issues.push("Public products require at least one image");
+  if (!condition) issues.push("กรุณาระบุสภาพสินค้า");
+  if (typeof product.shutter !== "number" || Number.isNaN(shutter)) {
+    issues.push("กรุณาใส่จำนวนชัตเตอร์");
+  }
+  if (!defectDetail) issues.push("กรุณาใส่รายละเอียดตำหนิ");
+  if (!freeGiftDetail) issues.push("กรุณาใส่ของแถม");
+  if (!hasImage) issues.push("กรุณาใส่รูปสินค้าอย่างน้อย 1 รูป");
 
   return issues;
 }

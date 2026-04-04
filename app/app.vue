@@ -16,8 +16,7 @@ const { isLoading, message } = useGlobalLoading();
     <VOverlay
       :model-value="isLoading"
       persistent
-      contained
-      class="tw:items-center tw:justify-center"
+      class="d-flex align-center justify-center"
       scrim="rgba(255, 255, 255, 0.32)"
     >
       <div class="tw:flex tw:min-w-[220px] tw:flex-col tw:items-center tw:gap-4 tw:rounded-2xl tw:bg-white tw:px-8 tw:py-7 tw:shadow-xl">

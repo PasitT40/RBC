@@ -1,7 +1,7 @@
 import { Timestamp, collection, doc, getDocs, increment, limit, query, runTransaction, serverTimestamp, startAfter, where, type QueryConstraint } from "firebase/firestore";
 import type { ConfirmSaleInput, OrderRecord, OrderStatus, PageCursor, PageResult, ProductRecord, ProductStatus, ReportPageInput } from "./firestore/types";
 import { assertSellableProduct, getProductStatus } from "./firestore/products";
-import { globalRef, monthKey } from "./firestore/utils";
+import { globalRef, monthKey, normalizeDashboardPeriod } from "./firestore/utils";
 
 export function useOrdersFirestore() {
   const { $db } = useNuxtApp() as { $db: any };
@@ -29,9 +29,17 @@ export function useOrdersFirestore() {
 
     const status = input.status ?? "CONFIRMED";
     constraints.push(where("status", "==", status));
+    const period = normalizeDashboardPeriod({
+      month: input.month,
+      fromMonth: input.fromMonth,
+      toMonth: input.toMonth,
+    });
 
-    if (input.month) {
-      constraints.push(where("sold_yyyymm", "==", input.month));
+    if (period.kind === "month") {
+      constraints.push(where("sold_yyyymm", "==", period.month));
+    } else if (period.kind === "range") {
+      constraints.push(where("sold_yyyymm", ">=", period.fromMonth));
+      constraints.push(where("sold_yyyymm", "<=", period.toMonth));
     }
 
     if (input.brandId) constraints.push(where("brand_id", "==", input.brandId));

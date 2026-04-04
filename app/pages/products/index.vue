@@ -38,7 +38,11 @@ const saleDialog = ref(false);
 const saleSubmitting = ref(false);
 const saleTarget = ref<ProductRow | null>(null);
 const undoingSaleId = ref<string | null>(null);
-const sortBy = ref<DataTableSortItem[]>([{ key: "updated_at", order: "desc" }]);
+const search = ref("");
+const sortBy = ref<DataTableSortItem[]>([
+  { key: "status", order: "asc" },
+  { key: "updated_at", order: "desc" },
+]);
 const saleForm = reactive({
   sold_price: "",
   sold_at: "",
@@ -60,16 +64,16 @@ const saleChannelOptions = [
 ];
 
 const statusMetaMap: Record<ProductStatus, { label: string; color: string; rank: number }> = {
-  ACTIVE: { label: "Active", color: "#67c86a", rank: 0 },
-  RESERVED: { label: "Reserved", color: "#5b8def", rank: 1 },
-  SOLD: { label: "SOLD", color: "#f39a3d", rank: 2 },
-  DELETED: { label: "DELETED", color: "#8c8c8c", rank: 3 },
+  ACTIVE: { label: "พร้อมขาย", color: "#67c86a", rank: 0 },
+  RESERVED: { label: "จองแล้ว", color: "#5b8def", rank: 1 },
+  SOLD: { label: "ขายแล้ว", color: "#f39a3d", rank: 2 },
+  DELETED: { label: "ลบแล้ว", color: "#8c8c8c", rank: 3 },
 };
 
 const loadProducts = async () => {
   loading.value = true;
   try {
-    const result = await getProducts(50);
+    const result = await getProducts(50, { includeDeleted: true });
     products.value = result.filter(isProductRow);
   } catch (error) {
     console.error("โหลดสินค้าไม่สำเร็จ", error);
@@ -126,11 +130,21 @@ const canMarkSold = (item: ProductRow) => {
 const canUndoSold = (item: ProductRow) => !item.is_deleted && getDisplayStatus(item) === "SOLD" && Boolean(item.sold_ref);
 
 const statusActionLabel = (item: ProductRow) =>
-  getDisplayStatus(item) === "RESERVED" ? "Set Active" : "Reserve";
+  getDisplayStatus(item) === "RESERVED" ? "ตั้งเป็นพร้อมขาย" : "เปลี่ยนเป็นจอง";
 
 const statusMeta = (item: ProductRow) => statusMetaMap[getDisplayStatus(item)];
 
 const statusSortRank = (item: ProductRow) => statusMeta(item).rank;
+
+const summaryItems = computed(() => {
+  const rows = products.value;
+  return [
+    { label: "ทั้งหมด", value: rows.length },
+    { label: "พร้อมขาย", value: rows.filter((item) => getDisplayStatus(item) === "ACTIVE").length },
+    { label: "จองแล้ว", value: rows.filter((item) => getDisplayStatus(item) === "RESERVED").length },
+    { label: "ขายแล้ว", value: rows.filter((item) => getDisplayStatus(item) === "SOLD").length },
+  ];
+});
 
 const formatDateInputValue = (value: Date) => {
   const year = value.getFullYear();
@@ -199,38 +213,32 @@ const validateSaleForm = () => {
 };
 
 const headers: DataTableHeader[] = [
-  { title: "ID", key: "rowIndex", sortable: false },
-  { title: "Image", key: "cover_image", sortable: false },
-  { title: "Name", key: "name", sortable: true },
-  { title: "Category", key: "category_name", sortable: true },
-  { title: "Brands", key: "brand_name", sortable: true },
-  { title: "ราคาขาย", key: "sell_price", sortable: true },
+  { title: "รูป", key: "cover_image", sortable: false, width: 96 },
+  { title: "สินค้า", key: "name", sortable: true, width: 320 },
+  { title: "ราคาขาย", key: "sell_price", sortable: true, width: 120 },
   {
-    title: "Create At",
-    key: "created_at",
-    sortable: true,
-    sortRaw: (a, b) => getSortableTime(a.created_at) - getSortableTime(b.created_at),
-  },
-  {
-    title: "Update At",
+    title: "อัปเดตล่าสุด",
     key: "updated_at",
+    width: 150,
     sortable: true,
     sortRaw: (a, b) => getSortableTime(a.updated_at ?? a.created_at) - getSortableTime(b.updated_at ?? b.created_at),
   },
   {
-    title: "Sold At",
+    title: "วันที่ขาย",
     key: "sold_at",
+    width: 150,
     sortable: true,
     sortRaw: (a, b) => getSortableTime((a as ProductRow).sold_at) - getSortableTime((b as ProductRow).sold_at),
   },
   {
-    title: "Status",
+    title: "สถานะ",
     key: "status",
+    width: 140,
     sortable: true,
     sortRaw: (a, b) => statusSortRank(a as ProductRow) - statusSortRank(b as ProductRow),
   },
-  { title: "Action", key: "actions", sortable: false },
-  { title: "Switch", key: "show", sortable: false },
+  { title: "แสดงผล", key: "show", sortable: false,width:280 },
+  { title: "Action", key: "actions", sortable: false, width: 340, align:'center' as const},
 ];
 
 const onToggleShow = async (item: ProductRow, nextValue: boolean | null) => {
@@ -354,165 +362,203 @@ onMounted(loadProducts);
 </script>
 
 <template>
-<v-row>
-    <v-col cols="12" class="tw:px-4 tw:py-6 md:tw:px-8 md:tw:py-10">
-    <div class="tw:mb-8 tw:flex tw:flex-col tw:gap-4 md:tw:flex-row md:tw:items-center md:tw:justify-between">
-      <div>
-        <h1 class="tw:text-4xl tw:font-black tw:text-black md:tw:text-5xl">Products</h1>
-      </div>
+  <v-row class="pa-5">
+    <v-col cols="12">
+      <v-row align="end" justify="space-between" class="tw:mb-6">
+        <v-col cols="8">
+          <h1 class="tw:text-4xl tw:font-black tw:tracking-tight tw:text-slate-900">สินค้า</h1>
+        </v-col>
 
-      <v-btn
-        color="#f5962f"
-        rounded="pill"
-        size="large"
-        class="tw:self-start tw:px-7 tw:font-bold tw:normal-case tw:text-white md:tw:self-auto"
-        to="/products/create"
-      >
-        <v-icon start>mdi-plus</v-icon>
-        New
-      </v-btn>
-    </div>
-  </v-col>
-  <v-col cols="12">
-    <v-card
-      rounded="xl"
-      elevation="0"
-      class="tw:overflow-hidden tw:border tw:border-black/5"
-    >
-      <v-data-table
-       class="pa-5"
-        :headers="headers"
-        :items="products"
-        :loading="loading"
-        v-model:sort-by="sortBy"
-        item-value="id"
-        items-per-page="10"
-        hover
-      >
-        <template #item.rowIndex="{ index }">
-          <span class="tw:text-md tw:text-black">{{ index + 1 }}</span>
-        </template>
 
-        <template #item.cover_image="{ item }">
-          <div class="tw:flex tw:items-center tw:py-1">
-            <div
-              class="tw:h-16 tw:w-16 tw:overflow-hidden tw:rounded-full tw:bg-gray-200"
+        <v-col cols="4" class="tw:flex tw:justify-end">
+          <v-btn
+            color="#f5962f"
+            rounded="pill"
+            size="large"
+            class="tw:px-6 tw:font-bold tw:normal-case tw:text-white!"
+            to="/products/create"
+          >
+            <v-icon start>mdi-plus</v-icon>
+            เพิ่มสินค้า
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-col>
+
+    <v-col cols="12">
+      <v-row class="tw:mb-4" align="center">
+        <v-col cols="7">
+          <v-row>
+            <v-col
+              v-for="item in summaryItems"
+              :key="item.label"
+              cols="3"
             >
-              <img
-                v-if="item.cover_image"
-                :src="item.cover_image"
-                :alt="item.name || 'product image'"
-                class="tw:h-full tw:w-full tw:object-cover"
-              >
+              <div class="tw:rounded-2xl tw:border tw:border-slate-200 tw:bg-white tw:px-4 tw:py-3 tw:shadow-sm pa-3">
+                <div class="tw:text-xs tw:font-medium tw:text-slate-500">{{ item.label }}</div>
+                <div class="tw:mt-1 tw:text-2xl tw:font-black tw:text-slate-900">{{ item.value }}</div>
+              </div>
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="5">
+          <v-text-field
+            v-model="search"
+            variant="outlined"
+            density="comfortable"
+            prepend-inner-icon="mdi-magnify"
+            label="ค้นหาชื่อสินค้า / หมวดหมู่ / แบรนด์"
+            hide-details
+            clearable
+          />
+        </v-col>
+      </v-row>
+    </v-col>
+
+    <v-col cols="12">
+      <div class="tw:overflow-hidden tw:rounded-[28px] tw:border tw:border-slate-200 tw:bg-white tw:shadow-[0_14px_40px_rgba(15,23,42,0.07)]">
+        <div class="tw:overflow-x-auto tw:overflow-y-hidden">
+          <div class="tw:min-w-[1280px]">
+            <v-data-table
+              :headers="headers"
+              :items="products"
+              :loading="loading"
+              :search="search"
+              v-model:sort-by="sortBy"
+              item-value="id"
+              items-per-page="10"
+              density="comfortable"
+              no-data-text="ไม่พบข้อมูลสินค้า"
+            hover
+            >
+            <template v-slot:item.cover_image="{ item }">
+              <v-row>
+                <v-col v-if="item.cover_image"  cols="12" class="d-flex tw:justify-center">
+                  <v-img :src="item.cover_image" max-height="80px" max-width="80px" width="100%" height="100%" cover />
+                </v-col>
+                <v-col v-else cols="12" class="d-flex tw:justify-center">
+                 <v-icon icon="mdi-image-off" size="48" />
+                </v-col>
+              </v-row>
+            </template>
+        <template #item.name="{ item }">
+          <div class="tw:py-1">
+            <div class="tw:text-[15px] tw:font-semibold tw:text-slate-900">{{ item.name || "-" }}</div>
+            <div class="tw:text-[12px] tw:text-slate-400">{{ item.slug || "-" }}</div>
+            <div class="tw:text-[12px] tw:text-slate-600">
+              {{ item.category_name || "-" }} / {{ item.brand_name || "-" }}
             </div>
           </div>
         </template>
 
-        <template #item.name="{ item }">
-          <span class="tw:text-md tw:text-black">{{ item.name || "-" }}</span>
-        </template>
-
-        <template #item.category_name="{ item }">
-          <span class="tw:text-md tw:font-bold tw:text-black">{{ item.category_name || "-" }}</span>
-        </template>
-
-        <template #item.brand_name="{ item }">
-          <span class="tw:text-md tw:font-bold tw:text-black">{{ item.brand_name || "-" }}</span>
+        <template #item.updated_at="{ item }">
+          <span class="tw:whitespace-nowrap tw:text-sm tw:text-slate-600">{{ formatDateTime(item.updated_at) }}</span>
         </template>
 
         <template #item.sell_price="{ item }">
-          <span class="tw:text-md tw:font-semibold tw:text-neutral-500">{{ formatPrice(item.sell_price) }}</span>
-        </template>
-
-        <template #item.created_at="{ item }">
-          <span class="tw:text-md tw:font-semibold tw:text-black">{{ formatDateTime(item.created_at) }}</span>
-        </template>
-
-        <template #item.updated_at="{ item }">
-          <span class="tw:text-md tw:font-semibold tw:text-black">{{ formatDateTime(item.updated_at) }}</span>
+          <span class="tw:text-sm tw:font-semibold tw:text-slate-700">{{ formatPrice(item.sell_price) }}</span>
         </template>
 
         <template #item.sold_at="{ item }">
-          <span class="tw:text-md tw:font-semibold tw:text-black">
+          <span class="tw:whitespace-nowrap tw:text-sm tw:text-slate-600">
             {{ getDisplayStatus(item) === "SOLD" ? formatDateTime(item.sold_at) : "-" }}
           </span>
         </template>
 
         <template #item.status="{ item }">
-          <v-chip
+          <v-row no-gutters>
+          <v-col cols="12">
+            <v-chip
             :color="statusMeta(item).color"
             rounded="pill"
             size="large"
-            class="tw:min-w-[94px] tw:justify-center tw:font-medium tw:text-white"
+            class="tw:min-w-[96px] tw:justify-center tw:font-semibold tw:text-white"
           >
             {{ statusMeta(item).label }}
           </v-chip>
+          </v-col>
+          <v-col cols="12"
+            v-if="getDisplayStatus(item) === 'SOLD'"
+            class="tw:mt-1 tw:text-[12px] tw:text-slate-500"
+          >
+            {{ formatDateTime(item.sold_at) }}
+          </v-col>
+          </v-row>
+       
         </template>
 
         <template #item.actions="{ item }">
-          <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
-            <v-btn
-              v-if="canToggleProductStatus(item)"
-              rounded="pill"
-              variant="outlined"
-              color="black"
-              size="small"
-              class="tw:px-4 tw:font-semibold tw:normal-case"
-              :loading="statusUpdatingId === item.id"
-              @click="onToggleStatus(item)"
-            >
-              {{ statusActionLabel(item) }}
-            </v-btn>
-            <div
-              v-else class="tw:min-w-[94px]"
-            >
-            </div>
-            <v-btn
-              v-if="canMarkSold(item)"
-              rounded="pill"
-              color="#f5962f"
-              size="small"
-              class="tw:px-4 tw:font-semibold tw:normal-case tw:text-white"
-              @click="openSaleDialog(item)"
-            >
-              Mark Sold
-            </v-btn>
-            <v-btn
-              v-else-if="canUndoSold(item)"
-              rounded="pill"
-              variant="outlined"
-              color="#f5962f"
-              size="small"
-              class="tw:px-4 tw:font-semibold tw:normal-case"
-              :loading="undoingSaleId === item.id"
-              @click="onUndoSale(item)"
-            >
-              Undo Sale
-            </v-btn>
-            <div
-              v-else
-              class="tw:min-w-[94px]"
-            >
-            </div>
-            <v-btn
-              icon
-              variant="text"
-              color="black"
-              :to="item.id ? `/products/edit-${item.id}` : undefined"
-              :disabled="!item.id || item.is_deleted"
-            >
-              <v-icon size="28">mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn icon variant="text" color="black" :disabled="!canDeleteProduct(item)" @click="onDeleteProduct(item)">
-              <v-icon size="28">mdi-delete</v-icon>
-            </v-btn>
-          </div>
+          <v-row no-gutters align="center" class="tw:min-w-[320px]">
+            <v-col cols="9">
+              <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
+              <v-btn
+                v-if="canToggleProductStatus(item)"
+                rounded="pill"
+                variant="outlined"
+                color="black"
+                size="small"
+                class="tw:min-w-[110px] tw:font-semibold tw:normal-case"
+                :loading="statusUpdatingId === item.id"
+                @click="onToggleStatus(item)"
+              >
+                {{ statusActionLabel(item) }}
+              </v-btn>
+              <div v-else class="tw:min-w-[110px]"></div>
+              <v-btn
+                v-if="canMarkSold(item)"
+                rounded="pill"
+                color="#f5962f"
+                size="small"
+                class="tw:min-w-[88px] tw:font-semibold tw:normal-case tw:text-white"
+                @click="openSaleDialog(item)"
+              >
+                ขายแล้ว
+              </v-btn>
+              <v-btn
+                v-else-if="canUndoSold(item)"
+                rounded="pill"
+                variant="outlined"
+                color="#f5962f"
+                size="small"
+                class="tw:min-w-[88px] tw:font-semibold tw:normal-case"
+                :loading="undoingSaleId === item.id"
+                @click="onUndoSale(item)"
+              >
+                ย้อนขาย
+              </v-btn>
+              <div v-else class="tw:min-w-[88px]"></div>
+              </div>
+            </v-col>
+            
+            <v-col cols="3" class="tw:flex tw:justify-end">
+              <div class="tw:flex tw:items-center tw:rounded-full tw:border tw:border-slate-200 tw:bg-slate-50 tw:px-1">
+              <v-btn
+                icon
+                variant="text"
+                color="black"
+                :to="item.id ? `/products/edit-${item.id}` : undefined"
+                :disabled="!item.id || item.is_deleted"
+              >
+                <v-icon size="22">mdi-pencil</v-icon>
+              </v-btn>
+                            <v-btn
+                icon
+                variant="text"
+                color="black"
+                :disabled="!canDeleteProduct(item)"
+                @click="onDeleteProduct(item)"
+              >
+                <v-icon size="22">mdi-delete</v-icon>
+              </v-btn>
+              </div>
+            </v-col>
+          </v-row>
         </template>
 
         <template #item.show="{ item }">
           <div class="tw:flex tw:items-center tw:gap-2">
-            <v-switch
-              :model-value="Boolean(item.show)"
+            <form-vee-switch
+              v-model="item.show"
               color="primary"
               density="compact"
               hide-details
@@ -520,76 +566,77 @@ onMounted(loadProducts);
               :disabled="item.is_deleted"
               @update:model-value="onToggleShow(item, $event)"
             />
-            <span class="tw:text-sm tw:text-neutral-700">{{ item.show ? "on" : "off" }}</span>
+            <span class="tw:text-sm tw:text-neutral-700">{{ item.show ? "เปิด" : "ปิด" }}</span>
           </div>
         </template>
 
         <template #no-data>
-          <div class="tw:px-6 tw:py-14 tw:text-center tw:text-neutral-500">
+          <div>
             ยังไม่มีข้อมูลสินค้า
           </div>
         </template>
-      </v-data-table>
-    </v-card>
-  </v-col>
-</v-row>
-
-<v-dialog v-model="saleDialog" max-width="520" persistent>
-  <v-card rounded="xl">
-    <v-card-title class="tw:pb-1 tw:text-xl tw:font-bold tw:text-black">
-      บันทึกการขายสินค้า
-    </v-card-title>
-    <v-card-text class="tw:flex tw:flex-col tw:gap-4 tw:pt-2">
-      <div>
-        <div class="tw:text-sm tw:text-neutral-500">สินค้า</div>
-        <div class="tw:text-base tw:font-semibold tw:text-black">{{ saleTarget?.name || "-" }}</div>
+            </v-data-table>
+          </div>
+        </div>
       </div>
+    </v-col>
+  </v-row>
 
-      <v-text-field
-        v-model="saleForm.sold_price"
-        label="ราคาขาย"
-        type="number"
-        min="0"
-        variant="outlined"
-        density="comfortable"
-        hide-details="auto"
-        :error-messages="saleErrors.sold_price"
-      />
+  <v-dialog v-model="saleDialog" max-width="520" persistent>
+    <v-card rounded="xl">
+      <v-card-title class="tw:px-6 tw:pb-2 tw:pt-6 tw:text-xl tw:font-bold tw:text-slate-900">บันทึกการขายสินค้า</v-card-title>
+      <v-card-text class="tw:grid tw:gap-4 tw:px-6 tw:pb-2 tw:pt-2">
+        <div class="tw:rounded-2xl tw:border tw:border-slate-200 tw:bg-slate-50 tw:p-4">
+          <div class="tw:mb-1 tw:text-sm tw:text-slate-500">สินค้า</div>
+          <div class="tw:text-base tw:font-semibold tw:text-slate-900">{{ saleTarget?.name || "-" }}</div>
+        </div>
 
-      <v-text-field
-        v-model="saleForm.sold_at"
-        label="วันที่ขาย"
-        type="date"
-        variant="outlined"
-        density="comfortable"
-        hide-details="auto"
-        :error-messages="saleErrors.sold_at"
-      />
+        <v-text-field
+          v-model="saleForm.sold_price"
+          label="ราคาขาย"
+          type="number"
+          min="0"
+          variant="outlined"
+          density="comfortable"
+          hide-details="auto"
+          :error-messages="saleErrors.sold_price"
+        />
 
-      <v-select
-        v-model="saleForm.sold_channel"
-        label="ช่องทางการขาย"
-        :items="saleChannelOptions"
-        variant="outlined"
-        density="comfortable"
-        hide-details="auto"
-        :error-messages="saleErrors.sold_channel"
-      />
-    </v-card-text>
-    <v-card-actions class="tw:justify-end tw:gap-2 tw:px-6 tw:pb-5">
-      <v-btn variant="text" color="black" :disabled="saleSubmitting" @click="closeSaleDialog()">
-        ยกเลิก
-      </v-btn>
-      <v-btn
-        color="#f5962f"
-        variant="flat"
-        :loading="saleSubmitting"
-        class="tw:font-semibold tw:normal-case tw:text-white"
-        @click="onConfirmSale()"
-      >
-        ยืนยันการขาย
-      </v-btn>
-    </v-card-actions>
-  </v-card>
-</v-dialog>
+        <v-text-field
+          v-model="saleForm.sold_at"
+          label="วันที่ขาย"
+          type="date"
+          variant="outlined"
+          density="comfortable"
+          hide-details="auto"
+          :error-messages="saleErrors.sold_at"
+        />
+
+        <v-select
+          v-model="saleForm.sold_channel"
+          label="ช่องทางการขาย"
+          :items="saleChannelOptions"
+          variant="outlined"
+          density="comfortable"
+          hide-details="auto"
+          :error-messages="saleErrors.sold_channel"
+        />
+      </v-card-text>
+      <v-card-actions class="tw:justify-end tw:gap-2 tw:px-6 tw:pb-6">
+        <v-btn variant="outlined" color="black" rounded="pill" :disabled="saleSubmitting" @click="closeSaleDialog()">
+          ยกเลิก
+        </v-btn>
+        <v-btn
+          color="#f5962f"
+          variant="flat"
+          :loading="saleSubmitting"
+          rounded="pill"
+          class="tw:font-semibold tw:normal-case tw:text-white"
+          @click="onConfirmSale()"
+        >
+          ยืนยันการขาย
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>

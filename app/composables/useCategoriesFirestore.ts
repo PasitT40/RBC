@@ -1,5 +1,5 @@
 import { collection, doc, getDoc, getDocs, updateDoc, addDoc, deleteDoc, limit, orderBy, query, startAfter, where, serverTimestamp, writeBatch, type QueryConstraint } from "firebase/firestore";
-import { deleteStorageFolder, deleteStorageUrl, deleteStorageUrls, uploadImageAsWebP } from "./firestore/media";
+import { IMAGE_UPLOAD_PROFILES, deleteStorageFolder, deleteStorageUrl, deleteStorageUrls, uploadImageAsWebP } from "./firestore/media";
 import type { BrandRecord, CategoriesPageInput, CategoryBrandRecord, CategoryRecord, PageCursor, PageResult, SubcategoriesPageInput } from "./firestore/types";
 
 export function useCategoriesFirestore() {
@@ -8,7 +8,7 @@ export function useCategoriesFirestore() {
   const toSlug = (value: string): string => value.toLowerCase().trim().replace(/\s+/g, "-");
   const normalizeName = (value: string): string => value.trim().toLowerCase();
   const uploadImage = async (rawFile: File, folderPath: string): Promise<string | null> =>
-    uploadImageAsWebP($storage, rawFile, folderPath);
+    uploadImageAsWebP($storage, rawFile, folderPath, IMAGE_UPLOAD_PROFILES.categoryOrBrandBanner);
   const deleteImage = async (url: string | null | undefined): Promise<void> => deleteStorageUrl($storage, url);
   const deleteImages = async (urls: string[]): Promise<void> => deleteStorageUrls($storage, urls);
   const deleteFolder = async (folderPath: string): Promise<void> => deleteStorageFolder($storage, folderPath);
@@ -25,13 +25,28 @@ export function useCategoriesFirestore() {
     categoryId?: string;
   };
 
-  const buildOrderConstraints = (targetOrder: number, scope: OrderScope = {}): QueryConstraint[] => {
-    const constraints: QueryConstraint[] = [where("order", ">=", targetOrder)];
-    if (scope.categoryId) {
+  const getOrderValue = (value: unknown): number => {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric) ? numeric : 0;
+  };
+
+  const normalizeOrderInput = (value: unknown): number | undefined => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric < 1) return undefined;
+    return Math.trunc(numeric);
+  };
+
+  const getScopedOrderDocs = async (
+    collectionName: string,
+    scope: OrderScope = {},
+    excludeDocId?: string,
+  ) => {
+    const constraints: QueryConstraint[] = [];
+    if (collectionName === "category_brands" && scope.categoryId) {
       constraints.push(where("category_id", "==", scope.categoryId));
     }
-    constraints.push(orderBy("order", "asc"));
-    return constraints;
+    const snap = await getDocs(query(collection($db, collectionName), ...constraints));
+    return snap.docs.filter((docSnap) => docSnap.id !== excludeDocId);
   };
 
   const buildNextOrderConstraints = (scope: OrderScope = {}): QueryConstraint[] => {
@@ -229,19 +244,61 @@ export function useCategoriesFirestore() {
     return (data?.order || 0) + 1;
   };
 
-  const shiftOrders = async (collectionName: string, targetOrder: number, scope: OrderScope = {}) => {
-    const snap = collectionName === "category_brands" && scope.categoryId
-      ? await getDocs(
-          query(collection($db, collectionName), where("category_id", "==", scope.categoryId))
-        )
-      : await getDocs(query(collection($db, collectionName), ...buildOrderConstraints(targetOrder, scope)));
+  const insertOrder = async (
+    collectionName: string,
+    targetOrder: number,
+    scope: OrderScope = {},
+    excludeDocId?: string,
+  ) => {
+    const docs = await getScopedOrderDocs(collectionName, scope, excludeDocId);
+    const updatePromises = docs
+      .filter((docSnap) => getOrderValue(docSnap.data().order) >= targetOrder)
+      .map((docSnap) => updateDoc(docSnap.ref, {
+        order: getOrderValue(docSnap.data().order) + 1,
+      }));
 
-    const updatePromises = snap.docs
-      .filter((docSnap) => Number(docSnap.data().order || 0) >= targetOrder)
+    await Promise.all(updatePromises);
+  };
+
+  const moveOrder = async (
+    collectionName: string,
+    currentOrder: number,
+    targetOrder: number,
+    scope: OrderScope = {},
+    excludeDocId?: string,
+  ) => {
+    if (currentOrder === targetOrder) return;
+
+    const docs = await getScopedOrderDocs(collectionName, scope, excludeDocId);
+    const updatePromises = docs
+      .filter((docSnap) => {
+        const order = getOrderValue(docSnap.data().order);
+        return targetOrder < currentOrder
+          ? order >= targetOrder && order < currentOrder
+          : order <= targetOrder && order > currentOrder;
+      })
       .map((docSnap) => {
-        const currentOrder = docSnap.data().order || 0;
-        return updateDoc(docSnap.ref, { order: currentOrder + 1 });
+        const order = getOrderValue(docSnap.data().order);
+        return updateDoc(docSnap.ref, {
+          order: targetOrder < currentOrder ? order + 1 : order - 1,
+        });
       });
+
+    await Promise.all(updatePromises);
+  };
+
+  const compactOrdersAfterRemoval = async (
+    collectionName: string,
+    removedOrder: number,
+    scope: OrderScope = {},
+    excludeDocId?: string,
+  ) => {
+    const docs = await getScopedOrderDocs(collectionName, scope, excludeDocId);
+    const updatePromises = docs
+      .filter((docSnap) => getOrderValue(docSnap.data().order) > removedOrder)
+      .map((docSnap) => updateDoc(docSnap.ref, {
+        order: getOrderValue(docSnap.data().order) - 1,
+      }));
 
     await Promise.all(updatePromises);
   };
@@ -254,7 +311,7 @@ export function useCategoriesFirestore() {
   const addCategory = async (data: { name: string; file?: File; order?: number; [key: string]: any }) => {
     let orderToUse = data.order;
     if (typeof orderToUse === 'number') {
-      await shiftOrders("categories", orderToUse);
+      await insertOrder("categories", orderToUse);
     } else {
       orderToUse = await getNextCollectionOrder("categories");
     }
@@ -300,9 +357,9 @@ export function useCategoriesFirestore() {
     const name = `${data.name ?? ""}`.trim();
     if (!name) throw new Error("Subcategory name is required");
 
-    let orderToUse = data.order;
+    let orderToUse = normalizeOrderInput(data.order);
     if (typeof orderToUse === 'number') {
-      await shiftOrders("brands", orderToUse);
+      await insertOrder("brands", orderToUse);
     } else {
       orderToUse = await getNextCollectionOrder("brands");
     }
@@ -333,9 +390,9 @@ export function useCategoriesFirestore() {
       const categorySnap = await getDoc(categoryRef);
       if (!categorySnap.exists()) throw new Error("Category not found");
 
-      let catBrandOrderToUse = data.categoryBrandOrder;
+      let catBrandOrderToUse = normalizeOrderInput(data.categoryBrandOrder);
       if (typeof catBrandOrderToUse === "number") {
-        await shiftOrders("category_brands", catBrandOrderToUse, { categoryId: data.category_id });
+        await insertOrder("category_brands", catBrandOrderToUse, { categoryId: data.category_id });
       } else {
         catBrandOrderToUse = await getNextCollectionOrder("category_brands", { categoryId: data.category_id });
       }
@@ -366,15 +423,21 @@ export function useCategoriesFirestore() {
    * Name change alone requires NO Storage operations (folder = doc ID, not name).
    */
   const updateCategory = async (id: string, data: { name?: string; file?: File; is_active?: boolean; order?: number; [key: string]: any }) => {
-    if (typeof data.order === 'number') {
-      await shiftOrders("categories", data.order);
-    }
-
     const docRef = doc($db, "categories", id);
     const { file, ...firestoreData } = data;
-    const oldDoc = file ? await getDoc(docRef) : null;
-    const oldImageUrl = oldDoc?.exists() ? oldDoc.data().image_url : null;
+    const oldDoc = await getDoc(docRef);
+    if (!oldDoc.exists()) throw new Error("Category not found");
+    const oldImageUrl = oldDoc.data().image_url ?? null;
     let uploadedImageUrl: string | null = null;
+
+    if (typeof data.order === "number") {
+      const currentOrder = getOrderValue(oldDoc.data().order);
+      if (currentOrder > 0) {
+        await moveOrder("categories", currentOrder, data.order, {}, id);
+      } else {
+        await insertOrder("categories", data.order, {}, id);
+      }
+    }
 
     if (file) {
       uploadedImageUrl = await uploadImage(file, `categories/${id}`);
@@ -420,11 +483,17 @@ export function useCategoriesFirestore() {
     const oldDoc = await getDoc(docRef);
     if (!oldDoc.exists()) throw new Error("Subcategory not found");
 
-    if (typeof data.order === 'number') {
-      await shiftOrders("brands", data.order);
+    const oldData = oldDoc.data() as Record<string, any>;
+    const previousBrandOrder = getOrderValue(oldData.order);
+    const nextBrandOrder = normalizeOrderInput(data.order);
+    if (typeof nextBrandOrder === "number") {
+      if (previousBrandOrder > 0) {
+        await moveOrder("brands", previousBrandOrder, nextBrandOrder, {}, id);
+      } else {
+        await insertOrder("brands", nextBrandOrder, {}, id);
+      }
     }
 
-    const oldData = oldDoc.data() as Record<string, any>;
     const nextName = typeof data.name === "string" ? data.name.trim() : (oldData.name ?? "");
     const nextIsActive = typeof data.is_active === "boolean" ? data.is_active : Boolean(oldData.is_active);
     const uploadedImageUrl = data.file
@@ -447,13 +516,16 @@ export function useCategoriesFirestore() {
       is_active: nextIsActive,
       updated_at: serverTimestamp(),
     };
-    if (typeof data.order === "number") {
-      brandPayload.order = data.order;
+    if (typeof nextBrandOrder === "number") {
+      brandPayload.order = nextBrandOrder;
     }
 
     const qCatBrand = query(collection($db, "category_brands"), where("brand_id", "==", id));
     const snapCatBrand = await getDocs(qCatBrand);
     const categoryMappings = snapCatBrand.docs;
+    const existingPrimaryMapping = categoryMappings[0] ?? null;
+    const previousCategoryId = existingPrimaryMapping?.data().category_id ?? null;
+    const previousCategoryBrandOrder = getOrderValue(existingPrimaryMapping?.data().order);
     const batch = writeBatch($db);
     batch.update(docRef, brandPayload);
 
@@ -462,13 +534,25 @@ export function useCategoriesFirestore() {
         const targetMappingId = `${data.category_id}__${id}`;
         const targetDoc = categoryMappings.find((d) => d.id === targetMappingId);
 
-        let categoryBrandOrder = data.categoryBrandOrder;
+        let categoryBrandOrder = normalizeOrderInput(data.categoryBrandOrder);
+        const targetCategoryId = String(data.category_id);
+        const targetDocOrder = getOrderValue(targetDoc?.data().order);
+
         if (typeof categoryBrandOrder === "number") {
-          await shiftOrders("category_brands", categoryBrandOrder, { categoryId: data.category_id });
+          if (previousCategoryId === targetCategoryId && targetDocOrder > 0) {
+            await moveOrder("category_brands", targetDocOrder, categoryBrandOrder, { categoryId: targetCategoryId }, targetMappingId);
+          } else {
+            await insertOrder("category_brands", categoryBrandOrder, { categoryId: targetCategoryId }, targetMappingId);
+            if (previousCategoryId && previousCategoryId !== targetCategoryId && previousCategoryBrandOrder > 0) {
+              await compactOrdersAfterRemoval("category_brands", previousCategoryBrandOrder, { categoryId: previousCategoryId }, existingPrimaryMapping?.id);
+            }
+          }
+        } else if (targetDocOrder > 0) {
+          categoryBrandOrder = targetDocOrder;
         } else {
-          categoryBrandOrder = targetDoc?.data().order;
-          if (typeof categoryBrandOrder !== "number") {
-            categoryBrandOrder = await getNextCollectionOrder("category_brands", { categoryId: data.category_id });
+          categoryBrandOrder = await getNextCollectionOrder("category_brands", { categoryId: targetCategoryId });
+          if (previousCategoryId && previousCategoryId !== targetCategoryId && previousCategoryBrandOrder > 0) {
+            await compactOrdersAfterRemoval("category_brands", previousCategoryBrandOrder, { categoryId: previousCategoryId }, existingPrimaryMapping?.id);
           }
         }
 
@@ -497,6 +581,9 @@ export function useCategoriesFirestore() {
           updated_at: serverTimestamp(),
         }, { merge: true });
       } else {
+        if (previousCategoryId && previousCategoryBrandOrder > 0) {
+          await compactOrdersAfterRemoval("category_brands", previousCategoryBrandOrder, { categoryId: previousCategoryId }, existingPrimaryMapping?.id);
+        }
         for (const mappingDoc of categoryMappings) {
           batch.delete(mappingDoc.ref);
         }

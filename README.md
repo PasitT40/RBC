@@ -41,7 +41,8 @@ Recommended rollout for this repository:
 Security boundary notes:
 - backoffice access is allowlisted from `owners/{uid}`
 - Firestore data remains private to owners; this repo does not treat Firestore as a public catalog read surface
-- current Storage Rules owner checks read from Firestore `(default)`, so named Firestore database rollouts require explicit owner-upload verification
+- Storage writes are authorized by Firebase Auth custom claim `backoffice_owner=true`
+- after granting or revoking the storage-owner claim, force the user to sign out and sign in again before testing uploads
 
 ## Verification scripts
 

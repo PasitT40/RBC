@@ -29,6 +29,8 @@
     "dev:prod": "set -a && . ./.env.production && set +a && nuxt dev",
     "generate": "nuxt generate",
     "generate:hosting": "set -a && . ./.env.production && set +a && nuxt generate",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "deploy:indexes": "firebase deploy --only firestore:indexes",
@@ -36,6 +38,10 @@
     "deploy:storage:dev": "firebase deploy --only storage:dev",
     "deploy:storage:prod": "firebase deploy --only storage:prod",
     "set:storage-owner-claim": "node scripts/set-storage-owner-claim.cjs",
+    "cleanup:dev-data": "APP_ENV=development node scripts/cleanup-dev-dataset.cjs",
+    "cleanup:dev-data:apply": "APP_ENV=development node scripts/cleanup-dev-dataset.cjs --execute",
+    "reseed:dev-data": "APP_ENV=development node scripts/reseed-dev-dataset.cjs",
+    "reseed:dev-data:verify": "APP_ENV=development node scripts/reseed-dev-dataset.cjs --verify",
     "deploy:hosting": "firebase deploy --only hosting:backoffice",
     "deploy:backoffice": "firebase deploy --only hosting:backoffice,firestore:indexes,firestore:rules,storage",
     "seed": "cp seed-ui.js seed-ui.cjs && set -a && . ./.env.development && set +a && APP_ENV=single node seed-ui.cjs; rc=$?; rm -f seed-ui.cjs; exit $rc",
@@ -43,6 +49,7 @@
   },
   "type": "module",
   "devDependencies": {
-    "nuxt-echarts": "^1.0.1"
+    "nuxt-echarts": "^1.0.1",
+    "prettier": "^3.5.3"
   }
 }

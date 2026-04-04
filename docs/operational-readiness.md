@@ -88,7 +88,8 @@ Recommended deployment checks:
 - Firestore rules deployed
 - Storage rules deployed
 - owner allowlist exists in the database used by backoffice auth checks
-- Storage write authorization is verified against the same effective owner source
+- Storage write authorization is verified with a real account that has Firebase Auth custom claim `backoffice_owner=true`
+- after claim changes, the owner account signs out and signs in again before upload checks
 
 ## Verification scripts
 

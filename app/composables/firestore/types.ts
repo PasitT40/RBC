@@ -201,6 +201,7 @@ export type ProductsPageInput = {
   brandId?: string;
   status?: ProductStatus;
   show?: boolean;
+  includeDeleted?: boolean;
 };
 
 export type CategoriesPageInput = {
@@ -219,6 +220,8 @@ export type ReportPageInput = {
   pageSize?: number;
   cursor?: PageCursor;
   month?: string; // YYYY-MM
+  fromMonth?: string; // YYYY-MM
+  toMonth?: string; // YYYY-MM
   status?: OrderStatus;
   brandId?: string;
   soldChannel?: string;

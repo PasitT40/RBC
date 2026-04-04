@@ -1,6 +1,6 @@
 import { collection, doc, getDoc, getDocs, increment, limit, orderBy, query, serverTimestamp, startAfter, where, writeBatch, type QueryConstraint } from "firebase/firestore";
 import type { PageCursor, PageResult, ProductInput, ProductRecord, ProductsPageInput, ProductStatus } from "./firestore/types";
-import { deleteStorageUrls, uploadImageAsWebP } from "./firestore/media";
+import { IMAGE_UPLOAD_PROFILES, deleteStorageUrls, uploadImageAsWebP } from "./firestore/media";
 import {
   assertActivatableProduct,
   assertDeletableProduct,
@@ -16,7 +16,7 @@ export function useProductsFirestore() {
   const { track } = useGlobalLoading();
 
   const uploadImage = async (rawFile: File, folderPath: string): Promise<string | null> =>
-    uploadImageAsWebP($storage, rawFile, folderPath);
+    uploadImageAsWebP($storage, rawFile, folderPath, IMAGE_UPLOAD_PROFILES.productGallery);
 
   const uploadImages = async (files: File[] | undefined, folderPath: string) => {
     if (!files?.length) return [] as string[];
@@ -43,7 +43,11 @@ export function useProductsFirestore() {
     if (!trimmedSlug) throw new Error("Product slug is required");
 
     const snap = await getDocs(query(collection($db, "products"), where("slug", "==", trimmedSlug)));
-    const hasDuplicate = snap.docs.some((docSnap) => docSnap.id !== excludeId);
+    const hasDuplicate = snap.docs.some((docSnap) => {
+      if (docSnap.id === excludeId) return false;
+      const product = { id: docSnap.id, ...docSnap.data() } as ProductRecord;
+      return !isSoftDeletedProduct(product);
+    });
     if (hasDuplicate) throw new Error("Product slug already exists");
   };
 
@@ -81,7 +85,7 @@ export function useProductsFirestore() {
     const snap = await getDocs(q);
     const items = snap.docs
       .map((d) => ({ id: d.id, ...d.data() } as ProductRecord))
-      .filter((item) => !isSoftDeletedProduct(item));
+      .filter((item) => input.includeDeleted ? true : !isSoftDeletedProduct(item));
     const nextCursor: PageCursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
 
     return {
@@ -91,8 +95,8 @@ export function useProductsFirestore() {
     };
   };
 
-  const getProducts = async (count = 50) => {
-    const page = await getProductsPage({ pageSize: count });
+  const getProducts = async (count = 50, options: { includeDeleted?: boolean } = {}) => {
+    const page = await getProductsPage({ pageSize: count, includeDeleted: options.includeDeleted });
     return page.items;
   };
 
@@ -365,7 +369,7 @@ export function useProductsFirestore() {
 
   return {
     getProductsPage: (input?: ProductsPageInput) => track(() => getProductsPage(input), "Loading products..."),
-    getProducts: (count?: number) => track(() => getProducts(count), "Loading products..."),
+    getProducts: (count?: number, options?: { includeDeleted?: boolean }) => track(() => getProducts(count, options), "Loading products..."),
     getProductById: (productId: string) => track(() => getProductById(productId), "Loading product..."),
     createProduct: (payload: ProductInput) => track(() => createProduct(payload), "Creating product..."),
     updateProduct: (payload: ProductInput) => track(() => updateProduct(payload), "Updating product..."),

@@ -1,0 +1,12 @@
+.git
+.nuxt
+.output
+dist
+node_modules
+coverage
+*.log
+yarn.lock
+bun.lock
+package-lock.json
+pnpm-lock.yaml
+serviceAccountKey.json

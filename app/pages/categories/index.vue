@@ -26,6 +26,8 @@ const appToast = useAppToast();
 
 const itemCategory = ref<CategoryLikeItem[]>([]);
 const itemSubCategory = ref<CategoryLikeItem[]>([]);
+const categorySearch = ref("");
+const brandSearch = ref("");
 const errorMessage = ref<string | null>(null);
 const dialogMode = ref<DialogMode>(null);
 const deleteCategoryId = ref<string | null>(null);
@@ -34,25 +36,25 @@ const editCategoryItem = ref<CategoryLikeItem | null>(null);
 const editSubcategoryItem = ref<CategoryLikeItem | null>(null);
 
 const headers = [
-  { title: "Name", key: "name" },
-  { title: "Slug", key: "slug" },
-  { title: "Order", key: "order" },
-  { title: "Img", key: "image_url" },
-  { title: "Update at", key: "updated_at" },
-  { title: "Is Active", key: "is_active" },
-  { title: "Action", key: "Action" },
+  { title: "ชื่อ", key: "name", align: "center" as const },
+  { title: "Slug", key: "slug", align: "center" as const },
+  { title: "ลำดับ", key: "order", align: "center" as const },
+  { title: "รูปภาพ", key: "image_url", align: "center" as const },
+  { title: "อัปเดตล่าสุด", key: "updated_at", align: "center" as const },
+  { title: "แสดงผล", key: "is_active", align: "center" as const },
+  { title: "Actions", key: "Action", align: "center" as const },
 ];
 
 const subcategoryHeaders = [
-  { title: "Name", key: "name" },
-  { title: "Slug", key: "slug" },
-  { title: "Category", key: "category_name" },
-  { title: "Brand Order", key: "order" },
-  { title: "Mapping Order", key: "category_brand_order" },
-  { title: "Img", key: "image_url" },
-  { title: "Update at", key: "updated_at" },
-  { title: "Is Active", key: "is_active" },
-  { title: "Action", key: "Action" },
+  { title: "ชื่อ", key: "name", align: "center" as const },
+  { title: "Slug", key: "slug", align: "center" as const },
+  { title: "หมวดหมู่", key: "category_name", align: "center" as const },
+  { title: "ลำดับรวม", key: "order", align: "center" as const },
+  { title: "ลำดับในหมวดหมู่", key: "category_brand_order", align: "center" as const },
+  { title: "รูปภาพ", key: "image_url", align: "center" as const },
+  { title: "อัปเดตล่าสุด", key: "updated_at" },
+  { title: "แสดงผล", key: "is_active" },
+  { title: "Actions", key: "Action", align: "center" as const },
 ];
 
 const emptyFormValues = (): CategoryFormValues => ({
@@ -102,6 +104,7 @@ const showSubcategoryDeleteDialog = computed({
 
 const isCategoryEditMode = computed(() => editCategoryItem.value !== null);
 const isSubcategoryEditMode = computed(() => editSubcategoryItem.value !== null);
+const bannerImageHint = "แนะนำภาพแนวนอนประมาณ 1600x900 พิกเซล ระบบจะบีบอัดเป็น WebP อัตโนมัติ";
 
 const formatDate = (date: unknown) => {
   if (!date) return "";
@@ -129,40 +132,40 @@ const categoryOptions = computed(() => itemCategory.value.map((item) => ({
 const schema = computed(() => {
   if (dialogMode.value === "subcategory") {
     return yup.object({
-      name: yup.string().required("Name required"),
+      name: yup.string().required("กรุณากรอกชื่อแบรนด์"),
       seo_title: yup.string().nullable().default(""),
       seo_description: yup.string().nullable().default(""),
       seo_image: yup
         .string()
         .transform((value, originalValue) => (originalValue === "" || originalValue === null ? undefined : value))
-        .url("SEO image must be a valid URL")
+        .url("ลิงก์รูป SEO ต้องเป็น URL ที่ถูกต้อง")
         .nullable()
         .optional(),
-      category_id: yup.string().required("Category required"),
+      category_id: yup.string().required("กรุณาเลือกหมวดหมู่"),
       order: yup
         .number()
         .transform((value, originalValue) => (originalValue === "" || originalValue === null ? null : value))
         .nullable()
-        .min(1, "Brand order must be at least 1"),
+        .min(1, "ลำดับรวมต้องเริ่มต้นที่ 1"),
       category_brand_order: yup
         .number()
         .transform((value, originalValue) => (originalValue === "" || originalValue === null ? null : value))
         .nullable()
-        .min(1, "Mapping order must be at least 1"),
+        .min(1, "ลำดับในหมวดหมู่ต้องเริ่มต้นที่ 1"),
       image: isSubcategoryEditMode.value
         ? yup.mixed().nullable().optional()
-        : yup.mixed().required("Image required"),
+        : yup.mixed().required("กรุณาเลือกรูปภาพ"),
     });
   }
 
   return yup.object({
-    name: yup.string().required("Name required"),
+    name: yup.string().required("กรุณากรอกชื่อหมวดหมู่"),
     seo_title: yup.string().nullable().default(""),
     seo_description: yup.string().nullable().default(""),
     seo_image: yup
       .string()
       .transform((value, originalValue) => (originalValue === "" || originalValue === null ? undefined : value))
-      .url("SEO image must be a valid URL")
+      .url("ลิงก์รูป SEO ต้องเป็น URL ที่ถูกต้อง")
       .nullable()
       .optional(),
     category_id: yup.string().nullable().optional(),
@@ -170,11 +173,11 @@ const schema = computed(() => {
       .number()
       .transform((value, originalValue) => (originalValue === "" || originalValue === null ? null : value))
       .nullable()
-      .min(1, "Order must be at least 1"),
+      .min(1, "ลำดับต้องเริ่มต้นที่ 1"),
     category_brand_order: yup.number().nullable().optional(),
     image: isCategoryEditMode.value
       ? yup.mixed().nullable().optional()
-      : yup.mixed().required("Image required"),
+      : yup.mixed().required("กรุณาเลือกรูปภาพ"),
   });
 });
 
@@ -253,8 +256,11 @@ const showDuplicateError = (label: string, name: string) => {
   appToast.error(errorMessage.value);
 };
 
-const normalizePositiveOrder = (value: number | null | undefined) =>
-  typeof value === "number" && Number.isFinite(value) && value >= 1 ? Math.trunc(value) : undefined;
+const normalizePositiveOrder = (value: number | string | null | undefined) => {
+  if (value === "" || value === null || value === undefined) return undefined;
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue >= 1 ? Math.trunc(numericValue) : undefined;
+};
 
 const submitCategory = async (values: CategoryFormValues, trimmedName: string) => {
   if (isCategoryEditMode.value && editCategoryItem.value) {
@@ -409,8 +415,8 @@ const handleDeleteSubcategory = async () => {
   await handleDelete(
     deleteSubcategoryId.value,
     deleteSubcategory,
-    "ลบหมวดย่อยสำเร็จ",
-    "ลบหมวดย่อยไม่สำเร็จ",
+    "ลบแบรนด์สำเร็จ",
+    "ลบแบรนด์ไม่สำเร็จ",
     () => {
       deleteSubcategoryId.value = null;
     }
@@ -441,7 +447,7 @@ const toggleSubcategoryActive = async (item: CategoryLikeItem, nextValue: boolea
     appToast.success("อัปเดตสถานะแบรนด์สำเร็จ");
   } catch (error) {
     item.is_active = previousValue;
-    console.error("อัปเดตสถานะ subcategory ไม่สำเร็จ:", error);
+    console.error("อัปเดตสถานะแบรนด์ไม่สำเร็จ:", error);
     errorMessage.value = "อัปเดตสถานะแบรนด์ไม่สำเร็จ";
     appToast.error(errorMessage.value);
   }
@@ -455,30 +461,33 @@ onMounted(loadPageData);
     <ModalCategory
       v-model="categoryDialog"
       persistent
-      :title="isCategoryEditMode ? 'Edit Category' : 'New Category'"
+      :title="isCategoryEditMode ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่'"
     >
     <template #default>
       <v-form >
-        <form-vee-text-field variant="outlined" name="name" label="Category Name" />
+        <form-vee-text-field variant="outlined" name="name" label="ชื่อหมวดหมู่" />
         <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
           Slug จะสร้างจากชื่ออัตโนมัติ และหน้า public จะ fallback ไปใช้ `name` / `image_url` หาก SEO fields ว่าง
         </div>
-        <form-vee-text-field variant="outlined" name="order" label="Display Order" type="number" min="1" />
-        <form-vee-text-field variant="outlined" name="seo_title" label="SEO Title" />
-        <form-vee-text-area variant="outlined" name="seo_description" label="SEO Description" rows="3" auto-grow />
-        <form-vee-text-field variant="outlined" name="seo_image" label="SEO Image URL" />
+
+        <form-vee-text-field variant="outlined" name="order" label="ลำดับการแสดงผล" type="number" min="1" />
+        <form-vee-text-field variant="outlined" name="seo_title" label="ชื่อ SEO" />
+        <form-vee-text-area variant="outlined" name="seo_description" label="คำอธิบาย SEO" rows="3" auto-grow />
+        <form-vee-text-field variant="outlined" name="seo_image" label="ลิงก์รูป SEO" />
         <form-vee-file-input
           variant="outlined"
           name="image"
-          label="Image"
+          label="รูปภาพ"
+          :hint="`${bannerImageHint} แนะนำความละเอียดไม่เกิน 1200 x 1200 px และขนาดไฟล์ไม่เกิน 8 MB`"
+          :max-size="8000000"
           :preview-url="isCategoryEditMode ? editCategoryItem?.image_url : undefined"
         />
       </v-form>
     </template>
     <template #actions>
       <div class="tw:flex tw:justify-end tw:gap-2">
-        <v-btn color="primary" @click="closeCategoryDialog">Close</v-btn>
-        <v-btn color="primary" @click="submit()">Save</v-btn>
+        <v-btn color="black" variant="outlined" @click="closeCategoryDialog">ยกเลิก</v-btn>
+        <v-btn color="#f5962f" class="text-white" @click="submit()">บันทึก</v-btn>
       </div>
     </template>
     </ModalCategory>
@@ -486,82 +495,103 @@ onMounted(loadPageData);
     <ModalCategory
       v-model="subcategoryDialog"
       persistent
-      :title="isSubcategoryEditMode ? 'Edit Brand' : 'New Brand'"
+      :title="isSubcategoryEditMode ? 'แก้ไขแบรนด์' : 'เพิ่มแบรนด์'"
     >
     <template #default>
       <v-form>
         <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
           หน้านี้แก้ global `brands/{brandId}` และ `category_brands/{categoryId__brandId}` เท่านั้น ไม่มี brand subcollection ใต้ category
         </div>
-        <form-vee-text-field variant="outlined" name="name" label="Brand Name" />
-        <form-vee-text-field variant="outlined" name="order" label="Global Brand Order" type="number" min="1" />
-        <form-vee-text-field variant="outlined" name="seo_title" label="SEO Title" />
-        <form-vee-text-area variant="outlined" name="seo_description" label="SEO Description" rows="3" auto-grow />
-        <form-vee-text-field variant="outlined" name="seo_image" label="SEO Image URL" />
+        <form-vee-text-field variant="outlined" name="name" label="ชื่อแบรนด์" />
+        <form-vee-text-field variant="outlined" name="order" label="ลำดับรวม" type="number" min="1" />
+        <form-vee-text-field variant="outlined" name="seo_title" label="ชื่อ SEO" />
+        <form-vee-text-area variant="outlined" name="seo_description" label="คำอธิบาย SEO" rows="3" auto-grow />
+        <form-vee-text-field variant="outlined" name="seo_image" label="ลิงก์รูป SEO" />
         <form-vee-select
           variant="outlined"
           name="category_id"
-          label="Category"
+          label="หมวดหมู่"
           item-title="title"
           item-value="value"
           :items="categoryOptions"
         />
-        <form-vee-text-field variant="outlined" name="category_brand_order" label="Order In Selected Category" type="number" min="1" />
+        <form-vee-text-field variant="outlined" name="category_brand_order" label="ลำดับในหมวดหมู่" type="number" min="1" />
         <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
           Brand dropdown ในหน้าสินค้าอ้างอิง `category_brands` เท่านั้น และใช้ลำดับจาก `category_brands.order`
         </div>
         <form-vee-file-input
           variant="outlined"
           name="image"
-          label="Image"
+          label="รูปภาพ"
+          :hint="`${bannerImageHint} แนะนำความละเอียดไม่เกิน 1200 x 1200 px และขนาดไฟล์ไม่เกิน 8 MB`"
+          :max-size="8000000"
           :preview-url="isSubcategoryEditMode ? editSubcategoryItem?.image_url : undefined"
         />
       </v-form>
     </template>
     <template #actions>
       <div class="tw:flex tw:justify-end tw:gap-2">
-        <v-btn color="primary" @click="closeSubcategoryDialog">Close</v-btn>
-        <v-btn color="primary" @click="submit()">Save</v-btn>
+        <v-btn color="black" variant="outlined" @click="closeSubcategoryDialog">ยกเลิก</v-btn>
+        <v-btn color="#f5962f" class="text-white" @click="submit()">บันทึก</v-btn>
       </div>
     </template>
     </ModalCategory>
     <v-row class="tw:mt-1">
-      <v-col cols="12">
-        <div class="tw:mb-5 tw:flex tw:flex-col tw:gap-4 md:tw:flex-row md:tw:items-center md:tw:justify-between">
-          <div class="tw:text-3xl tw:font-black tw:text-black">Categories</div>
-          <v-btn
+      <v-col cols="12" >
+        <v-row>
+          <v-col cols="6">
+            <div class="tw:text-3xl tw:font-black tw:text-black">หมวดหมู่</div>
+          </v-col>
+          <v-col cols="6" class="d-flex tw:justify-end">
+            <v-btn
             color="#f5962f"
             rounded="pill"
             size="large"
-            class="tw:self-start tw:px-7 tw:font-bold tw:normal-case tw:text-white md:tw:self-auto"
+            class="tw:self-start tw:px-7 tw:font-bold tw:normal-case tw:text-white! md:tw:self-auto"
             @click="openCreateCategory()"
           >
             <v-icon start>mdi-plus</v-icon>
-            New
+            เพิ่มหมวดหมู่
           </v-btn>
-        </div>  
+        </v-col>
+        </v-row>
       </v-col>
       <v-col cols="12">
+        <v-text-field
+          v-model="categorySearch"
+          variant="outlined"
+          density="comfortable"
+          prepend-inner-icon="mdi-magnify"
+          label="ค้นหาหมวดหมู่"
+          hide-details
+          clearable
+          class="tw:mb-4"
+        />
 
         <v-card
           rounded="xl"
-          elevation="0"
-          class=" tw:overflow-hidden tw:border tw:border-black/5"
+          elevation="2"
+          class=" tw:overflow-hidden tw:border tw:border-black/5 mt-5"
         >
         
           <v-data-table
-            class="elevation-0 tw:shadow-none"
+            class="elevation-2 tw:shadow-none"
             :headers="headers"
             :items="itemCategory"
+            :search="categorySearch"
             :items-per-page="10"
+            no-data-text="ไม่พบข้อมูลหมวดหมู่"
             hover
           >
             <template v-slot:item.image_url="{ item }">
-              <div class="tw:flex tw:items-center tw:py-1">
-                <div class="tw:h-16 tw:w-16 tw:overflow-hidden tw:rounded-full tw:bg-gray-200">
-                  <v-img v-if="item.image_url" :src="item.image_url" width="64" height="64" cover />
-                </div>
-              </div>
+              <v-row>
+                <v-col v-if="item.image_url"  cols="12" class="d-flex tw:justify-center">
+                  <v-img :src="item.image_url" max-height="80px" max-width="80px" width="100%" height="100%" cover />
+                </v-col>
+                <v-col v-else cols="12" class="d-flex tw:justify-center">
+                 <v-icon icon="mdi-image-off" size="48" />
+                </v-col>
+              </v-row>
             </template>
 
             <template v-slot:item.name="{ item }">
@@ -592,18 +622,20 @@ onMounted(loadPageData);
                   inset
                   @update:model-value="toggleCategoryActive(item, $event)"
                 />
-                <span class="tw:text-sm tw:text-neutral-700">{{ item.is_active ? "on" : "off" }}</span>
+                <span class="tw:text-sm tw:text-neutral-700">{{ item.is_active ? "เปิด" : "ปิด" }}</span>
               </div>
             </template>
 
             <template v-slot:item.Action="{ item }">
-              <div class="tw:flex tw:items-center tw:gap-1">
+              <div class="tw:flex tw:justify-center">
+                <div class="tw:flex tw:items-center tw:rounded-full tw:border tw:border-slate-200 tw:bg-slate-50 tw:px-1">
                 <v-btn icon variant="text" color="black" @click="toggleCategoryEdit(item)">
-                  <v-icon size="28">mdi-pencil</v-icon>
+                  <v-icon size="22">mdi-pencil</v-icon>
                 </v-btn>
                 <v-btn icon variant="text" color="black" @click="confirmCategoryDelete(item.id)">
-                  <v-icon size="28">mdi-delete</v-icon>
+                  <v-icon size="22">mdi-delete</v-icon>
                 </v-btn>
+                </div>
               </div>
             </template>
           </v-data-table>
@@ -611,44 +643,58 @@ onMounted(loadPageData);
       </v-col>
 
       <v-col cols="12" class="tw:mt-6">
-        <div class="tw:mb-5 tw:flex tw:flex-col tw:gap-4 md:tw:flex-row md:tw:items-center md:tw:justify-between">
-          <div>
-            <div class="tw:text-3xl tw:font-black tw:text-black">Brands</div>
-            <div class="tw:text-sm tw:text-neutral-500">
-              แสดง global brands พร้อม primary category mapping สำหรับงาน backoffice
-            </div>
-          </div>
+        <v-row>
+          <v-col cols="6">
+            <div class="tw:text-3xl tw:font-black tw:text-black">แบรนด์</div>
+          </v-col>
+          <v-col cols="6" class="d-flex tw:justify-end">
           <v-btn
             color="#f5962f"
             rounded="pill"
             size="large"
-            class="tw:self-start tw:px-7 tw:font-bold tw:normal-case tw:text-white md:tw:self-auto"
+            class="tw:self-start tw:px-7 tw:font-bold tw:normal-case tw:text-white! md:tw:self-auto"
             @click="openCreateSubcategory()"
           >
             <v-icon start>mdi-plus</v-icon>
-            New Brand
+            เพิ่มแบรนด์
           </v-btn>
-        </div>
+          </v-col>
+        </v-row>
       </v-col>
       <v-col cols="12">
+        <v-text-field
+          v-model="brandSearch"
+          variant="outlined"
+          density="comfortable"
+          prepend-inner-icon="mdi-magnify"
+          label="ค้นหาแบรนด์"
+          hide-details
+          clearable
+          class="tw:mb-4"
+        />
                 <v-card
           rounded="xl"
-          elevation="0"
-          class="tw:overflow-hidden tw:border tw:border-black/5"
+          elevation="2"
+          class="tw:overflow-hidden tw:border tw:border-black/5 mt-5"
         >
           <v-data-table
             class="elevation-0 tw:shadow-none"
             :headers="subcategoryHeaders"
             :items="itemSubCategory"
+            :search="brandSearch"
             :items-per-page="10"
+            no-data-text="ไม่พบข้อมูลแบรนด์"
             hover
           >
             <template v-slot:item.image_url="{ item }">
-              <div class="tw:flex tw:items-center tw:py-1">
-                <div class="tw:h-16 tw:w-16 tw:overflow-hidden tw:rounded-full tw:bg-gray-200">
-                  <v-img v-if="item.image_url" :src="item.image_url" width="64" height="64" cover />
-                </div>
-              </div>
+              <v-row>
+                <v-col v-if="item.image_url"  cols="12" class="d-flex tw:justify-center">
+                  <v-img :src="item.image_url" max-height="80px" max-width="80px" width="100%" height="100%" cover />
+                </v-col>
+                <v-col v-else cols="12" class="d-flex tw:justify-center">
+                 <v-icon icon="mdi-image-off" size="48" />
+                </v-col>
+              </v-row>
             </template>
 
             <template v-slot:item.name="{ item }">
@@ -687,18 +733,20 @@ onMounted(loadPageData);
                   inset
                   @update:model-value="toggleSubcategoryActive(item, $event)"
                 />
-                <span class="tw:text-sm tw:text-neutral-700">{{ item.is_active ? "on" : "off" }}</span>
+                <span class="tw:text-sm tw:text-neutral-700">{{ item.is_active ? "เปิด" : "ปิด" }}</span>
               </div>
             </template>
 
             <template v-slot:item.Action="{ item }">
-              <div class="tw:flex tw:items-center tw:gap-1">
+              <div class="tw:flex tw:justify-center">
+                <div class="tw:flex tw:items-center tw:rounded-full tw:border tw:border-slate-200 tw:bg-slate-50 tw:px-1">
                 <v-btn icon variant="text" color="black" @click="toggleSubcategoryEdit(item)">
-                  <v-icon size="28">mdi-pencil</v-icon>
+                  <v-icon size="22">mdi-pencil</v-icon>
                 </v-btn>
                 <v-btn icon variant="text" color="black" @click="confirmSubcategoryDelete(item.id)">
-                  <v-icon size="28">mdi-delete</v-icon>
+                  <v-icon size="22">mdi-delete</v-icon>
                 </v-btn>
+                </div>
               </div>
             </template>
           </v-data-table>

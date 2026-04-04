@@ -109,11 +109,11 @@ Execute [`docs/implementation-plan.md`](./implementation-plan.md) phase by phase
   - `dashboard_brand_stats`
   - `stats_ledger`
 - Kept public catalog posture explicit: current Firestore documents remain private and any future public catalog should read through a controlled server/API layer rather than direct browser access
-- Documented and surfaced the Storage Rules caveat for named Firestore databases:
-  - Storage owner checks still resolve against Firestore `(default)`
-  - the backoffice layout now warns operators when the app is configured against a named Firestore database
-  - deployment docs and env guidance now call out the required owner upload verification before production use
-- Added a dedicated Phase 5 verifier that checks the expected Firestore Rules, Storage Rules, owner allowlist lookup, middleware gating, and named-database warning copy
+- Documented the current Storage authorization model:
+  - Storage writes use Firebase Auth custom claim `backoffice_owner=true`
+  - Firestore owner allowlist and Storage owner authorization are separate controls
+  - deployment docs and env guidance now call out the required auth-session refresh after claim changes
+- Added a dedicated Phase 5 verifier that checks the expected Firestore Rules, Storage Rules, owner allowlist lookup, middleware gating, and storage-boundary documentation copy
 
 ## Files touched in Phase 5
 

@@ -66,23 +66,37 @@ function getPublicProductIssues(product) {
   const slug = String(product.slug ?? "").trim();
   const categoryId = String(product.category_id ?? "").trim();
   const brandId = String(product.brand_id ?? "").trim();
+  const costPrice = Number(product.cost_price);
   const sellPrice = Number(product.sell_price);
+  const condition = String(product.condition ?? "").trim();
+  const defectDetail = String(product.defect_detail ?? "").trim();
+  const freeGiftDetail = String(product.free_gift_detail ?? "").trim();
+  const shutter = Number(product.shutter);
   const coverImage = String(product.cover_image ?? "").trim();
   const images = sanitizeProductImageUrls(product.images);
   const hasImage = Boolean(coverImage) || images.length > 0;
 
-  if (!name) issues.push("Public products require a name");
+  if (!name) issues.push("กรุณาใส่ชื่อสินค้า");
   if (!slug) {
-    issues.push("Public products require a slug");
+    issues.push("ยังสร้างลิงก์สินค้าไม่สำเร็จ ลองตรวจชื่อสินค้าอีกครั้ง");
   } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-    issues.push("Public products require a valid slug");
+    issues.push("ลิงก์สินค้ายังไม่ถูกต้อง");
   }
-  if (!categoryId) issues.push("Public products require a category");
-  if (!brandId) issues.push("Public products require a brand");
+  if (!categoryId) issues.push("กรุณาเลือกประเภทสินค้า");
+  if (!brandId) issues.push("กรุณาเลือกแบรนด์");
+  if (typeof product.cost_price !== "number" || Number.isNaN(costPrice)) {
+    issues.push("กรุณาใส่ราคาทุน");
+  }
   if (typeof product.sell_price !== "number" || Number.isNaN(sellPrice)) {
-    issues.push("Public products require a valid sell price");
+    issues.push("กรุณาใส่ราคาขาย");
   }
-  if (!hasImage) issues.push("Public products require at least one image");
+  if (!condition) issues.push("กรุณาระบุสภาพสินค้า");
+  if (typeof product.shutter !== "number" || Number.isNaN(shutter)) {
+    issues.push("กรุณาใส่จำนวนชัตเตอร์");
+  }
+  if (!defectDetail) issues.push("กรุณาใส่รายละเอียดตำหนิ");
+  if (!freeGiftDetail) issues.push("กรุณาใส่ของแถม");
+  if (!hasImage) issues.push("กรุณาใส่รูปสินค้าอย่างน้อย 1 รูป");
 
   return issues;
 }
@@ -117,7 +131,10 @@ async function getActiveMappings() {
 
 async function assertUniqueProductSlug(slug, excludeId) {
   const snap = await db.collection("products").where("slug", "==", slug).get();
-  const hasDuplicate = snap.docs.some((docSnap) => docSnap.id !== excludeId);
+  const hasDuplicate = snap.docs.some((docSnap) => {
+    if (docSnap.id === excludeId) return false;
+    return docSnap.data().is_deleted !== true;
+  });
   if (hasDuplicate) throw new Error("Product slug already exists");
 }
 
@@ -154,9 +171,15 @@ async function createProduct(payload) {
     category_name: payload.category_name,
     brand_id: payload.brand_id,
     brand_name: payload.brand_name,
+    seo_title: payload.seo_title || "",
+    seo_description: payload.seo_description || "",
+    seo_image: payload.seo_image || "",
     cost_price: payload.cost_price,
     sell_price: payload.sell_price,
     condition: payload.condition || "GOOD",
+    shutter: payload.shutter ?? null,
+    defect_detail: payload.defect_detail || "",
+    free_gift_detail: payload.free_gift_detail || "",
     cover_image: coverImage,
     images,
     status,
@@ -224,6 +247,10 @@ async function main() {
     brand_name: primary.brand_name,
     cost_price: 1000,
     sell_price: 2000,
+    condition: "GOOD",
+    shutter: 1234,
+    defect_detail: "minor scratch",
+    free_gift_detail: "battery",
     images: [],
     show: false,
     status: "ACTIVE",
@@ -242,11 +269,15 @@ async function main() {
       brand_name: primary.brand_name,
       cost_price: 1000,
       sell_price: 2000,
+      condition: "GOOD",
+      shutter: 1234,
+      defect_detail: "minor scratch",
+      free_gift_detail: "battery",
       images: [],
       show: true,
       status: "ACTIVE",
     }),
-    "Public products require at least one image",
+    "กรุณาใส่รูปสินค้าอย่างน้อย 1 รูป",
     "visible create missing image"
   );
   results.push({ flow: "visibleCreateRequiresImage", status: "passed" });
@@ -260,6 +291,10 @@ async function main() {
     brand_name: primary.brand_name,
     cost_price: 1000,
     sell_price: 2000,
+    condition: "GOOD",
+    shutter: 1234,
+    defect_detail: "minor scratch",
+    free_gift_detail: "battery",
     images: [placeholder(`${prefix}-published`)],
     show: true,
     status: "ACTIVE",
@@ -276,6 +311,10 @@ async function main() {
       brand_name: primary.brand_name,
       cost_price: 1000,
       sell_price: 2000,
+      condition: "GOOD",
+      shutter: 1234,
+      defect_detail: "minor scratch",
+      free_gift_detail: "battery",
       images: [placeholder(`${prefix}-duplicate`)],
       show: true,
       status: "ACTIVE",
@@ -287,12 +326,32 @@ async function main() {
 
   await expectReject(
     () => toggleShow(draftId, true),
-    "Public products require at least one image",
+    "กรุณาใส่รูปสินค้าอย่างน้อย 1 รูป",
     "toggleShow draft to visible without image"
   );
   results.push({ flow: "toggleShowRequiresPublishReadiness", status: "passed", productId: draftId });
 
   await softDelete(publishedId);
+
+  const recycledSlugId = await createProduct({
+    name: `${prefix} recycled slug`,
+    slug: `${prefix} published`,
+    category_id: primary.category_id,
+    category_name: primary.category_name,
+    brand_id: primary.brand_id,
+    brand_name: primary.brand_name,
+    cost_price: 1000,
+    sell_price: 2000,
+    condition: "GOOD",
+    shutter: 1234,
+    defect_detail: "minor scratch",
+    free_gift_detail: "battery",
+    images: [placeholder(`${prefix}-recycled-slug`)],
+    show: true,
+    status: "ACTIVE",
+  });
+  results.push({ flow: "deletedSlugCanBeReused", status: "passed", productId: recycledSlugId });
+
   await expectReject(
     () => toggleShow(publishedId, true),
     "Product not found",

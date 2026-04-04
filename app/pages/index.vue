@@ -66,61 +66,87 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="pa-6">
-    <div class="tw:text-2xl tw:font-bold tw:text-start">Dashboard</div>
-    <v-row class="tw:mt-5!">
-      <v-col cols="4">
-        <v-card>
-          <v-card-title>สินค้าทั้งหมด (ชิ้น)</v-card-title>
-          <v-card-text>{{ totalProducts }}</v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="4">
-        <v-card>
-          <v-card-title>ขายไปแล้ว (ชิ้น)</v-card-title>
-          <v-card-text>{{ totalSold }}</v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="4">
-        <v-card>
-          <v-card-title>จองทั้งหมด (ชิ้น)</v-card-title>
-          <v-card-text>{{ totalReserved }}</v-card-text>
-        </v-card>
-      </v-col>
+  <v-container fluid class="pa-6">
+    <v-row>
       <v-col cols="12">
+        <div class="text-h4 font-weight-black">ภาพรวมร้านวันนี้</div>
+        <div class="text-subtitle-1 text-medium-emphasis">
+          ดูจำนวนสินค้า ยอดขาย และภาพรวมแบรนด์ที่ทำผลงานได้ดีในหน้าเดียว
+        </div>
+      </v-col>
+
+      <v-col cols="4">
+        <v-card rounded="lg" elevation="2">
+          <v-card-text class="pa-6">
+            <div class="text-body-2 font-weight-medium text-medium-emphasis">สินค้าทั้งหมด</div>
+            <div class="text-h4 font-weight-black mt-3">{{ totalProducts }}</div>
+            <div class="text-body-2 text-medium-emphasis mt-2">รวมสินค้าที่กำลังขาย จอง และขายแล้ว</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="4">
+        <v-card rounded="lg" elevation="2">
+          <v-card-text class="pa-6">
+            <div class="text-body-2 font-weight-medium text-medium-emphasis">ขายไปแล้ว</div>
+            <div class="text-h4 font-weight-black mt-3">{{ totalSold }}</div>
+            <div class="text-body-2 text-medium-emphasis mt-2">จำนวนสินค้าที่ปิดการขายเรียบร้อยแล้ว</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="4">
+        <v-card rounded="lg" elevation="2">
+          <v-card-text class="pa-6">
+            <div class="text-body-2 font-weight-medium text-medium-emphasis">สินค้าที่ถูกจอง</div>
+            <div class="text-h4 font-weight-black mt-3">{{ totalReserved }}</div>
+            <div class="text-body-2 text-medium-emphasis mt-2">รายการที่กันสินค้าไว้และยังไม่ปิดการขาย</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="8">
+        <v-card rounded="lg" elevation="2">
+          <v-card-item>
+            <v-card-title>ยอดขายแยกตามแบรนด์</v-card-title>
+            <v-card-subtitle>เปรียบเทียบมูลค่ายอดขายของแต่ละแบรนด์จากข้อมูล dashboard ล่าสุด</v-card-subtitle>
+          </v-card-item>
+          <v-card-text>
+            <v-sheet rounded="lg" color="grey-lighten-5" class="pa-4">
+              <div style="height: 400px; width: 100%">
+                <VChart class="chart" :option="chartOption" autoresize />
+              </div>
+            </v-sheet>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="4">
         <v-row>
-          <v-col cols="8">
-            <div style="height: 400px; width: 100%;">
-              <VChart class="chart" :option="chartOption" autoresize />
-            </div>
+          <v-col cols="12">
+            <v-card rounded="lg" elevation="2">
+              <v-card-text class="pa-6 text-center">
+                <div class="text-body-2 font-weight-medium text-medium-emphasis">ต้นทุนทั้งหมด</div>
+                <div class="text-h4 font-weight-black mt-3">฿ {{ dashboardStats?.total_cost_amount }}</div>
+              </v-card-text>
+            </v-card>
           </v-col>
-          <v-col class="tw:flex tw:flex-col tw:items-center" cols="4">
-            <v-row>
-              <v-col cols="12">
-                <v-card>
-                  <v-card-title class="tw:text-center">ต้นทุนทั้งหมด (บาท)</v-card-title>
-                  <v-card-text class="tw:text-center tw:font-bold! tw:text-2xl!">
-                    ฿ {{ dashboardStats?.total_cost_amount }}
-                  </v-card-text>
-                </v-card>
-              </v-col>
-              <v-col cols="12">
-                <v-card>
-                  <v-card-title class="tw:text-center">ยอดขายทั้งหมด (บาท)</v-card-title>
-                  <v-card-text class="tw:text-center tw:font-bold! tw:text-2xl!">฿ {{ dashboardStats?.total_sales_amount }}</v-card-text>
-                </v-card>
-              </v-col>
-              <v-col cols="12">
-                <v-card>
-                  <v-card-title class="tw:text-center">กำไรสุทธิ (ชิ้น)</v-card-title>
-                  <v-card-text class="tw:text-center tw:font-bold! tw:text-2xl!">฿ {{ dashboardStats?.total_profit_amount }}</v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
+          <v-col cols="12">
+            <v-card rounded="lg" elevation="2">
+              <v-card-text class="pa-6 text-center">
+                <div class="text-body-2 font-weight-medium text-medium-emphasis">ยอดขายทั้งหมด</div>
+                <div class="text-h4 font-weight-black mt-3">฿ {{ dashboardStats?.total_sales_amount }}</div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12">
+            <v-card rounded="lg" elevation="2">
+              <v-card-text class="pa-6 text-center">
+                <div class="text-body-2 font-weight-medium text-medium-emphasis">กำไรสุทธิ</div>
+                <div class="text-h4 font-weight-black mt-3">฿ {{ dashboardStats?.total_profit_amount }}</div>
+              </v-card-text>
+            </v-card>
           </v-col>
         </v-row>
       </v-col>
     </v-row>
-  </div>
-
+  </v-container>
 </template>

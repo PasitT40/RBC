@@ -29,8 +29,9 @@ Reasoning:
 3. Bind hosting target `backoffice` to the intended Firebase Hosting site.
 4. Fill `.env` with the real Firebase values for the single environment.
 5. Make sure the production owner allowlist exists in `owners/{uid}`.
-6. If `NUXT_PUBLIC_FIRESTORE_DATABASE_ID` is not `(default)`, plan a real owner upload smoke test before release because Storage Rules still check `owners/{uid}` in `(default)`.
-7. Set storage bucket envs to match the Firestore database policy:
+6. Grant Firebase Auth custom claim `backoffice_owner=true` to each owner account that should upload media.
+7. After granting or revoking the storage-owner claim, force the user to sign out and sign in again so Firebase refreshes the auth token.
+8. Set storage bucket envs to match the Firestore database policy:
    - `(default)` Firestore -> `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD`
    - named Firestore database -> `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV`
 
@@ -93,11 +94,10 @@ After deploy, verify:
 
 ## Important caveat
 
-This rollout should prefer Firestore `(default)` for the current project to minimize rule and integration risk.
+Firestore owner access and Storage owner access are separate controls:
+- Firestore browser access uses `owners/{uid}`
+- Storage writes use Firebase Auth custom claim `backoffice_owner=true`
 
-If the single environment uses a named Firestore database instead of `(default)`, verify Storage Rules owner checks carefully.
-
-Current Storage Rules use:
-- `firestore.exists(/databases/(default)/documents/owners/$(request.auth.uid))`
-
-That can diverge from a named Firestore database setup. Do not treat production rollout as complete until Storage writes are verified with a real owner account.
+Do not treat rollout as complete until both are verified with a real owner account:
+- the account can read and write backoffice Firestore data through the UI
+- the same account can upload and replace category, brand, and product media

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useForm } from "vee-validate";
 import * as yup from "yup";
+import ProductEditorForm from "../../components/products/ProductEditorForm.vue";
 import { getPublicProductIssues, normalizeProductSlug } from "../../composables/firestore/publication";
 
 type SelectOption = {
@@ -48,38 +49,40 @@ const normalizeFiles = (files: unknown): File[] =>
   Array.isArray(files) ? files.filter(isFile) : [];
 
 const schema = yup.object({
-  name: yup.string().trim().required("กรุณากรอกชื่อสินค้า"),
+  name: yup.string().trim().required("ใส่ชื่อสินค้าให้หน่อย"),
   seo_title: yup.string().nullable().default(""),
   seo_description: yup.string().nullable().default(""),
   seo_image: yup
     .string()
     .transform((value, originalValue) => (originalValue === "" || originalValue === null ? undefined : value))
-    .url("กรุณากรอก URL รูป SEO ให้ถูกต้อง")
+    .url("ลิงก์รูป SEO ยังไม่ถูกต้อง")
     .nullable()
     .optional(),
-  category_id: yup.string().required("กรุณาเลือกประเภทสินค้า"),
-  brand_id: yup.string().required("กรุณาเลือกแบรนด์"),
+  category_id: yup.string().required("เลือกประเภทสินค้าให้หน่อย"),
+  brand_id: yup.string().required("เลือกแบรนด์ให้หน่อย"),
   cost_price: yup
     .number()
-    .typeError("กรุณากรอกราคาทุน")
-    .min(0, "ราคาทุนต้องมากกว่าหรือเท่ากับ 0")
-    .required("กรุณากรอกราคาทุน"),
+    .typeError("ใส่ราคาทุนให้หน่อย")
+    .min(0, "ราคาทุนต้องเป็น 0 หรือมากกว่า")
+    .required("ใส่ราคาทุนให้หน่อย"),
   sell_price: yup
     .number()
-    .typeError("กรุณากรอกราคาขาย")
-    .min(0, "ราคาขายต้องมากกว่าหรือเท่ากับ 0")
-    .required("กรุณากรอกราคาขาย"),
-  condition: yup.string().nullable().default("GOOD"),
+    .typeError("ใส่ราคาขายให้หน่อย")
+    .min(0, "ราคาขายต้องเป็น 0 หรือมากกว่า")
+    .required("ใส่ราคาขายให้หน่อย"),
+  condition: yup.string().trim().required("ระบุสภาพสินค้าให้หน่อย"),
   shutter: yup
     .number()
     .transform((value, originalValue) => (originalValue === "" || originalValue === null ? null : value))
+    .typeError("ใส่จำนวนชัตเตอร์ให้หน่อย")
     .nullable()
-    .min(0, "Shutter ต้องมากกว่าหรือเท่ากับ 0"),
-  defect_detail: yup.string().nullable(),
-  free_gift_detail: yup.string().nullable(),
+    .min(0, "จำนวนชัตเตอร์ต้องเป็น 0 หรือมากกว่า")
+    .required("ใส่จำนวนชัตเตอร์ให้หน่อย"),
+  defect_detail: yup.string().trim().required("ใส่รายละเอียดตำหนิให้หน่อย"),
+  free_gift_detail: yup.string().trim().required("ใส่รายละเอียดของแถมให้หน่อย"),
   image_files: yup.array().of(yup.mixed<File>()).when("show", {
     is: true,
-    then: (schema) => schema.min(1, "กรุณาอัปโหลดรูปสินค้าอย่างน้อย 1 รูป").required("กรุณาอัปโหลดรูปสินค้า"),
+    then: (schema) => schema.min(1, "ใส่รูปสินค้าอย่างน้อย 1 รูปก่อนเปิดแสดงหน้าเว็บ").required("ใส่รูปสินค้าอย่างน้อย 1 รูปก่อนเปิดแสดงหน้าเว็บ"),
     otherwise: (schema) => schema.default([]),
   }),
   show: yup.boolean().default(true),
@@ -136,7 +139,12 @@ const publicReadinessIssues = computed(() =>
     slug: slugPreview.value,
     category_id: values.category_id,
     brand_id: values.brand_id,
+    cost_price: typeof values.cost_price === "number" ? values.cost_price : Number.NaN,
     sell_price: typeof values.sell_price === "number" ? values.sell_price : Number.NaN,
+    condition: values.condition,
+    shutter: typeof values.shutter === "number" ? values.shutter : Number.NaN,
+    defect_detail: values.defect_detail,
+    free_gift_detail: values.free_gift_detail,
     images: normalizeFiles(values.image_files).map((file) => file.name),
     show: values.show,
   })
@@ -221,7 +229,7 @@ const submit = handleSubmit(async (formValues) => {
   const selectedBrand = brandMappings.value.find((item) => item.brand_id === formValues.brand_id);
 
   if (!selectedCategory || !selectedBrand) {
-    appToast.error("กรุณาเลือกประเภทสินค้าและแบรนด์ให้ครบ");
+    appToast.error("เลือกประเภทสินค้าและแบรนด์ให้ครบก่อนบันทึก");
     return;
   }
 
@@ -261,7 +269,7 @@ const submit = handleSubmit(async (formValues) => {
   }
 }, ({ errors: submitErrors }) => {
   const firstError = Object.values(submitErrors)[0];
-  appToast.error(typeof firstError === "string" ? firstError : "กรุณากรอกข้อมูลให้ครบ");
+  appToast.error(typeof firstError === "string" ? firstError : "เช็กข้อมูลที่ยังกรอกไม่ครบอีกนิด");
 });
 
 onMounted(async () => {
@@ -275,204 +283,43 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <v-row class="pa-5">
-    <v-col cols="12" class="tw:mb-8 tw:flex tw:flex-col tw:gap-4 md:tw:flex-row md:tw:items-center md:tw:justify-between">
-      <div>
-        <h1 class="tw:text-3xl tw:font-black tw:text-black md:tw:text-4xl">Create Product</h1>
-      </div>
-
-      <div class="tw:flex tw:items-center tw:justify-end tw:gap-3">
-        <v-btn
-          variant="outlined"
-          color="black"
-          rounded="pill"
-          class="tw:px-6 tw:font-semibold tw:normal-case"
-          @click="goBack"
-        >
-          Cancel
-        </v-btn>
-        <v-btn
-          color="#f5962f"
-          rounded="pill"
-          class="tw:px-7 tw:font-semibold tw:normal-case tw:text-white"
-          :loading="loading"
-          @click="submit()"
-        >
-          Save
-        </v-btn>
-      </div>
-    </v-col>
-    <v-col cols="12">
-            <div class="tw:grid tw:grid-cols-1 tw:gap-x-6 tw:gap-y-4 md:tw:grid-cols-2">
-        <form-vee-text-field
-          name="name"
-          label="ชื่อสินค้า"
-          variant="outlined"
-          density="comfortable"
-          hide-details="auto"
-        />
-
-        <form-vee-text-field
-          name="seo_title"
-          label="SEO Title"
-          variant="outlined"
-          density="comfortable"
-          hide-details="auto"
-        />
-
-        <div class="tw:flex tw:flex-col tw:justify-center tw:gap-1 tw:rounded-2xl tw:border tw:border-neutral-200 tw:bg-neutral-50 tw:px-4 tw:py-3">
-          <div class="tw:flex tw:items-center tw:justify-between tw:gap-4">
-            <div>
-              <div class="tw:text-sm tw:font-semibold tw:text-neutral-900">เผยแพร่บนหน้าเว็บ</div>
-              <div class="tw:text-xs tw:text-neutral-600">ปิดไว้ก่อนได้หากข้อมูลยังไม่พร้อมสำหรับหน้า public</div>
-            </div>
+  <product-editor-form
+    title="เพิ่มสินค้าใหม่"
+    :save-loading="loading"
+    :category-options="categoryOptions"
+    :brand-options="brandOptions"
+    :brand-disabled="!values.category_id"
+    :slug-preview="slugPreview"
+    :seo-fallback-hint="'ช่อง SEO ยังเว้นว่างได้ ระบบจะช่วยดึงชื่อสินค้า รายละเอียด และรูปปกไปใช้ให้อัตโนมัติ'"
+    :public-readiness-issues="publicReadinessIssues"
+    :hidden-info-message="'สินค้านี้จะถูกบันทึกแบบซ่อนไว้ก่อน และค่อยเปิดแสดงบนหน้าเว็บภายหลังได้'"
+    :publish-active="values.show"
+    :image-hint="`รูปแรกจะถูกใช้เป็น cover_image อัตโนมัติสำหรับหน้า list/detail${derivedCoverImageLabel ? ` ตอนนี้รูปปกคือ ${derivedCoverImageLabel}` : ''}`"
+    @cancel="goBack"
+    @submit="submit()"
+    @select-images="onDetailSelected"
+  >
+    <template #top-aside>
+      <v-sheet rounded="lg" color="grey-lighten-5" class="pa-4 fill-height">
+        <v-row align="center">
+          <v-col cols="8">
+            <div class="text-body-2 font-weight-medium">แสดงสินค้านี้บนหน้าเว็บ</div>
+            <div class="text-caption text-medium-emphasis">ถ้ายังเตรียมข้อมูลไม่ครบ สามารถปิดไว้ก่อนได้</div>
+          </v-col>
+          <v-col cols="4" class="d-flex justify-end">
             <form-vee-switch
               name="show"
               color="primary"
               inset
               hide-details
             />
-          </div>
-          <div class="tw:text-xs tw:text-neutral-500">Slug: {{ slugPreview || "-" }}</div>
-          <div class="tw:text-xs tw:text-neutral-500">SEO ว่างได้ ระบบ public จะ fallback ไปใช้ชื่อสินค้า, สรุปข้อมูลสินค้า และ cover image</div>
-        </div>
-
-        <form-vee-select
-          name="category_id"
-          label="ประเภทสินค้า"
-          variant="outlined"
-          density="comfortable"
-          item-title="title"
-          item-value="value"
-          :items="categoryOptions"
-          hide-details="auto"
-        />
-
-        <form-vee-select
-          name="brand_id"
-          label="Brand"
-          variant="outlined"
-          density="comfortable"
-          item-title="title"
-          item-value="value"
-          :items="brandOptions"
-          :disabled="!values.category_id"
-          hide-details="auto"
-        />
-        <form-vee-text-field
-          name="condition"
-          label="คุณภาพของสินค้า"
-          variant="outlined"
-          density="comfortable"
-          hide-details="auto"
-        />
-
-
-        <form-vee-text-field
-          name="cost_price"
-          label="ราคา - ทุน"
-          variant="outlined"
-          density="comfortable"
-          type="number"
-          min="0"
-          hide-details="auto"
-        />
-
-        <form-vee-text-field
-          name="sell_price"
-          label="ราคา - ขาย"
-          variant="outlined"
-          density="comfortable"
-          type="number"
-          min="0"
-          hide-details="auto"
-        />
-
-        <form-vee-text-field
-          name="shutter"
-          label="Shutter"
-          variant="outlined"
-          density="comfortable"
-          type="number"
-          min="0"
-          hide-details="auto"
-        />
-      </div>
-
-      <div class="tw:mt-6 tw:grid tw:grid-cols-1 tw:gap-6">
-        <form-vee-text-area
-          name="seo_description"
-          label="SEO Description"
-          variant="outlined"
-          rows="3"
-          auto-grow
-          hide-details="auto"
-        />
-
-        <form-vee-text-field
-          name="seo_image"
-          label="SEO Image URL"
-          variant="outlined"
-          density="comfortable"
-          hide-details="auto"
-        />
-
-        <form-vee-text-area
-          name="defect_detail"
-          label="รายละเอียดตำหนิ"
-          variant="outlined"
-          rows="5"
-          auto-grow
-          hide-details="auto"
-        />
-
-        <form-vee-text-area
-          name="free_gift_detail"
-          label="ของแถม"
-          variant="outlined"
-          rows="5"
-          auto-grow
-          hide-details="auto"
-        />
-
-        <div>
-          <div class="tw:mb-3 tw:text-sm tw:font-semibold tw:text-neutral-800">รูปสินค้า (รายละเอียด)</div>
-          <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
-            รูปแรกจะถูกใช้เป็น `cover_image` อัตโนมัติสำหรับหน้า list/detail
-            <span v-if="derivedCoverImageLabel">ตอนนี้รูปปกคือ {{ derivedCoverImageLabel }}</span>
-          </div>
-          <form-vee-file-input
-            name="image_files"
-            label="เลือกรูปรายละเอียดสินค้า"
-            variant="outlined"
-            accept="image/*"
-            multiple
-            :max-files="4"
-            sortable
-            removable
-            @update:model-value="onDetailSelected"
-          />
-        </div>
-      </div>
-
-      <v-alert
-        v-if="values.show && publicReadinessIssues.length"
-        type="warning"
-        variant="tonal"
-        class="tw:mt-6"
-      >
-        ยังไม่พร้อมเผยแพร่: {{ publicReadinessIssues.join(", ") }}
-      </v-alert>
-
-      <v-alert
-        v-else-if="!values.show"
-        type="info"
-        variant="tonal"
-        class="tw:mt-6"
-      >
-        สินค้านี้จะถูกบันทึกแบบซ่อนจากหน้าเว็บ (`show=false`) จนกว่าจะเปิดเผยแพร่ภายหลัง
-      </v-alert>
-    </v-col>
-
-  </v-row>
+          </v-col>
+          <v-col cols="12">
+            <div class="text-caption text-medium-emphasis">ลิงก์สินค้าที่ระบบจะสร้างให้: {{ slugPreview || "-" }}</div>
+            <div class="text-caption text-medium-emphasis">ถ้ายังไม่กรอก SEO ระบบจะใช้ชื่อสินค้า รายละเอียด และรูปปกให้โดยอัตโนมัติ</div>
+          </v-col>
+        </v-row>
+      </v-sheet>
+    </template>
+  </product-editor-form>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from "vue"
+import { computed } from "vue"
 import { useField } from "vee-validate"
 
 defineOptions({ inheritAttrs:false })
@@ -28,27 +28,13 @@ const inputValue = computed<string | number | null>({
     return modelValue.value
   },
   set(nextValue) {
-    modelValue.value = nextValue
     if (hasFieldName.value && field) {
       field.handleChange(nextValue)
+      return
     }
+    modelValue.value = nextValue
   },
 })
-
-watch(modelValue, (nextValue) => {
-  if (!hasFieldName.value || !field) return
-  if (field.value.value !== nextValue) {
-    field.handleChange(nextValue)
-  }
-}, { immediate: true })
-
-if (field) {
-  watch(field.value, (nextValue) => {
-    if (modelValue.value !== nextValue) {
-      modelValue.value = nextValue
-    }
-  })
-}
 
 const errorMessage = computed(() => {
   if (!hasFieldName.value || !field) return undefined

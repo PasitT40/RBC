@@ -20,17 +20,18 @@ const appToast = useAppToast();
 
 const loading = ref(false);
 const exporting = ref(false);
-const month = ref("");
+const fromMonth = ref("");
+const toMonth = ref("");
 const stats = ref<DashboardStatsRecord | null>(null);
 const brandStats = ref<DashboardBrandStatsRecord[]>([]);
 const rows = ref<ReportRow[]>([]);
 const sortBy = ref<DataTableSortItem[]>([{ key: "sold_at", order: "desc" }]);
 
 const headers: DataTableHeader[] = [
-  { title: "ID:", key: "id", sortable: false },
-  { title: "Categories", key: "category_name", sortable: true },
-  { title: "Name", key: "name", sortable: true },
-  { title: "Brands", key: "brand_name", sortable: true },
+  { title: "เลขที่รายการ", key: "id", sortable: false },
+  { title: "หมวดหมู่", key: "category_name", sortable: true },
+  { title: "สินค้า", key: "name", sortable: true },
+  { title: "แบรนด์", key: "brand_name", sortable: true },
   {
     title: "วันที่ขาย",
     key: "sold_at",
@@ -92,10 +93,21 @@ const summaryCards = computed(() => [
   },
 ]);
 
+const reportFilter = computed(() => {
+  if (fromMonth.value || toMonth.value) {
+    return {
+      fromMonth: fromMonth.value || toMonth.value,
+      toMonth: toMonth.value || fromMonth.value,
+    };
+  }
+
+  return {};
+});
+
 const loadReport = async () => {
   loading.value = true;
   try {
-    const filter = month.value ? { month: month.value } : {};
+    const filter = reportFilter.value;
     const [dashboardStats, dashboardBrandStats, reportPage] = await Promise.all([
       getDashboardStats(filter),
       getDashboardBrandStats({ ...filter, count: 8 }),
@@ -117,7 +129,7 @@ const loadReport = async () => {
     }));
   } catch (error) {
     console.error("โหลดรายงานไม่สำเร็จ", error);
-    appToast.error("โหลดรายงานไม่สำเร็จ");
+    appToast.error("โหลดข้อมูลรายงานไม่สำเร็จ");
   } finally {
     loading.value = false;
   }
@@ -125,13 +137,13 @@ const loadReport = async () => {
 
 const exportCsv = async () => {
   if (!rows.value.length) {
-    appToast.error("ยังไม่มีข้อมูลสำหรับ export");
+    appToast.error("ยังไม่มีข้อมูลให้ส่งออก");
     return;
   }
 
   exporting.value = true;
   try {
-    const header = ["ID", "Categories", "Name", "Brands", "วันที่ขาย", "ราคาทุน", "ราคาขาย", "กำไรสุทธิ", "ช่องทางการขาย"];
+    const header = ["เลขที่รายการ", "หมวดหมู่", "สินค้า", "แบรนด์", "วันที่ขาย", "ราคาทุน", "ราคาขาย", "กำไรสุทธิ", "ช่องทางการขาย"];
     const lines = rows.value.map((row) => [
       row.id,
       row.category_name,
@@ -152,19 +164,19 @@ const exportCsv = async () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `report-${month.value || "all"}.csv`;
+    link.download = `report-${fromMonth.value || "all"}-${toMonth.value || fromMonth.value || "all"}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    appToast.success("Export report สำเร็จ");
+    appToast.success("ส่งออกรายงานสำเร็จ");
   } catch (error) {
     console.error("Export report ไม่สำเร็จ", error);
-    appToast.error("Export report ไม่สำเร็จ");
+    appToast.error("ส่งออกรายงานไม่สำเร็จ");
   } finally {
     exporting.value = false;
   }
 };
 
-watch(month, () => {
+watch([fromMonth, toMonth], () => {
   loadReport();
 });
 
@@ -172,137 +184,169 @@ onMounted(loadReport);
 </script>
 
 <template>
-  <div class="tw:min-h-screen tw:bg-black tw:px-4 tw:py-6 md:tw:px-8 md:tw:py-8">
-    <div class="tw:mx-auto tw:flex tw:max-w-[1400px] tw:flex-col tw:gap-6">
-      <div class="tw:flex tw:flex-col tw:gap-4 md:tw:flex-row md:tw:items-center md:tw:justify-between">
-        <div>
-          <h1 class="tw:text-4xl tw:font-black tw:text-white md:tw:text-5xl">Report</h1>
-        </div>
-
-        <div class="tw:flex tw:flex-col tw:gap-3 sm:tw:flex-row sm:tw:items-center">
-          <v-text-field
-            v-model="month"
-            type="month"
-            label="เดือนที่ขาย"
-            variant="solo-filled"
-            flat
-            hide-details
-            density="comfortable"
-            bg-color="white"
-            clearable
-            class="tw:min-w-[190px]"
-          />
-
-          <v-btn
-            color="#f5962f"
-            rounded="pill"
-            size="large"
-            class="tw:px-6 tw:font-bold tw:normal-case tw:text-white"
-            :loading="exporting"
-            @click="exportCsv()"
-          >
-            Export
-          </v-btn>
-        </div>
-      </div>
-
-      <div class="tw:grid tw:gap-5 lg:tw:grid-cols-[minmax(0,1fr)_280px]">
-        <v-card
-          rounded="xl"
-          elevation="0"
-          class="tw:overflow-hidden tw:border-2 tw:border-black tw:bg-white"
-        >
-          <div class="tw:p-6">
-            <div class="tw:mb-5 tw:text-2xl tw:font-black tw:text-black">
-              ยอดขายแยกตาม Brands
+  <v-container fluid class="pa-6">
+    <v-row justify="center">
+      <v-col cols="10">
+        <v-row align="end" class="mb-6">
+          <v-col cols="5">
+            <div class="text-h4 font-weight-black">รายงานยอดขาย</div>
+            <div class="text-body-2 text-medium-emphasis">
+              ดูภาพรวมยอดขาย ต้นทุน กำไร และรายการขายในช่วงเวลาที่เลือก
             </div>
-            <BrandBarChart :data="chartData" metric="amount" :height="320" />
-          </div>
-        </v-card>
+          </v-col>
 
-        <div class="tw:flex tw:flex-col tw:gap-4">
-          <v-card
-            v-for="card in summaryCards"
-            :key="card.title"
-            rounded="xl"
-            elevation="0"
-            class="tw:border-2 tw:border-black tw:bg-white"
-          >
-            <div class="tw:px-6 tw:py-6">
-              <div class="tw:border-b tw:border-neutral-200 tw:pb-4 tw:text-center tw:text-2xl tw:font-black tw:text-neutral-500">
-                {{ card.title }}
-              </div>
-              <div class="tw:pt-5 tw:text-center tw:text-3xl tw:font-black tw:text-[#0f2b20]">
-                {{ card.value }}
-              </div>
-            </div>
-          </v-card>
-        </div>
-      </div>
+          <v-col cols="7">
+            <v-row align="center" justify="end">
+              <v-col cols="4">
+                <v-text-field
+                  v-model="fromMonth"
+                  type="month"
+                  label="เดือนเริ่มต้น"
+                  variant="outlined"
+                  hide-details
+                  density="comfortable"
+                  clearable
+                />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field
+                  v-model="toMonth"
+                  type="month"
+                  label="เดือนสิ้นสุด"
+                  variant="outlined"
+                  hide-details
+                  density="comfortable"
+                  clearable
+                />
+              </v-col>
+              <v-col cols="2">
+                <v-btn
+                  block
+                  variant="outlined"
+                  rounded="pill"
+                  size="large"
+                  @click="fromMonth = ''; toMonth = ''"
+                >
+                  ล้างช่วง
+                </v-btn>
+              </v-col>
+              <v-col cols="2">
+                <v-btn
+                  block
+                  color="#f5962f"
+                  rounded="pill"
+                  size="large"
+                  class="text-white"
+                  :loading="exporting"
+                  @click="exportCsv()"
+                >
+                  ส่งออก
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
 
-      <v-card
-        rounded="xl"
-        elevation="0"
-        class="tw:overflow-hidden tw:border-2 tw:border-black tw:bg-white"
-      >
-        <v-data-table
-          class="pa-2 md:pa-4"
-          :headers="headers"
-          :items="rows"
-          :loading="loading"
-          v-model:sort-by="sortBy"
-          item-value="id"
-          items-per-page="5"
-          hover
-        >
-          <template #item.id="{ item }">
-            <span class="tw:text-sm tw:font-semibold tw:text-black">{{ item.id || "-" }}</span>
-          </template>
+        <v-row class="mb-6">
+          <v-col cols="9">
+            <v-card rounded="xl" elevation="1">
+              <v-card-item>
+                <v-card-title>ยอดขายแยกตามแบรนด์</v-card-title>
+                <v-card-subtitle>ดูว่าแต่ละแบรนด์ทำยอดขายได้มากน้อยแค่ไหนในช่วงเวลาที่เลือก</v-card-subtitle>
+              </v-card-item>
+              <v-card-text>
+                <BrandBarChart :data="chartData" metric="amount" :height="320" />
+              </v-card-text>
+            </v-card>
+          </v-col>
 
-          <template #item.category_name="{ item }">
-            <span class="tw:text-sm tw:font-semibold tw:text-black">{{ item.category_name }}</span>
-          </template>
+          <v-col cols="3">
+            <v-row>
+              <v-col
+                v-for="card in summaryCards"
+                :key="card.title"
+                cols="12"
+              >
+                <v-card rounded="xl" elevation="1">
+                  <v-card-text class="pa-6">
+                    <div class="text-body-2 font-weight-medium text-medium-emphasis">
+                      {{ card.title }}
+                    </div>
+                    <div class="text-h4 font-weight-black mt-3">
+                      {{ card.value }}
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
 
-          <template #item.name="{ item }">
-            <span class="tw:text-sm tw:text-black">{{ item.name }}</span>
-          </template>
+        <v-row>
+          <v-col cols="12">
+            <v-card rounded="xl" elevation="1">
+              <v-card-item>
+                <v-card-title>รายการขาย</v-card-title>
+                <v-card-subtitle>เช็กรายการขายทีละรายการ พร้อมต้นทุน ราคาขาย และกำไรที่ได้</v-card-subtitle>
+              </v-card-item>
+              <v-data-table
+                class="pa-4"
+                :headers="headers"
+                :items="rows"
+                :loading="loading"
+                v-model:sort-by="sortBy"
+                item-value="id"
+                items-per-page="5"
+                hover
+              >
+                <template #item.id="{ item }">
+                  <span class="font-weight-medium">{{ item.id || "-" }}</span>
+                </template>
 
-          <template #item.brand_name="{ item }">
-            <span class="tw:text-sm tw:font-semibold tw:text-black">{{ item.brand_name }}</span>
-          </template>
+                <template #item.category_name="{ item }">
+                  <span class="font-weight-medium">{{ item.category_name }}</span>
+                </template>
 
-          <template #item.sold_at="{ item }">
-            <span class="tw:text-sm tw:text-black">{{ formatDate(item.sold_at) }}</span>
-          </template>
+                <template #item.name="{ item }">
+                  <span>{{ item.name }}</span>
+                </template>
 
-          <template #item.cost_price_at_sale="{ item }">
-            <span class="tw:text-sm tw:text-black">{{ Number(item.cost_price_at_sale).toLocaleString("th-TH") }}</span>
-          </template>
+                <template #item.brand_name="{ item }">
+                  <span class="font-weight-medium">{{ item.brand_name }}</span>
+                </template>
 
-          <template #item.sold_price="{ item }">
-            <span class="tw:text-sm tw:text-black">{{ Number(item.sold_price).toLocaleString("th-TH") }}</span>
-          </template>
+                <template #item.sold_at="{ item }">
+                  <span class="text-medium-emphasis">{{ formatDate(item.sold_at) }}</span>
+                </template>
 
-          <template #item.profit="{ item }">
-            <span
-              class="tw:text-sm tw:font-black"
-              :class="Number(item.profit) >= 0 ? 'tw:text-[#36d870]' : 'tw:text-[#ef5b3e]'"
-            >
-              {{ Number(item.profit) > 0 ? "+" : "" }}{{ Number(item.profit).toLocaleString("th-TH") }}
-            </span>
-          </template>
+                <template #item.cost_price_at_sale="{ item }">
+                  <span>{{ Number(item.cost_price_at_sale).toLocaleString("th-TH") }}</span>
+                </template>
 
-          <template #item.sold_channel="{ item }">
-            <span class="tw:text-sm tw:font-semibold tw:text-[#36d870]">{{ item.sold_channel }}</span>
-          </template>
+                <template #item.sold_price="{ item }">
+                  <span class="font-weight-medium">{{ Number(item.sold_price).toLocaleString("th-TH") }}</span>
+                </template>
 
-          <template #no-data>
-            <div class="tw:px-6 tw:py-14 tw:text-center tw:text-neutral-500">
-              ยังไม่มีข้อมูลรายงาน
-            </div>
-          </template>
-        </v-data-table>
-      </v-card>
-    </div>
-  </div>
+                <template #item.profit="{ item }">
+                  <span :class="Number(item.profit) >= 0 ? 'text-success' : 'text-error'" class="font-weight-bold">
+                    {{ Number(item.profit) > 0 ? "+" : "" }}{{ Number(item.profit).toLocaleString("th-TH") }}
+                  </span>
+                </template>
+
+                <template #item.sold_channel="{ item }">
+                  <span class="font-weight-medium">{{ item.sold_channel }}</span>
+                </template>
+
+                <template #no-data>
+                  <div class="py-10 text-center text-medium-emphasis">
+                    ยังไม่มีข้อมูลรายงาน
+                  </div>
+                </template>
+              </v-data-table>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>

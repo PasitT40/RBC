@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useForm } from "vee-validate";
 import * as yup from "yup";
+import ProductEditorForm from "../../components/products/ProductEditorForm.vue";
 import type { ProductRecord } from "../../composables/firestore/types";
+import { getProductStatus, isSoftDeletedProduct } from "../../composables/firestore/products";
 import { getPublicProductIssues, normalizeProductSlug } from "../../composables/firestore/publication";
 
 type SelectOption = {
@@ -48,40 +50,49 @@ const derivedCoverImageUrl = ref("");
 
 const routeId = computed(() => String(route.params.id ?? ""));
 
+const statusMetaMap = {
+  ACTIVE: { label: "พร้อมขาย", color: "success" },
+  RESERVED: { label: "จองแล้ว", color: "warning" },
+  SOLD: { label: "ขายแล้ว", color: "error" },
+  DELETED: { label: "ลบแล้ว", color: "default" },
+} as const;
+
 const schema = yup.object({
-  name: yup.string().trim().required("กรุณากรอกชื่อสินค้า"),
+  name: yup.string().trim().required("ใส่ชื่อสินค้าให้หน่อย"),
   seo_title: yup.string().nullable().default(""),
   seo_description: yup.string().nullable().default(""),
   seo_image: yup
     .string()
     .transform((value, originalValue) => (originalValue === "" || originalValue === null ? undefined : value))
-    .url("กรุณากรอก URL รูป SEO ให้ถูกต้อง")
+    .url("ลิงก์รูป SEO ยังไม่ถูกต้อง")
     .nullable()
     .optional(),
-  category_id: yup.string().required("กรุณาเลือกประเภทสินค้า"),
-  brand_id: yup.string().required("กรุณาเลือกแบรนด์"),
+  category_id: yup.string().required("เลือกประเภทสินค้าให้หน่อย"),
+  brand_id: yup.string().required("เลือกแบรนด์ให้หน่อย"),
   cost_price: yup
     .number()
-    .typeError("กรุณากรอกราคาทุน")
-    .min(0, "ราคาทุนต้องมากกว่าหรือเท่ากับ 0")
-    .required("กรุณากรอกราคาทุน"),
+    .typeError("ใส่ราคาทุนให้หน่อย")
+    .min(0, "ราคาทุนต้องเป็น 0 หรือมากกว่า")
+    .required("ใส่ราคาทุนให้หน่อย"),
   sell_price: yup
     .number()
-    .typeError("กรุณากรอกราคาขาย")
-    .min(0, "ราคาขายต้องมากกว่าหรือเท่ากับ 0")
-    .required("กรุณากรอกราคาขาย"),
-  condition: yup.string().nullable().default("GOOD"),
+    .typeError("ใส่ราคาขายให้หน่อย")
+    .min(0, "ราคาขายต้องเป็น 0 หรือมากกว่า")
+    .required("ใส่ราคาขายให้หน่อย"),
+  condition: yup.string().trim().required("ระบุสภาพสินค้าให้หน่อย"),
   shutter: yup
     .number()
     .transform((value, originalValue) => (originalValue === "" || originalValue === null ? null : value))
+    .typeError("ใส่จำนวนชัตเตอร์ให้หน่อย")
     .nullable()
-    .min(0, "Shutter ต้องมากกว่าหรือเท่ากับ 0"),
-  defect_detail: yup.string().nullable(),
-  free_gift_detail: yup.string().nullable(),
+    .min(0, "จำนวนชัตเตอร์ต้องเป็น 0 หรือมากกว่า")
+    .required("ใส่จำนวนชัตเตอร์ให้หน่อย"),
+  defect_detail: yup.string().trim().required("ใส่รายละเอียดตำหนิให้หน่อย"),
+  free_gift_detail: yup.string().trim().required("ใส่รายละเอียดของแถมให้หน่อย"),
   image_files: yup.array().of(yup.mixed<File>()).nullable(),
 });
 
-const { handleSubmit, setFieldValue, values, resetForm } = useForm<ProductEditFormValues>({
+const { handleSubmit, setFieldValue, setValues, values, resetForm } = useForm<ProductEditFormValues>({
   validationSchema: schema,
   initialValues: {
     name: "",
@@ -133,13 +144,59 @@ const derivedCoverImageLabel = computed(() => {
   return firstEntry.kind === "existing" ? firstEntry.url : firstEntry.file.name;
 });
 
+const formatDateTime = (value: unknown) => {
+  const date =
+    typeof (value as { toDate?: () => Date })?.toDate === "function"
+      ? (value as { toDate: () => Date }).toDate()
+      : value
+        ? new Date(value as string | number | Date)
+        : null;
+
+  if (!date || Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("th-TH", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
+
+const formatCurrency = (value: number | null | undefined) => {
+  if (typeof value !== "number" || Number.isNaN(value)) return "-";
+  return new Intl.NumberFormat("th-TH").format(value);
+};
+
+const displayStatus = computed<keyof typeof statusMetaMap>(() =>
+  product.value && isSoftDeletedProduct(product.value) ? "DELETED" : getProductStatus(product.value)
+);
+
+const statusMeta = computed(() => statusMetaMap[displayStatus.value]);
+
+const currentCoverImageUrl = computed(() => {
+  if (derivedCoverImageUrl.value) return derivedCoverImageUrl.value;
+  if (typeof product.value?.cover_image === "string" && product.value.cover_image.trim()) {
+    return product.value.cover_image.trim();
+  }
+  return "";
+});
+
+const currentImageCount = computed(() => {
+  const imageCount = Array.isArray(product.value?.images) ? product.value?.images.length : 0;
+  if (imageEntries.value.length) return imageEntries.value.length;
+  return imageCount;
+});
+
 const publicReadinessIssues = computed(() =>
   getPublicProductIssues({
     name: values.name,
     slug: slugPreview.value,
     category_id: values.category_id,
     brand_id: values.brand_id,
+    cost_price: typeof values.cost_price === "number" ? values.cost_price : Number.NaN,
     sell_price: typeof values.sell_price === "number" ? values.sell_price : Number.NaN,
+    condition: values.condition,
+    shutter: typeof values.shutter === "number" ? values.shutter : Number.NaN,
+    defect_detail: values.defect_detail,
+    free_gift_detail: values.free_gift_detail,
     images: imageEntries.value.map((entry) => (entry.kind === "existing" ? entry.url : entry.file.name)),
     show: Boolean(product.value?.show),
   })
@@ -247,24 +304,29 @@ const hydrateForm = async () => {
     isHydrating.value = true;
     await loadBrands(foundProduct.category_id);
 
-    resetForm({
-      values: {
-        name: foundProduct.name ?? "",
-        seo_title: foundProduct.seo_title ?? "",
-        seo_description: foundProduct.seo_description ?? "",
-        seo_image: foundProduct.seo_image ?? "",
-        category_id: foundProduct.category_id ?? "",
-        brand_id: foundProduct.brand_id ?? "",
-        cost_price: typeof foundProduct.cost_price === "number" ? foundProduct.cost_price : undefined,
-        sell_price: typeof foundProduct.sell_price === "number" ? foundProduct.sell_price : undefined,
-        condition: foundProduct.condition ?? "GOOD",
-        shutter: typeof foundProduct.shutter === "number" ? foundProduct.shutter : null,
-        defect_detail: foundProduct.defect_detail ?? "",
-        free_gift_detail: foundProduct.free_gift_detail ?? "",
-        image_files: [],
-      },
-    });
+    const nextFormValues = {
+      name: foundProduct.name ?? "",
+      seo_title: foundProduct.seo_title ?? "",
+      seo_description: foundProduct.seo_description ?? "",
+      seo_image: foundProduct.seo_image ?? "",
+      category_id: foundProduct.category_id ?? "",
+      brand_id: foundProduct.brand_id ?? "",
+      cost_price: typeof foundProduct.cost_price === "number" ? foundProduct.cost_price : undefined,
+      sell_price: typeof foundProduct.sell_price === "number" ? foundProduct.sell_price : undefined,
+      condition: foundProduct.condition ?? "GOOD",
+      shutter: typeof foundProduct.shutter === "number" ? foundProduct.shutter : null,
+      defect_detail: foundProduct.defect_detail ?? "",
+      free_gift_detail: foundProduct.free_gift_detail ?? "",
+      image_files: [],
+    } satisfies ProductEditFormValues;
+
+    resetForm({ values: nextFormValues });
     applyExistingImages(Array.isArray(foundProduct.images) ? foundProduct.images : []);
+
+    // ProductEditorForm mounts its Vee fields after the loading gate flips off.
+    // Re-apply current values on the next tick so registered fields receive them.
+    await nextTick();
+    setValues(nextFormValues, false);
   } catch (error) {
     console.error("โหลดข้อมูลสินค้าไม่สำเร็จ", error);
     appToast.error("โหลดข้อมูลสินค้าไม่สำเร็จ");
@@ -284,7 +346,7 @@ const submit = handleSubmit(async (formValues) => {
   const selectedBrand = brandMappings.value.find((item) => item.brand_id === formValues.brand_id);
 
   if (!selectedCategory || !selectedBrand) {
-    appToast.error("กรุณาเลือกประเภทสินค้าและแบรนด์ให้ครบ");
+    appToast.error("เลือกประเภทสินค้าและแบรนด์ให้ครบก่อนบันทึก");
     return;
   }
 
@@ -330,7 +392,7 @@ const submit = handleSubmit(async (formValues) => {
   }
 }, ({ errors }) => {
   const firstError = Object.values(errors)[0];
-  appToast.error(typeof firstError === "string" ? firstError : "กรุณากรอกข้อมูลให้ครบ");
+  appToast.error(typeof firstError === "string" ? firstError : "เช็กข้อมูลที่ยังกรอกไม่ครบอีกนิด");
 });
 
 onMounted(hydrateForm);
@@ -342,209 +404,136 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <v-row class="pa-5">
-    <v-col cols="12" class="tw:mb-8 tw:flex tw:flex-col tw:gap-4 md:tw:flex-row md:tw:items-center md:tw:justify-between">
-      <div>
-        <h1 class="tw:text-3xl tw:font-black tw:text-black md:tw:text-4xl">Edit Product</h1>
-      </div>
+  <product-editor-form
+    title="แก้ไขข้อมูลสินค้า"
+    :save-loading="loading"
+    :save-disabled="pageLoading"
+    :page-loading="pageLoading"
+    :category-options="categoryOptions"
+    :brand-options="brandOptions"
+    :brand-disabled="!values.category_id"
+    :slug-preview="slugPreview"
+    :seo-fallback-hint="'ช่อง SEO ยังเว้นว่างได้ ระบบจะช่วยดึงชื่อสินค้า รายละเอียด และรูปปกไปใช้ให้อัตโนมัติ'"
+    :public-readiness-issues="publicReadinessIssues"
+    :hidden-info-message="'สินค้านี้ยังถูกซ่อนไว้จากหน้าเว็บอยู่ เลยยังไม่จำเป็นต้องกรอกข้อมูลให้พร้อมแสดงครบทุกจุด'"
+    :publish-active="product?.show ?? null"
+    :image-hint="`รูปแรกในลำดับจะถูกเก็บเป็น cover_image อัตโนมัติ${derivedCoverImageLabel ? ` ตอนนี้ cover image คือ ${derivedCoverImageLabel}` : ''}`"
+    :cover-preview-url="derivedCoverImageUrl"
+    cover-preview-alt="cover-image-preview"
+    :preview-urls="existingPreviewUrls"
+    @cancel="goBack"
+    @submit="submit()"
+    @select-images="onDetailSelected"
+    @reorder-previews="reorderExistingImages"
+    @remove-preview="removeDetailImage"
+  >
+    <template #summary>
+      <v-card rounded="xl" elevation="1" class="mb-6">
+        <v-card-item>
+          <v-row align="center">
+            <v-col cols="8">
+              <v-card-title>ข้อมูลที่บันทึกอยู่ตอนนี้</v-card-title>
+              <v-card-subtitle>ดูภาพรวมก่อน แล้วค่อยแก้ข้อมูลด้านล่างได้เลย</v-card-subtitle>
+            </v-col>
+            <v-col cols="4" class="d-flex justify-end">
+              <v-chip
+                :color="statusMeta.color"
+                variant="tonal"
+                rounded="pill"
+              >
+                {{ statusMeta.label }}
+              </v-chip>
+            </v-col>
+          </v-row>
+        </v-card-item>
+        <v-card-text>
+          <v-row>
+            <v-col cols="8">
+              <v-row>
+                <v-col cols="6">
+                  <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
+                    <div class="text-caption text-medium-emphasis">หมวดหมู่ / แบรนด์</div>
+                    <div class="text-body-2 font-weight-medium">{{ product?.category_name || "-" }} / {{ product?.brand_name || "-" }}</div>
+                  </v-sheet>
+                </v-col>
+                <v-col cols="6">
+                  <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
+                    <div class="text-caption text-medium-emphasis">การแสดงผลหน้าเว็บ</div>
+                    <div class="text-body-2 font-weight-medium">{{ product?.show ? "เปิดอยู่" : "ซ่อนอยู่" }}</div>
+                  </v-sheet>
+                </v-col>
+                <v-col cols="6">
+                  <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
+                    <div class="text-caption text-medium-emphasis">ราคาทุน / ราคาขาย</div>
+                    <div class="text-body-2 font-weight-medium">{{ formatCurrency(product?.cost_price) }} / {{ formatCurrency(product?.sell_price) }} บาท</div>
+                  </v-sheet>
+                </v-col>
+                <v-col cols="6">
+                  <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
+                    <div class="text-caption text-medium-emphasis">จำนวนรูป</div>
+                    <div class="text-body-2 font-weight-medium">{{ currentImageCount }} รูป</div>
+                  </v-sheet>
+                </v-col>
+                <v-col cols="6">
+                  <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
+                    <div class="text-caption text-medium-emphasis">สร้างเมื่อ</div>
+                    <div class="text-body-2 font-weight-medium">{{ formatDateTime(product?.created_at) }}</div>
+                  </v-sheet>
+                </v-col>
+                <v-col cols="6">
+                  <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
+                    <div class="text-caption text-medium-emphasis">อัปเดตล่าสุด</div>
+                    <div class="text-body-2 font-weight-medium">{{ formatDateTime(product?.updated_at) }}</div>
+                  </v-sheet>
+                </v-col>
+                <v-col cols="6">
+                  <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
+                    <div class="text-caption text-medium-emphasis">วันที่ขาย</div>
+                    <div class="text-body-2 font-weight-medium">{{ formatDateTime(product?.sold_at) }}</div>
+                  </v-sheet>
+                </v-col>
+                <v-col cols="6">
+                  <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
+                    <div class="text-caption text-medium-emphasis">ช่องทาง / ราคาที่ขายได้</div>
+                    <div class="text-body-2 font-weight-medium">{{ product?.sold_channel || "-" }} / {{ formatCurrency(product?.sold_price) }} บาท</div>
+                  </v-sheet>
+                </v-col>
+              </v-row>
+            </v-col>
 
-      <div class="tw:flex tw:items-center tw:justify-end tw:gap-3">
-        <v-btn
-          variant="outlined"
-          color="black"
-          rounded="pill"
-          class="tw:px-6 tw:font-semibold tw:normal-case"
-          @click="goBack"
-        >
-          Cancel
-        </v-btn>
-        <v-btn
-          color="#f5962f"
-          rounded="pill"
-          class="tw:px-7 tw:font-semibold tw:normal-case tw:text-white"
-          :loading="loading"
-          :disabled="pageLoading"
-          @click="submit()"
-        >
-          Save
-        </v-btn>
-      </div>
-    </v-col>
+            <v-col cols="4">
+              <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4 fill-height">
+                <div class="text-body-2 font-weight-medium mb-2">รูปปกตอนนี้</div>
+                <v-sheet
+                  v-if="currentCoverImageUrl"
+                  rounded="lg"
+                  color="white"
+                  border
+                  class="overflow-hidden mb-3"
+                >
+                  <v-img :src="currentCoverImageUrl" alt="product-cover-preview" height="208" cover />
+                </v-sheet>
+                <v-sheet
+                  v-else
+                  rounded="lg"
+                  color="white"
+                  border
+                  height="208"
+                  class="d-flex align-center justify-center text-body-2 text-medium-emphasis mb-3"
+                >
+                  ยังไม่มีรูปปกในตอนนี้
+                </v-sheet>
+                <div class="text-caption text-medium-emphasis">ลิงก์สินค้าที่ระบบจะสร้างให้: {{ slugPreview || "-" }}</div>
+                <div class="text-caption text-medium-emphasis">ถ้าจะเปิดหรือปิดการแสดงผลบนหน้าเว็บ ให้ทำจากหน้ารายการสินค้า</div>
+              </v-sheet>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </template>
 
-    <v-col cols="12">
-      <div v-if="pageLoading" class="tw:flex tw:justify-center tw:py-16">
-        <v-progress-circular indeterminate color="#f5962f" />
-      </div>
-
-      <template v-else>
-        <div class="tw:grid tw:grid-cols-1 tw:gap-x-6 tw:gap-y-4 md:tw:grid-cols-2">
-          <form-vee-text-field
-            name="name"
-            label="ชื่อสินค้า"
-            variant="outlined"
-            density="comfortable"
-            hide-details="auto"
-          />
-
-          <form-vee-text-field
-            name="seo_title"
-            label="SEO Title"
-            variant="outlined"
-            density="comfortable"
-            hide-details="auto"
-          />
-
-          <div class="tw:flex tw:flex-col tw:justify-center tw:gap-1 tw:rounded-2xl tw:border tw:border-neutral-200 tw:bg-neutral-50 tw:px-4 tw:py-3">
-            <div class="tw:text-sm tw:font-semibold tw:text-neutral-900">
-              การแสดงผลหน้าเว็บ: {{ product?.show ? "เปิดอยู่" : "ซ่อนอยู่" }}
-            </div>
-            <div class="tw:text-xs tw:text-neutral-600">
-              การเปิด/ปิดหน้าเว็บใช้ flow `toggleShow` จากหน้ารายการสินค้า
-            </div>
-            <div class="tw:text-xs tw:text-neutral-500">Slug: {{ slugPreview || "-" }}</div>
-            <div class="tw:text-xs tw:text-neutral-500">SEO ว่างได้ ระบบ public จะ fallback ไปใช้ชื่อสินค้า, สรุปข้อมูลสินค้า และ cover image</div>
-          </div>
-
-          <form-vee-select
-            name="category_id"
-            label="ประเภทสินค้า"
-            variant="outlined"
-            density="comfortable"
-            item-title="title"
-            item-value="value"
-            :items="categoryOptions"
-            hide-details="auto"
-          />
-
-          <form-vee-select
-            name="brand_id"
-            label="Brand"
-            variant="outlined"
-            density="comfortable"
-            item-title="title"
-            item-value="value"
-            :items="brandOptions"
-            :disabled="!values.category_id"
-            hide-details="auto"
-          />
-
-          <form-vee-text-field
-            name="condition"
-            label="คุณภาพของสินค้า"
-            variant="outlined"
-            density="comfortable"
-            hide-details="auto"
-          />
-
-          <form-vee-text-field
-            name="cost_price"
-            label="ราคา - ทุน"
-            variant="outlined"
-            density="comfortable"
-            type="number"
-            min="0"
-            hide-details="auto"
-          />
-
-          <form-vee-text-field
-            name="sell_price"
-            label="ราคา - ขาย"
-            variant="outlined"
-            density="comfortable"
-            type="number"
-            min="0"
-            hide-details="auto"
-          />
-
-          <form-vee-text-field
-            name="shutter"
-            label="Shutter"
-            variant="outlined"
-            density="comfortable"
-            type="number"
-            min="0"
-            hide-details="auto"
-          />
-        </div>
-
-        <div class="tw:mt-6 tw:grid tw:grid-cols-1 tw:gap-6">
-          <v-alert
-            v-if="product?.show && publicReadinessIssues.length"
-            type="warning"
-            variant="tonal"
-          >
-            สินค้านี้กำลังเผยแพร่อยู่ แต่ข้อมูล public ยังไม่ครบ: {{ publicReadinessIssues.join(", ") }}
-          </v-alert>
-
-          <v-alert
-            v-else-if="!product?.show"
-            type="info"
-            variant="tonal"
-          >
-            สินค้านี้ถูกซ่อนไว้จากหน้าเว็บอยู่ จึงยังไม่จำเป็นต้องครบตามเกณฑ์ publish
-          </v-alert>
-
-          <form-vee-text-area
-            name="seo_description"
-            label="SEO Description"
-            variant="outlined"
-            rows="3"
-            auto-grow
-            hide-details="auto"
-          />
-
-          <form-vee-text-field
-            name="seo_image"
-            label="SEO Image URL"
-            variant="outlined"
-            density="comfortable"
-            hide-details="auto"
-          />
-
-          <form-vee-text-area
-            name="defect_detail"
-            label="รายละเอียดตำหนิ"
-            variant="outlined"
-            rows="5"
-            auto-grow
-            hide-details="auto"
-          />
-
-          <form-vee-text-area
-            name="free_gift_detail"
-            label="ของแถม"
-            variant="outlined"
-            rows="5"
-            auto-grow
-            hide-details="auto"
-          />
-
-          <div>
-            <div class="tw:mb-3 tw:text-sm tw:font-semibold tw:text-neutral-800">รูปสินค้า (รายละเอียด)</div>
-            <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
-              รูปแรกในลำดับจะถูกเก็บเป็น `cover_image` อัตโนมัติ
-              <span v-if="derivedCoverImageLabel">ตอนนี้ cover image คือ {{ derivedCoverImageLabel }}</span>
-            </div>
-            <div v-if="derivedCoverImageUrl" class="tw:mb-3 tw:max-w-xs tw:overflow-hidden tw:rounded-2xl tw:border tw:border-neutral-200">
-              <img :src="derivedCoverImageUrl" alt="cover-image-preview" class="tw:h-40 tw:w-full tw:object-cover">
-            </div>
-            <form-vee-file-input
-              name="image_files"
-              label="เลือกรูปรายละเอียดสินค้า"
-              variant="outlined"
-              accept="image/*"
-              multiple
-              :max-files="4"
-              :preview-urls="existingPreviewUrls"
-              sortable
-              removable
-              @update:model-value="onDetailSelected"
-              @reorder-previews="reorderExistingImages"
-              @remove-preview="removeDetailImage"
-            />
-          </div>
-        </div>
-      </template>
-    </v-col>
-  </v-row>
+    <template #warning-message>
+      สินค้านี้กำลังแสดงอยู่บนหน้าเว็บ แต่ข้อมูลยังไม่ครบ: {{ publicReadinessIssues.join(", ") }}
+    </template>
+  </product-editor-form>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from "vue"
+import { computed } from "vue"
 import { useField } from "vee-validate"
 
 const props = defineProps<{
@@ -24,29 +24,13 @@ const switchValue = computed<boolean>({
     return Boolean(modelValue.value)
   },
   set(nextValue) {
-    modelValue.value = nextValue
     if (hasFieldName.value && field) {
       field.handleChange(nextValue)
+      return
     }
+    modelValue.value = nextValue
   },
 })
-
-watch(modelValue, (nextValue) => {
-  if (!hasFieldName.value || !field) return
-  const currentValue = Boolean(field.value.value)
-  if (currentValue !== Boolean(nextValue)) {
-    field.handleChange(Boolean(nextValue))
-  }
-}, { immediate: true })
-
-if (field) {
-  watch(field.value, (nextValue) => {
-    const normalizedValue = Boolean(nextValue)
-    if (Boolean(modelValue.value) !== normalizedValue) {
-      modelValue.value = normalizedValue
-    }
-  })
-}
 
 const errorMessage = computed(() => {
   if (!hasFieldName.value || !field) return undefined

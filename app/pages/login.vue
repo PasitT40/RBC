@@ -5,7 +5,7 @@ definePageMeta({ layout: "login" });
 const { loading, error, signInWithGoogle, checkRedirectResult } = useAuthFirebase();
 const route = useRoute();
 const deniedMessage = computed(() =>
-  route.query.denied === "1" ? "This account does not have backoffice access" : ""
+  route.query.denied === "1" ? "บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าใช้งานหลังบ้าน" : ""
 );
 
 const handleGoogleSignIn = () => {
@@ -19,26 +19,37 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="tw:bg-white tw:rounded-[24px] tw:p-10! tw:w-full tw:max-w-[600px] tw:max-h-[600px] tw:flex tw:flex-col tw:items-center tw:shadow-lg">
-    <div class="tw:w-24 tw:h-24 tw:bg-gray-300 tw:rounded-full tw:mb-8"></div>
+  <v-card rounded="xl" elevation="8" max-width="560" width="100%">
+    <v-card-text class="pa-10">
+      <v-row>
+        <v-col cols="12" class="text-center">
+          <div class="text-h4 font-weight-black">เข้าสู่ระบบหลังบ้าน</div>
+          <div class="text-subtitle-1 text-medium-emphasis mt-2">
+            ใช้บัญชี Google ที่ได้รับสิทธิ์เพื่อจัดการสินค้า รายงาน และการตั้งค่าหน้าเว็บ
+          </div>
+        </v-col>
 
-    <v-alert
-      v-if="error || deniedMessage"
-      type="error"
-      variant="tonal"
-      density="comfortable"
-      class="tw:mb-4 tw:w-full"
-    >
-      {{ error || deniedMessage }}
-    </v-alert>
+        <v-col cols="12">
+          <v-alert v-if="error || deniedMessage" type="error" variant="tonal" density="comfortable">
+            {{ error || deniedMessage }}
+          </v-alert>
+        </v-col>
 
-    <div
-      class="tw:w-full tw:border tw:p-5! tw:rounded-full tw:flex tw:items-center tw:justify-center tw:gap-2 tw:mt-5! tw:transition-opacity"
-      :class="loading ? 'tw:cursor-not-allowed tw:opacity-60' : 'tw:cursor-pointer'"
-      @click="handleGoogleSignIn"
-    >
-        <img src="/img/ext-google.png" alt="Continue with Google" class="tw:mx-auto tw:h-10">
-        <span class="tw:text-black tw:font-bold tw:text-xl">Log in with google</span>
-    </div>
-  </div>
+        <v-col cols="12">
+          <v-btn
+            block
+            size="x-large"
+            variant="outlined"
+            :loading="loading"
+            :disabled="loading"
+            class="text-none"
+            @click="handleGoogleSignIn"
+          >
+            <img src="/img/ext-google.png" alt="Continue with Google" height="32" class="mr-3">
+            เข้าสู่ระบบด้วย Google
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-card-text>
+  </v-card>
 </template>
