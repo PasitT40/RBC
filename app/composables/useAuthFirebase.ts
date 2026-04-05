@@ -9,6 +9,7 @@ import {
 
 export function useAuthFirebase() {
   const { $auth } = useNuxtApp() as { $auth: any };
+  const config = useRuntimeConfig();
   const route = useRoute();
   const { user, ready, waitUntilReady } = useAuthSession();
   const { ensureOwnerAccess, clearOwnerAccess } = useOwnerAccess();
@@ -29,14 +30,26 @@ export function useAuthFirebase() {
   const signInWithGoogle = async () => {
     loading.value = true;
     error.value = "";
+    console.info("[auth] signInWithGoogle start", {
+      projectId: config.public.firebaseProjectId,
+      firestoreDatabaseId: config.public.firestoreDatabaseId || "(default)",
+    });
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
 
       try {
         const credential = await signInWithPopup($auth, provider);
+        console.info("[auth] signInWithGoogle popup success", {
+          uid: credential.user.uid,
+          email: credential.user.email,
+        });
         const isOwner = await ensureOwnerAccess(credential.user.uid);
         if (!isOwner) {
+          console.warn("[auth] signInWithGoogle denied", {
+            uid: credential.user.uid,
+            email: credential.user.email,
+          });
           await signOut($auth);
           clearOwnerAccess();
           error.value = deniedMessage;
@@ -48,6 +61,7 @@ export function useAuthFirebase() {
         const code = String(err?.code ?? "");
         // ถ้า Popup โดนบล็อก ให้เปลี่ยนไปใช้ Redirect แทน
         if (code === "auth/popup-blocked" || code === "auth/cancelled-popup-request") {
+          console.warn("[auth] popup unavailable, falling back to redirect", { code });
           await signInWithRedirect($auth, provider);
           return;
         }
@@ -55,6 +69,7 @@ export function useAuthFirebase() {
         throw err;
       }
     } catch (err: any) {
+      console.error("[auth] signInWithGoogle failed", err);
       error.value = err?.message || "Google sign-in failed";
     } finally {
       loading.value = false;
@@ -99,6 +114,10 @@ export function useAuthFirebase() {
     if (!ready.value) await waitUntilReady();
 
     if (user.value) {
+      console.info("[auth] existing session detected before redirect check", {
+        uid: user.value.uid,
+        email: user.value.email,
+      });
       await navigateTo(redirectPath.value);
       return;
     }
@@ -106,8 +125,16 @@ export function useAuthFirebase() {
     try {
       await getRedirectResult($auth);
       if ($auth.currentUser) {
+        console.info("[auth] redirect result user", {
+          uid: $auth.currentUser.uid,
+          email: $auth.currentUser.email,
+        });
         const isOwner = await ensureOwnerAccess($auth.currentUser.uid);
         if (!isOwner) {
+          console.warn("[auth] redirect result denied", {
+            uid: $auth.currentUser.uid,
+            email: $auth.currentUser.email,
+          });
           await signOut($auth);
           clearOwnerAccess();
           error.value = deniedMessage;
@@ -117,6 +144,7 @@ export function useAuthFirebase() {
       }
     } catch (err: any) {
       const code = String(err?.code ?? "");
+      console.error("[auth] checkRedirectResult failed", err);
       error.value = code === "permission-denied"
         ? deniedMessage
         : err?.message || "Cannot complete login";
