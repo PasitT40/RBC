@@ -54,7 +54,7 @@ const chartOption = computed(() => ({
     {
       type: "bar",
       encode: { x: "Product", y: "amount" },
-      name: "Amount",
+      name: "มูลค่ายอดขาย",
       colorBy: "data",
     },
   ],
@@ -69,9 +69,9 @@ onMounted(() => {
   <v-container fluid class="pa-6">
     <v-row>
       <v-col cols="12">
-        <div class="text-h4 font-weight-black">ภาพรวมร้านวันนี้</div>
+        <div class="text-h4 font-weight-black">ภาพรวมวันนี้</div>
         <div class="text-subtitle-1 text-medium-emphasis">
-          ดูจำนวนสินค้า ยอดขาย และภาพรวมแบรนด์ที่ทำผลงานได้ดีในหน้าเดียว
+          ดูจำนวนสินค้า ยอดขาย และภาพรวมแบรนด์ที่ทำยอดได้ดีในหน้าเดียว
         </div>
       </v-col>
 
@@ -80,7 +80,7 @@ onMounted(() => {
           <v-card-text class="pa-6">
             <div class="text-body-2 font-weight-medium text-medium-emphasis">สินค้าทั้งหมด</div>
             <div class="text-h4 font-weight-black mt-3">{{ totalProducts }}</div>
-            <div class="text-body-2 text-medium-emphasis mt-2">รวมสินค้าที่กำลังขาย จอง และขายแล้ว</div>
+            <div class="text-body-2 text-medium-emphasis mt-2">รวมสินค้าที่พร้อมขาย จองแล้ว และขายแล้ว</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -89,7 +89,7 @@ onMounted(() => {
           <v-card-text class="pa-6">
             <div class="text-body-2 font-weight-medium text-medium-emphasis">ขายไปแล้ว</div>
             <div class="text-h4 font-weight-black mt-3">{{ totalSold }}</div>
-            <div class="text-body-2 text-medium-emphasis mt-2">จำนวนสินค้าที่ปิดการขายเรียบร้อยแล้ว</div>
+            <div class="text-body-2 text-medium-emphasis mt-2">จำนวนรายการที่บันทึกการขายเรียบร้อยแล้ว</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -98,7 +98,7 @@ onMounted(() => {
           <v-card-text class="pa-6">
             <div class="text-body-2 font-weight-medium text-medium-emphasis">สินค้าที่ถูกจอง</div>
             <div class="text-h4 font-weight-black mt-3">{{ totalReserved }}</div>
-            <div class="text-body-2 text-medium-emphasis mt-2">รายการที่กันสินค้าไว้และยังไม่ปิดการขาย</div>
+            <div class="text-body-2 text-medium-emphasis mt-2">รายการที่มีการจองไว้และยังไม่บันทึกการขาย</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -107,7 +107,7 @@ onMounted(() => {
         <v-card rounded="lg" elevation="2">
           <v-card-item>
             <v-card-title>ยอดขายแยกตามแบรนด์</v-card-title>
-            <v-card-subtitle>เปรียบเทียบมูลค่ายอดขายของแต่ละแบรนด์จากข้อมูล dashboard ล่าสุด</v-card-subtitle>
+            <v-card-subtitle>เปรียบเทียบมูลค่ายอดขายของแต่ละแบรนด์จากข้อมูลล่าสุด</v-card-subtitle>
           </v-card-item>
           <v-card-text>
             <v-sheet rounded="lg" color="grey-lighten-5" class="pa-4">

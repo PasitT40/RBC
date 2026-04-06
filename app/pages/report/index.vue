@@ -169,7 +169,7 @@ const exportCsv = async () => {
     URL.revokeObjectURL(url);
     appToast.success("ส่งออกรายงานสำเร็จ");
   } catch (error) {
-    console.error("Export report ไม่สำเร็จ", error);
+    console.error("ส่งออกรายงานไม่สำเร็จ", error);
     appToast.error("ส่งออกรายงานไม่สำเร็จ");
   } finally {
     exporting.value = false;

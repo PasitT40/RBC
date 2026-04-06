@@ -130,7 +130,7 @@ const canMarkSold = (item: ProductRow) => {
 const canUndoSold = (item: ProductRow) => !item.is_deleted && getDisplayStatus(item) === "SOLD" && Boolean(item.sold_ref);
 
 const statusActionLabel = (item: ProductRow) =>
-  getDisplayStatus(item) === "RESERVED" ? "ตั้งเป็นพร้อมขาย" : "เปลี่ยนเป็นจอง";
+  getDisplayStatus(item) === "RESERVED" ? "เปลี่ยนเป็นพร้อมขาย" : "เปลี่ยนเป็นจอง";
 
 const statusMeta = (item: ProductRow) => statusMetaMap[getDisplayStatus(item)];
 
@@ -237,8 +237,8 @@ const headers: DataTableHeader[] = [
     sortable: true,
     sortRaw: (a, b) => statusSortRank(a as ProductRow) - statusSortRank(b as ProductRow),
   },
-  { title: "แสดงผล", key: "show", sortable: false,width:280 },
-  { title: "Action", key: "actions", sortable: false, width: 340, align:'center' as const},
+  { title: "แสดงบนเว็บไซต์", key: "show", sortable: false,width:280 },
+  { title: "จัดการ", key: "actions", sortable: false, width: 340, align:'center' as const},
 ];
 
 const onToggleShow = async (item: ProductRow, nextValue: boolean | null) => {
@@ -282,10 +282,10 @@ const onToggleStatus = async (item: ProductRow) => {
   try {
     if (nextStatus === "RESERVED") {
       await setReserved(item.id);
-      appToast.success("เปลี่ยนสถานะเป็น Reserved สำเร็จ");
+      appToast.success("เปลี่ยนสถานะเป็นจองแล้วสำเร็จ");
     } else {
       await setActive(item.id);
-      appToast.success("เปลี่ยนสถานะเป็น Active สำเร็จ");
+      appToast.success("เปลี่ยนสถานะเป็นพร้อมขายสำเร็จ");
     }
 
     item.updated_at = new Date();
@@ -512,7 +512,7 @@ onMounted(loadProducts);
                 class="tw:min-w-[88px] tw:font-semibold tw:normal-case tw:text-white"
                 @click="openSaleDialog(item)"
               >
-                ขายแล้ว
+                บันทึกการขาย
               </v-btn>
               <v-btn
                 v-else-if="canUndoSold(item)"
@@ -524,7 +524,7 @@ onMounted(loadProducts);
                 :loading="undoingSaleId === item.id"
                 @click="onUndoSale(item)"
               >
-                ย้อนขาย
+                ยกเลิกการขาย
               </v-btn>
               <div v-else class="tw:min-w-[88px]"></div>
               </div>
@@ -566,7 +566,7 @@ onMounted(loadProducts);
               :disabled="item.is_deleted"
               @update:model-value="onToggleShow(item, $event)"
             />
-            <span class="tw:text-sm tw:text-neutral-700">{{ item.show ? "เปิด" : "ปิด" }}</span>
+            <span class="tw:text-sm tw:text-neutral-700">{{ item.show ? "แสดง" : "ซ่อน" }}</span>
           </div>
         </template>
 

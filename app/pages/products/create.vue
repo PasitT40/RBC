@@ -50,7 +50,7 @@ const normalizeFiles = (files: unknown): File[] =>
   Array.isArray(files) ? files.filter(isFile) : [];
 
 const schema = yup.object({
-  name: yup.string().trim().required("ใส่ชื่อสินค้าให้หน่อย"),
+  name: yup.string().trim().required("กรุณากรอกชื่อสินค้า"),
   seo_title: yup.string().nullable().default(""),
   seo_description: yup.string().nullable().default(""),
   seo_image: yup
@@ -59,38 +59,38 @@ const schema = yup.object({
     .url("ลิงก์รูป SEO ยังไม่ถูกต้อง")
     .nullable()
     .optional(),
-  category_id: yup.string().required("เลือกประเภทสินค้าให้หน่อย"),
-  brand_id: yup.string().required("เลือกแบรนด์ให้หน่อย"),
+  category_id: yup.string().required("กรุณาเลือกประเภทสินค้า"),
+  brand_id: yup.string().required("กรุณาเลือกแบรนด์"),
   cost_price: yup
     .number()
-    .typeError("ใส่ราคาทุนให้หน่อย")
+    .typeError("กรุณากรอกราคาทุน")
     .min(0, "ราคาทุนต้องเป็น 0 หรือมากกว่า")
-    .required("ใส่ราคาทุนให้หน่อย"),
+    .required("กรุณากรอกราคาทุน"),
   sell_price: yup
     .number()
-    .typeError("ใส่ราคาขายให้หน่อย")
+    .typeError("กรุณากรอกราคาขาย")
     .min(0, "ราคาขายต้องเป็น 0 หรือมากกว่า")
-    .required("ใส่ราคาขายให้หน่อย"),
+    .required("กรุณากรอกราคาขาย"),
   condition: yup
     .number()
-    .typeError("ระบุคุณภาพสินค้าให้หน่อย")
+    .typeError("กรุณาระบุคุณภาพสินค้า")
     .min(0, "คุณภาพสินค้าต้องอยู่ระหว่าง 0 ถึง 5")
     .max(5, "คุณภาพสินค้าต้องอยู่ระหว่าง 0 ถึง 5")
     .test("step", "คุณภาพสินค้าต้องเพิ่มทีละ 0.5", (value) =>
       typeof value === "number" ? Number.isInteger(value * 2) : false)
-    .required("ระบุคุณภาพสินค้าให้หน่อย"),
+    .required("กรุณาระบุคุณภาพสินค้า"),
   shutter: yup
     .number()
     .transform((value, originalValue) => (originalValue === "" || originalValue === null ? null : value))
-    .typeError("ใส่จำนวนชัตเตอร์ให้หน่อย")
+    .typeError("กรุณากรอกจำนวนชัตเตอร์")
     .nullable()
     .min(0, "จำนวนชัตเตอร์ต้องเป็น 0 หรือมากกว่า")
-    .required("ใส่จำนวนชัตเตอร์ให้หน่อย"),
-  defect_detail: yup.string().trim().required("ใส่รายละเอียดตำหนิให้หน่อย"),
-  free_gift_detail: yup.string().trim().required("ใส่รายละเอียดของแถมให้หน่อย"),
+    .required("กรุณากรอกจำนวนชัตเตอร์"),
+  defect_detail: yup.string().trim().required("กรุณากรอกรายละเอียดตำหนิ"),
+  free_gift_detail: yup.string().trim().required("กรุณากรอกรายละเอียดของแถม"),
   image_files: yup.array().of(yup.mixed<File>()).when("show", {
     is: true,
-    then: (schema) => schema.min(1, "ใส่รูปสินค้าอย่างน้อย 1 รูปก่อนเปิดแสดงหน้าเว็บ").required("ใส่รูปสินค้าอย่างน้อย 1 รูปก่อนเปิดแสดงหน้าเว็บ"),
+    then: (schema) => schema.min(1, "กรุณาใส่รูปสินค้าอย่างน้อย 1 รูปก่อนเปิดแสดงบนเว็บไซต์").required("กรุณาใส่รูปสินค้าอย่างน้อย 1 รูปก่อนเปิดแสดงบนเว็บไซต์"),
     otherwise: (schema) => schema.default([]),
   }),
   show: yup.boolean().default(true),
@@ -298,11 +298,11 @@ onBeforeUnmount(() => {
     :brand-options="brandOptions"
     :brand-disabled="!values.category_id"
     :slug-preview="slugPreview"
-    :seo-fallback-hint="'ช่อง SEO ยังเว้นว่างได้ ระบบจะช่วยดึงชื่อสินค้า รายละเอียด และรูปปกไปใช้ให้อัตโนมัติ'"
+    :seo-fallback-hint="'ถ้ายังไม่ได้กรอก SEO ระบบจะใช้ชื่อสินค้า รายละเอียด และรูปปกให้อัตโนมัติ'"
     :public-readiness-issues="publicReadinessIssues"
-    :hidden-info-message="'สินค้านี้จะถูกบันทึกแบบซ่อนไว้ก่อน และค่อยเปิดแสดงบนหน้าเว็บภายหลังได้'"
+    :hidden-info-message="'สินค้านี้จะถูกบันทึกแบบซ่อนไว้ก่อน และค่อยเปิดแสดงบนเว็บไซต์ภายหลังได้'"
     :publish-active="values.show"
-    :image-hint="`รูปแรกจะถูกใช้เป็น cover_image อัตโนมัติสำหรับหน้า list/detail${derivedCoverImageLabel ? ` ตอนนี้รูปปกคือ ${derivedCoverImageLabel}` : ''}`"
+    :image-hint="`รูปแรกจะถูกใช้เป็นรูปปกอัตโนมัติ${derivedCoverImageLabel ? ` ตอนนี้รูปปกคือ ${derivedCoverImageLabel}` : ''}`"
     @cancel="goBack"
     @submit="submit()"
     @select-images="onDetailSelected"
@@ -311,8 +311,8 @@ onBeforeUnmount(() => {
       <v-sheet rounded="lg" color="grey-lighten-5" class="pa-4 fill-height">
         <v-row align="center">
           <v-col cols="8">
-            <div class="text-body-2 font-weight-medium">แสดงสินค้านี้บนหน้าเว็บ</div>
-            <div class="text-caption text-medium-emphasis">ถ้ายังเตรียมข้อมูลไม่ครบ สามารถปิดไว้ก่อนได้</div>
+            <div class="text-body-2 font-weight-medium">แสดงสินค้านี้บนเว็บไซต์</div>
+            <div class="text-caption text-medium-emphasis">ถ้ายังเตรียมข้อมูลไม่ครบ สามารถซ่อนไว้ก่อนได้</div>
           </v-col>
           <v-col cols="4" class="d-flex justify-end">
             <form-vee-switch
@@ -324,7 +324,7 @@ onBeforeUnmount(() => {
           </v-col>
           <v-col cols="12">
             <div class="text-caption text-medium-emphasis">ลิงก์สินค้าที่ระบบจะสร้างให้: {{ slugPreview || "-" }}</div>
-            <div class="text-caption text-medium-emphasis">ถ้ายังไม่กรอก SEO ระบบจะใช้ชื่อสินค้า รายละเอียด และรูปปกให้โดยอัตโนมัติ</div>
+            <div class="text-caption text-medium-emphasis">ถ้ายังไม่กรอก SEO ระบบจะใช้ชื่อสินค้า รายละเอียด และรูปปกให้อัตโนมัติ</div>
           </v-col>
         </v-row>
       </v-sheet>

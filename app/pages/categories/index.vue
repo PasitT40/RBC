@@ -41,8 +41,8 @@ const headers = [
   { title: "ลำดับ", key: "order", align: "center" as const },
   { title: "รูปภาพ", key: "image_url", align: "center" as const },
   { title: "อัปเดตล่าสุด", key: "updated_at", align: "center" as const },
-  { title: "แสดงผล", key: "is_active", align: "center" as const },
-  { title: "Actions", key: "Action", align: "center" as const },
+  { title: "สถานะ", key: "is_active", align: "center" as const },
+  { title: "จัดการ", key: "Action", align: "center" as const },
 ];
 
 const subcategoryHeaders = [
@@ -53,8 +53,8 @@ const subcategoryHeaders = [
   { title: "ลำดับในหมวดหมู่", key: "category_brand_order", align: "center" as const },
   { title: "รูปภาพ", key: "image_url", align: "center" as const },
   { title: "อัปเดตล่าสุด", key: "updated_at" },
-  { title: "แสดงผล", key: "is_active" },
-  { title: "Actions", key: "Action", align: "center" as const },
+  { title: "สถานะ", key: "is_active" },
+  { title: "จัดการ", key: "Action", align: "center" as const },
 ];
 
 const emptyFormValues = (): CategoryFormValues => ({
@@ -432,7 +432,7 @@ const toggleCategoryActive = async (item: CategoryLikeItem, nextValue: boolean) 
     appToast.success("อัปเดตสถานะหมวดหมู่สำเร็จ");
   } catch (error) {
     item.is_active = previousValue;
-    console.error("อัปเดตสถานะ category ไม่สำเร็จ:", error);
+    console.error("อัปเดตสถานะหมวดหมู่ไม่สำเร็จ:", error);
     errorMessage.value = "อัปเดตสถานะหมวดหมู่ไม่สำเร็จ";
     appToast.error(errorMessage.value);
   }
@@ -467,7 +467,7 @@ onMounted(loadPageData);
       <v-form >
         <form-vee-text-field variant="outlined" name="name" label="ชื่อหมวดหมู่" />
         <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
-          Slug จะสร้างจากชื่ออัตโนมัติ และหน้า public จะ fallback ไปใช้ `name` / `image_url` หาก SEO fields ว่าง
+          ระบบจะสร้าง Slug จากชื่อให้อัตโนมัติ และถ้าไม่ได้กรอก SEO ระบบจะใช้ชื่อและรูปภาพหลักแทน
         </div>
 
         <form-vee-text-field variant="outlined" name="order" label="ลำดับการแสดงผล" type="number" min="1" />
@@ -500,7 +500,7 @@ onMounted(loadPageData);
     <template #default>
       <v-form>
         <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
-          หน้านี้แก้ global `brands/{brandId}` และ `category_brands/{categoryId__brandId}` เท่านั้น ไม่มี brand subcollection ใต้ category
+          หน้านี้จะบันทึกข้อมูลไปที่ `brands/{brandId}` และ `category_brands/{categoryId__brandId}` เท่านั้น โดยไม่ได้เก็บแบรนด์เป็น subcollection ใต้หมวดหมู่
         </div>
         <form-vee-text-field variant="outlined" name="name" label="ชื่อแบรนด์" />
         <form-vee-text-field variant="outlined" name="order" label="ลำดับรวม" type="number" min="1" />
@@ -517,7 +517,7 @@ onMounted(loadPageData);
         />
         <form-vee-text-field variant="outlined" name="category_brand_order" label="ลำดับในหมวดหมู่" type="number" min="1" />
         <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
-          Brand dropdown ในหน้าสินค้าอ้างอิง `category_brands` เท่านั้น และใช้ลำดับจาก `category_brands.order`
+          รายการแบรนด์ในหน้าสินค้าจะอ้างอิงจาก `category_brands` เท่านั้น และเรียงตาม `category_brands.order`
         </div>
         <form-vee-file-input
           variant="outlined"
@@ -622,7 +622,7 @@ onMounted(loadPageData);
                   inset
                   @update:model-value="toggleCategoryActive(item, $event)"
                 />
-                <span class="tw:text-sm tw:text-neutral-700">{{ item.is_active ? "เปิด" : "ปิด" }}</span>
+                <span class="tw:text-sm tw:text-neutral-700">{{ item.is_active ? "เปิดใช้งาน" : "ปิดใช้งาน" }}</span>
               </div>
             </template>
 
@@ -733,7 +733,7 @@ onMounted(loadPageData);
                   inset
                   @update:model-value="toggleSubcategoryActive(item, $event)"
                 />
-                <span class="tw:text-sm tw:text-neutral-700">{{ item.is_active ? "เปิด" : "ปิด" }}</span>
+                <span class="tw:text-sm tw:text-neutral-700">{{ item.is_active ? "เปิดใช้งาน" : "ปิดใช้งาน" }}</span>
               </div>
             </template>
 

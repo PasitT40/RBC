@@ -5,7 +5,7 @@ definePageMeta({ layout: "login" });
 const { loading, error, signInWithGoogle, checkRedirectResult } = useAuthFirebase();
 const route = useRoute();
 const deniedMessage = computed(() =>
-  route.query.denied === "1" ? "บัญชีนี้ยังไม่ได้รับสิทธิ์เข้าใช้งานหลังบ้าน" : ""
+  route.query.denied === "1" ? "บัญชีนี้ไม่มีสิทธิ์เข้าใช้งานระบบหลังบ้าน" : ""
 );
 
 const handleGoogleSignIn = () => {

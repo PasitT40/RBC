@@ -4,11 +4,11 @@ const runtimeConfig = useRuntimeConfig();
 const firestoreDatabaseId = computed(() => String(runtimeConfig.public.firestoreDatabaseId || ""));
 
 const menu = ref([
-  { title: "Dashboard", icon: "mdi-view-dashboard", to: "/" },
-  { title: "Categories", icon: "mdi-shape", to: "/categories" },
-  { title: "Products", icon: "mdi-sitemap", to: "/products" },
-  { title: "Reports", icon: "mdi-poll", to: "/report" },
-  { title: "Settings", icon: "mdi-image-multiple", to: "/settings" },
+  { title: "ภาพรวม", icon: "mdi-view-dashboard", to: "/" },
+  { title: "หมวดหมู่และแบรนด์", icon: "mdi-shape", to: "/categories" },
+  { title: "สินค้า", icon: "mdi-sitemap", to: "/products" },
+  { title: "รายงาน", icon: "mdi-poll", to: "/report" },
+  { title: "ตั้งค่าหน้าเว็บ", icon: "mdi-image-multiple", to: "/settings" },
 ]);
 </script>
 
@@ -18,7 +18,7 @@ const menu = ref([
       <div class="backoffice-brand">
         <img src="/img/logo.png" alt="Logo" class="backoffice-brand__logo">
         <div>
-          <div class="backoffice-brand__title">Admin</div>
+          <div class="backoffice-brand__title">หลังบ้าน</div>
           <div class="backoffice-brand__subtitle">Ratchaburi Camera</div>
         </div>
       </div>
@@ -47,12 +47,12 @@ const menu = ref([
           @click="logout()"
         >
           <v-icon start>mdi-logout</v-icon>
-          Log out
+          ออกจากระบบ
         </v-btn>
 
         <div class="backoffice-sidebar__meta">
-          Firestore database: <strong>{{ firestoreDatabaseId || "(default)" }}</strong><br>
-          Storage uploads require Firebase Auth custom claim <code>backoffice_owner=true</code>.
+          ฐานข้อมูล Firestore: <strong>{{ firestoreDatabaseId || "(default)" }}</strong><br>
+          การอัปโหลดไฟล์ต้องใช้ Firebase Auth custom claim <code>backoffice_owner=true</code>
         </div>
       </div>
     </aside>

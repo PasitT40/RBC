@@ -1,10 +1,10 @@
 export function useGlobalLoading() {
   const pendingCount = useState<number>("global-loading:count", () => 0);
-  const message = useState<string>("global-loading:message", () => "Loading...");
+  const message = useState<string>("global-loading:message", () => "กำลังโหลด...");
 
   const isLoading = computed(() => pendingCount.value > 0);
 
-  const start = (nextMessage = "Loading...") => {
+  const start = (nextMessage = "กำลังโหลด...") => {
     message.value = nextMessage;
     pendingCount.value += 1;
   };
@@ -12,7 +12,7 @@ export function useGlobalLoading() {
   const finish = () => {
     pendingCount.value = Math.max(0, pendingCount.value - 1);
     if (pendingCount.value === 0) {
-      message.value = "Loading...";
+      message.value = "กำลังโหลด...";
     }
   };
 

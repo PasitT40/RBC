@@ -16,7 +16,7 @@ export function useAuthFirebase() {
   const loading = ref(false);
   const error = ref("");
 
-  const deniedMessage = "This account does not have backoffice access";
+  const deniedMessage = "บัญชีนี้ไม่มีสิทธิ์เข้าใช้งานระบบหลังบ้าน";
   const homePath = "/";
 
   const signInWithGoogle = async () => {
@@ -48,7 +48,7 @@ export function useAuthFirebase() {
         throw err;
       }
     } catch (err: any) {
-      error.value = err?.message || "Google sign-in failed";
+      error.value = err?.message || "เข้าสู่ระบบด้วย Google ไม่สำเร็จ";
     } finally {
       loading.value = false;
     }
@@ -56,7 +56,7 @@ export function useAuthFirebase() {
 
   const signInWithEmail = async (email: string, pass: string) => {
     if (!email || !pass) {
-      error.value = "Please enter both email and password";
+      error.value = "กรุณากรอกอีเมลและรหัสผ่าน";
       return;
     }
     loading.value = true;
@@ -72,7 +72,7 @@ export function useAuthFirebase() {
       }
       await navigateTo(homePath);
     } catch (err: any) {
-      error.value = err?.message || "Invalid credentials";
+      error.value = err?.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
     } finally {
       loading.value = false;
     }
@@ -84,7 +84,7 @@ export function useAuthFirebase() {
       clearOwnerAccess();
       await navigateTo("/login");
     } catch (err: any) {
-      console.error("Logout failed:", err);
+      console.error("ออกจากระบบไม่สำเร็จ:", err);
     }
   };
 
@@ -119,16 +119,16 @@ export function useAuthFirebase() {
       const code = String(err?.code ?? "");
       error.value = code === "permission-denied"
         ? deniedMessage
-        : err?.message || "Cannot complete login";
+        : err?.message || "เข้าสู่ระบบไม่สำเร็จ";
     }
   };
 
   return {
     loading,
     error,
-    signInWithGoogle: () => track(signInWithGoogle, "Signing in..."),
-    signInWithEmail: (email: string, pass: string) => track(() => signInWithEmail(email, pass), "Signing in..."),
-    logout: () => track(logout, "Signing out..."),
-    checkRedirectResult: () => track(checkRedirectResult, "Checking session..."),
+    signInWithGoogle: () => track(signInWithGoogle, "กำลังเข้าสู่ระบบ..."),
+    signInWithEmail: (email: string, pass: string) => track(() => signInWithEmail(email, pass), "กำลังเข้าสู่ระบบ..."),
+    logout: () => track(logout, "กำลังออกจากระบบ..."),
+    checkRedirectResult: () => track(checkRedirectResult, "กำลังตรวจสอบสถานะการเข้าสู่ระบบ..."),
   };
 }

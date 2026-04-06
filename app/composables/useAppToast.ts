@@ -4,7 +4,7 @@ export function useAppToast() {
 
   const success = (message: string) => {
     toast.success({
-      title: "Success",
+      title: "สำเร็จ",
       message,
       position,
     });
@@ -12,7 +12,7 @@ export function useAppToast() {
 
   const error = (message: string) => {
     toast.error({
-      title: "Error",
+      title: "เกิดข้อผิดพลาด",
       message,
       position,
     });

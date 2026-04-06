@@ -59,7 +59,7 @@ const statusMetaMap = {
 } as const;
 
 const schema = yup.object({
-  name: yup.string().trim().required("ใส่ชื่อสินค้าให้หน่อย"),
+  name: yup.string().trim().required("กรุณากรอกชื่อสินค้า"),
   seo_title: yup.string().nullable().default(""),
   seo_description: yup.string().nullable().default(""),
   seo_image: yup
@@ -68,35 +68,35 @@ const schema = yup.object({
     .url("ลิงก์รูป SEO ยังไม่ถูกต้อง")
     .nullable()
     .optional(),
-  category_id: yup.string().required("เลือกประเภทสินค้าให้หน่อย"),
-  brand_id: yup.string().required("เลือกแบรนด์ให้หน่อย"),
+  category_id: yup.string().required("กรุณาเลือกประเภทสินค้า"),
+  brand_id: yup.string().required("กรุณาเลือกแบรนด์"),
   cost_price: yup
     .number()
-    .typeError("ใส่ราคาทุนให้หน่อย")
+    .typeError("กรุณากรอกราคาทุน")
     .min(0, "ราคาทุนต้องเป็น 0 หรือมากกว่า")
-    .required("ใส่ราคาทุนให้หน่อย"),
+    .required("กรุณากรอกราคาทุน"),
   sell_price: yup
     .number()
-    .typeError("ใส่ราคาขายให้หน่อย")
+    .typeError("กรุณากรอกราคาขาย")
     .min(0, "ราคาขายต้องเป็น 0 หรือมากกว่า")
-    .required("ใส่ราคาขายให้หน่อย"),
+    .required("กรุณากรอกราคาขาย"),
   condition: yup
     .number()
-    .typeError("ระบุคุณภาพสินค้าให้หน่อย")
+    .typeError("กรุณาระบุคุณภาพสินค้า")
     .min(0, "คุณภาพสินค้าต้องอยู่ระหว่าง 0 ถึง 5")
     .max(5, "คุณภาพสินค้าต้องอยู่ระหว่าง 0 ถึง 5")
     .test("step", "คุณภาพสินค้าต้องเพิ่มทีละ 0.5", (value) =>
       typeof value === "number" ? Number.isInteger(value * 2) : false)
-    .required("ระบุคุณภาพสินค้าให้หน่อย"),
+    .required("กรุณาระบุคุณภาพสินค้า"),
   shutter: yup
     .number()
     .transform((value, originalValue) => (originalValue === "" || originalValue === null ? null : value))
-    .typeError("ใส่จำนวนชัตเตอร์ให้หน่อย")
+    .typeError("กรุณากรอกจำนวนชัตเตอร์")
     .nullable()
     .min(0, "จำนวนชัตเตอร์ต้องเป็น 0 หรือมากกว่า")
-    .required("ใส่จำนวนชัตเตอร์ให้หน่อย"),
-  defect_detail: yup.string().trim().required("ใส่รายละเอียดตำหนิให้หน่อย"),
-  free_gift_detail: yup.string().trim().required("ใส่รายละเอียดของแถมให้หน่อย"),
+    .required("กรุณากรอกจำนวนชัตเตอร์"),
+  defect_detail: yup.string().trim().required("กรุณากรอกรายละเอียดตำหนิ"),
+  free_gift_detail: yup.string().trim().required("กรุณากรอกรายละเอียดของแถม"),
   image_files: yup.array().of(yup.mixed<File>()).nullable(),
 });
 
@@ -421,11 +421,11 @@ onBeforeUnmount(() => {
     :brand-options="brandOptions"
     :brand-disabled="!values.category_id"
     :slug-preview="slugPreview"
-    :seo-fallback-hint="'ช่อง SEO ยังเว้นว่างได้ ระบบจะช่วยดึงชื่อสินค้า รายละเอียด และรูปปกไปใช้ให้อัตโนมัติ'"
+    :seo-fallback-hint="'ถ้ายังไม่ได้กรอก SEO ระบบจะใช้ชื่อสินค้า รายละเอียด และรูปปกให้อัตโนมัติ'"
     :public-readiness-issues="publicReadinessIssues"
-    :hidden-info-message="'สินค้านี้ยังถูกซ่อนไว้จากหน้าเว็บอยู่ เลยยังไม่จำเป็นต้องกรอกข้อมูลให้พร้อมแสดงครบทุกจุด'"
+    :hidden-info-message="'สินค้านี้ยังถูกซ่อนไว้จากเว็บไซต์อยู่ จึงยังไม่จำเป็นต้องกรอกข้อมูลให้พร้อมแสดงครบทุกจุด'"
     :publish-active="product?.show ?? null"
-    :image-hint="`รูปแรกในลำดับจะถูกเก็บเป็น cover_image อัตโนมัติ${derivedCoverImageLabel ? ` ตอนนี้ cover image คือ ${derivedCoverImageLabel}` : ''}`"
+    :image-hint="`รูปแรกในลำดับจะถูกใช้เป็นรูปปกอัตโนมัติ${derivedCoverImageLabel ? ` ตอนนี้รูปปกคือ ${derivedCoverImageLabel}` : ''}`"
     :cover-preview-url="derivedCoverImageUrl"
     cover-preview-alt="cover-image-preview"
     :preview-urls="existingPreviewUrls"
@@ -466,7 +466,7 @@ onBeforeUnmount(() => {
                 </v-col>
                 <v-col cols="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
-                    <div class="text-caption text-medium-emphasis">การแสดงผลหน้าเว็บ</div>
+                    <div class="text-caption text-medium-emphasis">การแสดงผลบนเว็บไซต์</div>
                     <div class="text-body-2 font-weight-medium">{{ product?.show ? "เปิดอยู่" : "ซ่อนอยู่" }}</div>
                   </v-sheet>
                 </v-col>
@@ -532,7 +532,7 @@ onBeforeUnmount(() => {
                   ยังไม่มีรูปปกในตอนนี้
                 </v-sheet>
                 <div class="text-caption text-medium-emphasis">ลิงก์สินค้าที่ระบบจะสร้างให้: {{ slugPreview || "-" }}</div>
-                <div class="text-caption text-medium-emphasis">ถ้าจะเปิดหรือปิดการแสดงผลบนหน้าเว็บ ให้ทำจากหน้ารายการสินค้า</div>
+                <div class="text-caption text-medium-emphasis">หากต้องการเปลี่ยนการแสดงผลบนเว็บไซต์ ให้ไปที่หน้ารายการสินค้า</div>
               </v-sheet>
             </v-col>
           </v-row>
@@ -541,7 +541,7 @@ onBeforeUnmount(() => {
     </template>
 
     <template #warning-message>
-      สินค้านี้กำลังแสดงอยู่บนหน้าเว็บ แต่ข้อมูลยังไม่ครบ: {{ publicReadinessIssues.join(", ") }}
+      สินค้านี้กำลังแสดงอยู่บนเว็บไซต์ แต่ข้อมูลยังไม่ครบ: {{ publicReadinessIssues.join(", ") }}
     </template>
   </product-editor-form>
 </template>

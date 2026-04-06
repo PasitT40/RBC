@@ -117,8 +117,8 @@ export function useDashboardFirestore() {
   };
 
   return {
-    getConfirmedOrdersForDashboard: (input?: DashboardPeriodInput) => track(() => getConfirmedOrdersForDashboard(input), "Loading dashboard..."),
-    getDashboardStats: (input?: DashboardPeriodInput) => track(() => getDashboardStats(input), "Loading dashboard..."),
-    getDashboardBrandStats: (input?: DashboardBrandStatsInput) => track(() => getDashboardBrandStats(input), "Loading dashboard..."),
+    getConfirmedOrdersForDashboard: (input?: DashboardPeriodInput) => track(() => getConfirmedOrdersForDashboard(input), "กำลังโหลดข้อมูลแดชบอร์ด..."),
+    getDashboardStats: (input?: DashboardPeriodInput) => track(() => getDashboardStats(input), "กำลังโหลดข้อมูลแดชบอร์ด..."),
+    getDashboardBrandStats: (input?: DashboardBrandStatsInput) => track(() => getDashboardBrandStats(input), "กำลังโหลดข้อมูลแดชบอร์ด..."),
   };
 }

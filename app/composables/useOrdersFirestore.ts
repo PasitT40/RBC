@@ -247,8 +247,8 @@ export function useOrdersFirestore() {
   };
 
   return {
-    getReportPage: (input?: ReportPageInput) => track(() => getReportPage(input), "Loading reports..."),
-    confirmSale: (payload: ConfirmSaleInput) => track(() => confirmSale(payload), "Confirming sale..."),
-    undoSale: (orderId: string) => track(() => undoSale(orderId), "Undoing sale..."),
+    getReportPage: (input?: ReportPageInput) => track(() => getReportPage(input), "กำลังโหลดรายงาน..."),
+    confirmSale: (payload: ConfirmSaleInput) => track(() => confirmSale(payload), "กำลังบันทึกการขาย..."),
+    undoSale: (orderId: string) => track(() => undoSale(orderId), "กำลังยกเลิกการขาย..."),
   };
 }

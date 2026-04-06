@@ -35,12 +35,12 @@ export function useDashboard() {
 
       dashboardStats.value = stats;
       brandSeries.value = (brands as DashboardBrandStatsRecord[]).map((item) => ({
-        label: String(item.brand_name || item.brand_id || "Unknown"),
+        label: String(item.brand_name || item.brand_id || "ไม่ระบุแบรนด์"),
         qty: Number(item.sales_count ?? 0),
         amount: Number(item.sales_amount ?? 0),
       }));
     } catch (err: any) {
-      error.value = err?.message || "Load dashboard failed";
+      error.value = err?.message || "โหลดข้อมูลแดชบอร์ดไม่สำเร็จ";
     } finally {
       loading.value = false;
     }

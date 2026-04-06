@@ -43,7 +43,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
         <v-row align="center" class="mb-6">
           <v-col cols="7">
             <div class="text-h4 font-weight-black">{{ title }}</div>
-            <div class="text-body-2 text-medium-emphasis">กรอกข้อมูลสินค้าให้ครบ แล้วค่อยบันทึกหรือเปิดแสดงบนหน้าเว็บ</div>
+            <div class="text-body-2 text-medium-emphasis">กรอกข้อมูลสินค้าให้ครบก่อนบันทึก และเลือกแสดงบนเว็บไซต์ได้เมื่อพร้อม</div>
           </v-col>
 
           <v-col cols="5">
@@ -92,7 +92,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                 class="mb-6"
               >
                 <slot name="warning-message">
-                  ยังเปิดแสดงบนหน้าเว็บไม่ได้ เพราะข้อมูลยังขาดอยู่: {{ publicReadinessIssues?.join(", ") }}
+                  ยังเปิดแสดงบนเว็บไซต์ไม่ได้ เพราะข้อมูลยังขาดอยู่: {{ publicReadinessIssues?.join(", ") }}
                 </slot>
               </v-alert>
 
@@ -110,7 +110,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
               <v-card rounded="xl" elevation="0">
                 <v-card-item>
                   <v-card-title>ข้อมูลหลัก</v-card-title>
-                  <v-card-subtitle>ข้อมูลส่วนนี้จะใช้กับการขาย การค้นหา และการแสดงผลบนหน้าเว็บ</v-card-subtitle>
+                  <v-card-subtitle>ข้อมูลส่วนนี้ใช้กับการขาย การค้นหา และการแสดงผลบนเว็บไซต์</v-card-subtitle>
                 </v-card-item>
                 <v-card-text>
                   <v-row>
@@ -173,7 +173,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                     <v-col cols="6">
                       <form-vee-number-stepper
                         name="condition"
-                        label="คุณภาพของสินค้า *"
+                        label="คุณภาพสินค้า *"
                         :min="0"
                         :max="5"
                         :step="0.5"

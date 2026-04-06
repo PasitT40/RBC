@@ -369,14 +369,14 @@ export function useProductsFirestore() {
   };
 
   return {
-    getProductsPage: (input?: ProductsPageInput) => track(() => getProductsPage(input), "Loading products..."),
-    getProducts: (count?: number, options?: { includeDeleted?: boolean }) => track(() => getProducts(count, options), "Loading products..."),
-    getProductById: (productId: string) => track(() => getProductById(productId), "Loading product..."),
-    createProduct: (payload: ProductInput) => track(() => createProduct(payload), "Creating product..."),
-    updateProduct: (payload: ProductInput) => track(() => updateProduct(payload), "Updating product..."),
-    deleteProduct: (productId: string) => track(() => deleteProduct(productId), "Deleting product..."),
-    toggleShow: (productId: string, nextShow: boolean) => track(() => toggleShow(productId, nextShow), "Updating product..."),
-    setReserved: (productId: string) => track(() => setReserved(productId), "Updating product..."),
-    setActive: (productId: string) => track(() => setActive(productId), "Updating product..."),
+    getProductsPage: (input?: ProductsPageInput) => track(() => getProductsPage(input), "กำลังโหลดสินค้า..."),
+    getProducts: (count?: number, options?: { includeDeleted?: boolean }) => track(() => getProducts(count, options), "กำลังโหลดสินค้า..."),
+    getProductById: (productId: string) => track(() => getProductById(productId), "กำลังโหลดข้อมูลสินค้า..."),
+    createProduct: (payload: ProductInput) => track(() => createProduct(payload), "กำลังบันทึกสินค้า..."),
+    updateProduct: (payload: ProductInput) => track(() => updateProduct(payload), "กำลังอัปเดตสินค้า..."),
+    deleteProduct: (productId: string) => track(() => deleteProduct(productId), "กำลังลบสินค้า..."),
+    toggleShow: (productId: string, nextShow: boolean) => track(() => toggleShow(productId, nextShow), "กำลังอัปเดตการแสดงผลสินค้า..."),
+    setReserved: (productId: string) => track(() => setReserved(productId), "กำลังอัปเดตสถานะสินค้า..."),
+    setActive: (productId: string) => track(() => setActive(productId), "กำลังอัปเดตสถานะสินค้า..."),
   };
 }
