@@ -8,6 +8,7 @@ import {
   getProductStatus,
   isSoftDeletedProduct,
 } from "./firestore/products";
+import { normalizeProductCondition } from "./firestore/condition";
 import { assertPublicReadyProduct, normalizeProductSlug, sanitizeProductImageUrls } from "./firestore/publication";
 import { globalRef } from "./firestore/utils";
 
@@ -148,7 +149,7 @@ export function useProductsFirestore() {
       seo_image: payload.seo_image ?? "",
       cost_price: payload.cost_price,
       sell_price: payload.sell_price,
-      condition: payload.condition ?? "GOOD",
+      condition: normalizeProductCondition(payload.condition),
       shutter: payload.shutter ?? null,
       defect_detail: payload.defect_detail ?? "",
       free_gift_detail: payload.free_gift_detail ?? "",
@@ -239,7 +240,7 @@ export function useProductsFirestore() {
       seo_image: payload.seo_image ?? current.seo_image ?? "",
       cost_price: payload.cost_price,
       sell_price: payload.sell_price,
-      condition: payload.condition ?? current.condition ?? "GOOD",
+      condition: normalizeProductCondition(payload.condition ?? current.condition),
       shutter: payload.shutter ?? null,
       defect_detail: payload.defect_detail ?? "",
       free_gift_detail: payload.free_gift_detail ?? "",

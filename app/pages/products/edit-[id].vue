@@ -2,6 +2,7 @@
 import { useForm } from "vee-validate";
 import * as yup from "yup";
 import ProductEditorForm from "../../components/products/ProductEditorForm.vue";
+import { normalizeProductCondition } from "../../composables/firestore/condition";
 import type { ProductRecord } from "../../composables/firestore/types";
 import { getProductStatus, isSoftDeletedProduct } from "../../composables/firestore/products";
 import { getPublicProductIssues, normalizeProductSlug } from "../../composables/firestore/publication";
@@ -20,7 +21,7 @@ type ProductEditFormValues = {
   brand_id: string;
   cost_price: number | undefined;
   sell_price: number | undefined;
-  condition: string;
+  condition: number;
   shutter: number | null;
   defect_detail: string;
   free_gift_detail: string;
@@ -79,7 +80,14 @@ const schema = yup.object({
     .typeError("ใส่ราคาขายให้หน่อย")
     .min(0, "ราคาขายต้องเป็น 0 หรือมากกว่า")
     .required("ใส่ราคาขายให้หน่อย"),
-  condition: yup.string().trim().required("ระบุสภาพสินค้าให้หน่อย"),
+  condition: yup
+    .number()
+    .typeError("ระบุคุณภาพสินค้าให้หน่อย")
+    .min(0, "คุณภาพสินค้าต้องอยู่ระหว่าง 0 ถึง 5")
+    .max(5, "คุณภาพสินค้าต้องอยู่ระหว่าง 0 ถึง 5")
+    .test("step", "คุณภาพสินค้าต้องเพิ่มทีละ 0.5", (value) =>
+      typeof value === "number" ? Number.isInteger(value * 2) : false)
+    .required("ระบุคุณภาพสินค้าให้หน่อย"),
   shutter: yup
     .number()
     .transform((value, originalValue) => (originalValue === "" || originalValue === null ? null : value))
@@ -103,7 +111,7 @@ const { handleSubmit, setFieldValue, setValues, values, resetForm } = useForm<Pr
     brand_id: "",
     cost_price: undefined,
     sell_price: undefined,
-    condition: "GOOD",
+    condition: 4,
     shutter: null,
     defect_detail: "",
     free_gift_detail: "",
@@ -313,7 +321,7 @@ const hydrateForm = async () => {
       brand_id: foundProduct.brand_id ?? "",
       cost_price: typeof foundProduct.cost_price === "number" ? foundProduct.cost_price : undefined,
       sell_price: typeof foundProduct.sell_price === "number" ? foundProduct.sell_price : undefined,
-      condition: foundProduct.condition ?? "GOOD",
+      condition: normalizeProductCondition(foundProduct.condition),
       shutter: typeof foundProduct.shutter === "number" ? foundProduct.shutter : null,
       defect_detail: foundProduct.defect_detail ?? "",
       free_gift_detail: foundProduct.free_gift_detail ?? "",
@@ -374,7 +382,7 @@ const submit = handleSubmit(async (formValues) => {
       seo_image: formValues.seo_image?.trim() || undefined,
       cost_price: Number(formValues.cost_price),
       sell_price: Number(formValues.sell_price),
-      condition: formValues.condition?.trim() || "GOOD",
+      condition: normalizeProductCondition(formValues.condition),
       shutter: normalizeNullableNumber(formValues.shutter),
       defect_detail: formValues.defect_detail?.trim() ?? "",
       free_gift_detail: formValues.free_gift_detail?.trim() ?? "",

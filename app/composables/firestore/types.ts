@@ -24,7 +24,7 @@ export type ProductInput = {
   seo_image?: string;
   cost_price: number;
   sell_price: number;
-  condition?: string;
+  condition?: number | string;
   shutter?: number | null;
   defect_detail?: string;
   free_gift_detail?: string;

@@ -1,3 +1,4 @@
+import { normalizeProductCondition } from "./condition";
 import type { ProductInput, ProductRecord } from "./types";
 
 const PRODUCT_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -38,7 +39,7 @@ export function getPublicProductIssues(product: Partial<ProductInput & ProductRe
   const brandId = String(product.brand_id ?? "").trim();
   const costPrice = Number(product.cost_price);
   const sellPrice = Number(product.sell_price);
-  const condition = String(product.condition ?? "").trim();
+  const hasCondition = product.condition !== undefined && product.condition !== null && String(product.condition).trim() !== "";
   const defectDetail = String(product.defect_detail ?? "").trim();
   const freeGiftDetail = String(product.free_gift_detail ?? "").trim();
   const shutter = Number(product.shutter);
@@ -60,7 +61,9 @@ export function getPublicProductIssues(product: Partial<ProductInput & ProductRe
   if (typeof product.sell_price !== "number" || Number.isNaN(sellPrice)) {
     issues.push("กรุณาใส่ราคาขาย");
   }
-  if (!condition) issues.push("กรุณาระบุสภาพสินค้า");
+  if (!hasCondition || Number.isNaN(normalizeProductCondition(product.condition, Number.NaN))) {
+    issues.push("กรุณาระบุคุณภาพสินค้า");
+  }
   if (typeof product.shutter !== "number" || Number.isNaN(shutter)) {
     issues.push("กรุณาใส่จำนวนชัตเตอร์");
   }

@@ -29,6 +29,8 @@
     "dev:prod": "set -a && . ./.env.production && set +a && nuxt dev",
     "generate": "nuxt generate",
     "generate:hosting": "set -a && . ./.env.production && set +a && nuxt generate",
+    "generate:hosting:dev": "set -a && . ./.env.development && set +a && nuxt generate",
+    "generate:hosting:prod": "set -a && . ./.env.production && set +a && nuxt generate",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "nuxt preview",
@@ -43,6 +45,8 @@
     "reseed:dev-data": "APP_ENV=development node scripts/reseed-dev-dataset.cjs",
     "reseed:dev-data:verify": "APP_ENV=development node scripts/reseed-dev-dataset.cjs --verify",
     "deploy:hosting": "firebase deploy --only hosting:backoffice",
+    "deploy:hosting:dev": "yarn generate:hosting:dev && firebase deploy --only hosting:backoffice",
+    "deploy:hosting:prod": "yarn generate:hosting:prod && firebase deploy --only hosting:backoffice",
     "deploy:backoffice": "firebase deploy --only hosting:backoffice,firestore:indexes,firestore:rules,storage",
     "seed": "cp seed-ui.js seed-ui.cjs && set -a && . ./.env.development && set +a && APP_ENV=single node seed-ui.cjs; rc=$?; rm -f seed-ui.cjs; exit $rc",
     "seed:prod": "cp seed-ui.js seed-ui.cjs && set -a && . ./.env.production && set +a && APP_ENV=single node seed-ui.cjs; rc=$?; rm -f seed-ui.cjs; exit $rc"

@@ -5,7 +5,7 @@ type ProductSeoInput = {
   seo_image?: string | null;
   category_name?: string | null;
   brand_name?: string | null;
-  condition?: string | null;
+  condition?: string | number | null;
   shutter?: number | null;
   defect_detail?: string | null;
   cover_image?: string | null;
@@ -37,12 +37,17 @@ const compactJoin = (parts: Array<string | null | undefined>, separator = " ") =
 const limitLength = (value: string, length = 160) =>
   value.length <= length ? value : `${value.slice(0, Math.max(0, length - 1)).trimEnd()}...`;
 
+const normalizeConditionText = (value?: string | number | null) => {
+  if (typeof value === "number" && Number.isFinite(value)) return `condition ${value.toFixed(1)}/5`;
+  return normalizeText(typeof value === "string" ? value : "");
+};
+
 export function resolveProductSeo(input: ProductSeoInput) {
   const title = normalizeText(input.seo_title) || normalizeText(input.name);
   const generatedDescription = compactJoin([
     normalizeText(input.brand_name),
     normalizeText(input.category_name),
-    normalizeText(input.condition),
+    normalizeConditionText(input.condition),
     typeof input.shutter === "number" ? `shutter ${input.shutter}` : "",
     normalizeText(input.defect_detail),
   ], " | ");

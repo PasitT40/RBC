@@ -6,11 +6,12 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const { user, waitUntilReady } = useAuthSession();
   const { $auth } = useNuxtApp() as { $auth: any };
   const { ensureOwnerAccess, clearOwnerAccess } = useOwnerAccess();
+  const homePath = "/";
 
   await waitUntilReady();
 
   if (!user.value && to.path !== "/login") {
-    return navigateTo(`/login?redirect=${encodeURIComponent(to.fullPath)}`);
+    return navigateTo("/login");
   }
 
   if (user.value) {
@@ -32,10 +33,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
 
   if (user.value && to.path === "/login") {
-    const redirect =
-      typeof to.query.redirect === "string" && to.query.redirect.startsWith("/")
-        ? to.query.redirect
-        : "/";
-    return navigateTo(redirect);
+    return navigateTo(homePath);
   }
 });

@@ -171,12 +171,12 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                     </v-col>
 
                     <v-col cols="6">
-                      <form-vee-text-field
+                      <form-vee-number-stepper
                         name="condition"
                         label="คุณภาพของสินค้า *"
-                        variant="outlined"
-                        density="comfortable"
-                        hide-details="auto"
+                        :min="0"
+                        :max="5"
+                        :step="0.5"
                       />
                     </v-col>
 
