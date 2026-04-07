@@ -1,4 +1,10 @@
 {
+  "functions": [
+    {
+      "source": "functions/public-api",
+      "codebase": "public-api"
+    }
+  ],
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
@@ -23,6 +29,13 @@
         "**/node_modules/**"
       ],
       "rewrites": [
+        {
+          "source": "/api/**",
+          "function": {
+            "functionId": "publicApi",
+            "region": "asia-southeast1"
+          }
+        },
         {
           "source": "**",
           "destination": "/index.html"

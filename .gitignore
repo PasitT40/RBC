@@ -5,6 +5,7 @@
 .nitro
 .cache
 dist
+functions/public-api/lib
 
 # Node dependencies
 node_modules
