@@ -54,7 +54,7 @@ const routeId = computed(() => String(route.params.id ?? ""));
 
 const statusMetaMap = {
   ACTIVE: { label: "พร้อมขาย", color: "success" },
-  RESERVED: { label: "จองแล้ว", color: "warning" },
+  RESERVED: { label: "จอง", color: "warning" },
   SOLD: { label: "ขายแล้ว", color: "error" },
   DELETED: { label: "ลบแล้ว", color: "default" },
 } as const;
@@ -242,7 +242,7 @@ const refreshTaxonomy = async () => {
     appToast.success("รีเฟรชหมวดหมู่และแบรนด์สำเร็จ");
   } catch (error) {
     console.error("รีเฟรชหมวดหมู่และแบรนด์ไม่สำเร็จ", error);
-    appToast.error("รีเฟรชหมวดหมู่และแบรนด์ไม่สำเร็จ");
+    appToast.error(error, "รีเฟรชหมวดหมู่และแบรนด์ไม่สำเร็จ");
   } finally {
     taxonomyRefreshing.value = false;
   }
@@ -358,7 +358,7 @@ const hydrateForm = async () => {
     setValues(nextFormValues, false);
   } catch (error) {
     console.error("โหลดข้อมูลสินค้าไม่สำเร็จ", error);
-    appToast.error("โหลดข้อมูลสินค้าไม่สำเร็จ");
+    appToast.error(error, "โหลดข้อมูลสินค้าไม่สำเร็จ");
   } finally {
     isHydrating.value = false;
     pageLoading.value = false;
@@ -415,7 +415,7 @@ const submit = handleSubmit(async (formValues) => {
     router.push("/products");
   } catch (error) {
     console.error("อัปเดตสินค้าไม่สำเร็จ", error);
-    appToast.error(getErrorMessage(error, "อัปเดตสินค้าไม่สำเร็จ"));
+    appToast.error(error, "อัปเดตสินค้าไม่สำเร็จ");
   } finally {
     loading.value = false;
   }

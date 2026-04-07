@@ -38,8 +38,8 @@ const renderChart = () => {
         if (!point) return "";
         return [
           `<strong>${point.label}</strong>`,
-          `จำนวน: ${point.qty.toLocaleString()} ชิ้น`,
-          `ยอดขาย: ฿${point.amount.toLocaleString()}`,
+          `จำนวน: ${point.qty.toLocaleString("th-TH")} ชิ้น`,
+          `ยอดขาย: ฿${point.amount.toLocaleString("th-TH")}`,
         ].join("<br/>");
       },
     },

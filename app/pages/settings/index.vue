@@ -87,7 +87,7 @@ const loadSettings = async () => {
     await fillForm();
   } catch (error) {
     console.error("โหลดการตั้งค่าหน้าเว็บไม่สำเร็จ", error);
-    appToast.error("โหลดการตั้งค่าหน้าเว็บไม่สำเร็จ");
+    appToast.error(error, "โหลดการตั้งค่าหน้าเว็บไม่สำเร็จ");
   } finally {
     loading.value = false;
   }
@@ -168,7 +168,7 @@ const onSave = async () => {
     await loadSettings();
   } catch (error) {
     console.error("บันทึกการตั้งค่าหน้าเว็บไม่สำเร็จ", error);
-    appToast.error("บันทึกการตั้งค่าหน้าเว็บไม่สำเร็จ");
+    appToast.error(error, "บันทึกการตั้งค่าหน้าเว็บไม่สำเร็จ");
   } finally {
     saving.value = false;
   }

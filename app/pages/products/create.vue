@@ -186,7 +186,7 @@ const refreshTaxonomy = async () => {
     appToast.success("รีเฟรชหมวดหมู่และแบรนด์สำเร็จ");
   } catch (error) {
     console.error("รีเฟรชหมวดหมู่และแบรนด์ไม่สำเร็จ", error);
-    appToast.error("รีเฟรชหมวดหมู่และแบรนด์ไม่สำเร็จ");
+    appToast.error(error, "รีเฟรชหมวดหมู่และแบรนด์ไม่สำเร็จ");
   } finally {
     taxonomyRefreshing.value = false;
   }
@@ -293,7 +293,7 @@ const submit = handleSubmit(async (formValues) => {
     router.push("/products");
   } catch (error) {
     console.error("สร้างสินค้าไม่สำเร็จ", error);
-    appToast.error(getErrorMessage(error, "สร้างสินค้าไม่สำเร็จ"));
+    appToast.error(error, "สร้างสินค้าไม่สำเร็จ");
   } finally {
     loading.value = false;
   }

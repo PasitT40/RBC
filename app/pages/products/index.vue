@@ -34,6 +34,7 @@ const appToast = useAppToast();
 
 const loading = ref(false);
 const products = ref<ProductRow[]>([]);
+const showUpdatingId = ref<string | null>(null);
 const statusUpdatingId = ref<string | null>(null);
 const saleDialog = ref(false);
 const saleSubmitting = ref(false);
@@ -66,7 +67,7 @@ const saleChannelOptions = [
 
 const statusMetaMap: Record<ProductStatus, { label: string; color: string; rank: number }> = {
   ACTIVE: { label: "พร้อมขาย", color: "#67c86a", rank: 0 },
-  RESERVED: { label: "จองแล้ว", color: "#5b8def", rank: 1 },
+  RESERVED: { label: "จอง", color: "#5b8def", rank: 1 },
   SOLD: { label: "ขายแล้ว", color: "#f39a3d", rank: 2 },
   DELETED: { label: "ลบแล้ว", color: "#8c8c8c", rank: 3 },
 };
@@ -78,7 +79,7 @@ const loadProducts = async () => {
     products.value = result.filter(isProductRow);
   } catch (error) {
     console.error("โหลดสินค้าไม่สำเร็จ", error);
-    appToast.error("โหลดสินค้าไม่สำเร็จ");
+    appToast.error(error, "โหลดสินค้าไม่สำเร็จ");
   } finally {
     loading.value = false;
   }
@@ -108,6 +109,12 @@ const formatPrice = (value?: number) => {
   return new Intl.NumberFormat("th-TH").format(value);
 };
 
+const hasSalePriceOverride = (item: ProductRow) =>
+  getDisplayStatus(item) === "SOLD"
+  && typeof item.sold_price === "number"
+  && typeof item.sell_price === "number"
+  && item.sold_price !== item.sell_price;
+
 const getSortableTime = (value: unknown) => toDate(value)?.getTime() ?? 0;
 
 const getDisplayStatus = (item: ProductRow): ProductStatus => {
@@ -131,7 +138,7 @@ const canMarkSold = (item: ProductRow) => {
 const canUndoSold = (item: ProductRow) => !item.is_deleted && getDisplayStatus(item) === "SOLD" && Boolean(item.sold_ref);
 
 const statusActionLabel = (item: ProductRow) =>
-  getDisplayStatus(item) === "RESERVED" ? "เปลี่ยนเป็นพร้อมขาย" : "เปลี่ยนเป็นจอง";
+  getDisplayStatus(item) === "RESERVED" ? "พร้อมขาย" : "จอง";
 
 const statusMeta = (item: ProductRow) => statusMetaMap[getDisplayStatus(item)];
 
@@ -142,7 +149,7 @@ const summaryItems = computed(() => {
   return [
     { label: "ทั้งหมด", value: rows.length },
     { label: "พร้อมขาย", value: rows.filter((item) => getDisplayStatus(item) === "ACTIVE").length },
-    { label: "จองแล้ว", value: rows.filter((item) => getDisplayStatus(item) === "RESERVED").length },
+    { label: "จอง", value: rows.filter((item) => getDisplayStatus(item) === "RESERVED").length },
     { label: "ขายแล้ว", value: rows.filter((item) => getDisplayStatus(item) === "SOLD").length },
   ];
 });
@@ -207,7 +214,7 @@ const validateSaleForm = () => {
   }
 
   if (!saleForm.sold_channel.trim()) {
-    saleErrors.sold_channel = "กรุณาเลือกช่องทางการขาย";
+    saleErrors.sold_channel = "กรุณาเลือกช่องทางขาย";
   }
 
   return !saleErrors.sold_price && !saleErrors.sold_at && !saleErrors.sold_channel;
@@ -217,7 +224,7 @@ const headers: DataTableHeader[] = [
   { title: "SKU", key: "sku", sortable: true, width: 120 },
   { title: "รูป", key: "cover_image", sortable: false, width: 96 },
   { title: "สินค้า", key: "name", sortable: true, width: 320 },
-  { title: "ราคาขาย", key: "sell_price", sortable: true, width: 120 },
+  { title: "ราคา", key: "sell_price", sortable: true, width: 120 },
   {
     title: "อัปเดตล่าสุด",
     key: "updated_at",
@@ -239,22 +246,26 @@ const headers: DataTableHeader[] = [
     sortable: true,
     sortRaw: (a, b) => statusSortRank(a as ProductRow) - statusSortRank(b as ProductRow),
   },
-  { title: "แสดงบนเว็บไซต์", key: "show", sortable: false,width:280 },
+  { title: "แสดงหน้าเว็บ", key: "show", sortable: false,width:220 },
   { title: "จัดการ", key: "actions", sortable: false, width: 340, align:'center' as const},
 ];
 
 const onToggleShow = async (item: ProductRow, nextValue: boolean | null) => {
   const normalizedValue = Boolean(nextValue);
   const previousValue = Boolean(item.show);
-  item.show = normalizedValue;
+  if (previousValue === normalizedValue) return;
+  showUpdatingId.value = item.id;
 
   try {
     await toggleShow(item.id, normalizedValue);
+    item.show = normalizedValue;
+    products.value = [...products.value];
     appToast.success("อัปเดตการแสดงผลสำเร็จ");
   } catch (error) {
-    item.show = previousValue;
     console.error("อัปเดตการแสดงผลไม่สำเร็จ", error);
-    appToast.error("อัปเดตการแสดงผลไม่สำเร็จ");
+    appToast.error(error, "อัปเดตการแสดงผลไม่สำเร็จ");
+  } finally {
+    showUpdatingId.value = null;
   }
 };
 
@@ -268,7 +279,7 @@ const onDeleteProduct = async (item: ProductRow) => {
     appToast.success("ลบสินค้าสำเร็จ");
   } catch (error) {
     console.error("ลบสินค้าไม่สำเร็จ", error);
-    appToast.error("ลบสินค้าไม่สำเร็จ");
+    appToast.error(error, "ลบสินค้าไม่สำเร็จ");
   }
 };
 
@@ -284,10 +295,10 @@ const onToggleStatus = async (item: ProductRow) => {
   try {
     if (nextStatus === "RESERVED") {
       await setReserved(item.id);
-      appToast.success("เปลี่ยนสถานะเป็นจองแล้วสำเร็จ");
+      appToast.success("อัปเดตเป็นจองแล้ว");
     } else {
       await setActive(item.id);
-      appToast.success("เปลี่ยนสถานะเป็นพร้อมขายสำเร็จ");
+      appToast.success("อัปเดตเป็นพร้อมขายแล้ว");
     }
 
     item.updated_at = new Date();
@@ -295,7 +306,7 @@ const onToggleStatus = async (item: ProductRow) => {
   } catch (error) {
     item.status = previousStatus;
     console.error("อัปเดตสถานะสินค้าไม่สำเร็จ", error);
-    appToast.error("อัปเดตสถานะสินค้าไม่สำเร็จ");
+    appToast.error(error, "อัปเดตสถานะสินค้าไม่สำเร็จ");
   } finally {
     statusUpdatingId.value = null;
   }
@@ -330,7 +341,7 @@ const onConfirmSale = async () => {
     closeSaleDialog();
   } catch (error) {
     console.error("บันทึกการขายไม่สำเร็จ", error);
-    appToast.error("บันทึกการขายไม่สำเร็จ");
+    appToast.error(error, "บันทึกการขายไม่สำเร็จ");
   } finally {
     saleSubmitting.value = false;
   }
@@ -354,7 +365,7 @@ const onUndoSale = async (item: ProductRow) => {
     appToast.success("ยกเลิกการขายสำเร็จ");
   } catch (error) {
     console.error("ยกเลิกการขายไม่สำเร็จ", error);
-    appToast.error("ยกเลิกการขายไม่สำเร็จ");
+    appToast.error(error, "ยกเลิกการขายไม่สำเร็จ");
   } finally {
     undoingSaleId.value = null;
   }
@@ -409,7 +420,7 @@ onMounted(loadProducts);
             variant="outlined"
             density="comfortable"
             prepend-inner-icon="mdi-magnify"
-            label="ค้นหาชื่อสินค้า / หมวดหมู่ / แบรนด์"
+            label="ค้นหาสินค้า / หมวดหมู่ / แบรนด์"
             hide-details
             clearable
           />
@@ -422,6 +433,7 @@ onMounted(loadProducts);
         <div class="tw:overflow-x-auto tw:overflow-y-hidden">
           <div class="tw:min-w-[1280px]">
             <v-data-table
+              class="product-list-table"
               :headers="headers"
               :items="products"
               :loading="loading"
@@ -444,7 +456,7 @@ onMounted(loadProducts);
               </v-row>
             </template>
         <template #item.name="{ item }">
-          <div class="tw:py-1">
+          <div>
             <div class="tw:text-[15px] tw:font-semibold tw:text-slate-900">{{ item.name || "-" }}</div>
             <div class="tw:text-[12px] tw:font-semibold tw:text-slate-600">SKU: {{ item.sku || "-" }}</div>
             <div class="tw:text-[12px] tw:text-slate-400">{{ item.slug || "-" }}</div>
@@ -459,7 +471,23 @@ onMounted(loadProducts);
         </template>
 
         <template #item.sell_price="{ item }">
-          <span class="tw:text-sm tw:font-semibold tw:text-slate-700">{{ formatPrice(item.sell_price) }}</span>
+          <div class="tw:flex tw:flex-col tw:items-start tw:gap-0.5">
+            <span
+              v-if="hasSalePriceOverride(item)"
+              class="tw:text-xs tw:text-slate-400 tw:line-through"
+            >
+              {{ formatPrice(item.sell_price) }}
+            </span>
+            <span class="tw:text-sm tw:font-semibold tw:text-slate-700">
+              {{ formatPrice(hasSalePriceOverride(item) ? Number(item.sold_price) : item.sell_price) }}
+            </span>
+            <span
+              v-if="hasSalePriceOverride(item)"
+              class="tw:text-[11px] tw:font-medium tw:text-emerald-600"
+            >
+              ขายจริง
+            </span>
+          </div>
         </template>
 
         <template #item.sold_at="{ item }">
@@ -493,26 +521,25 @@ onMounted(loadProducts);
         <template #item.actions="{ item }">
           <v-row no-gutters align="center" class="tw:min-w-[320px]">
             <v-col cols="9">
-              <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
+              <div class="tw:flex tw:items-center tw:justify-center tw:gap-2">
               <v-btn
                 v-if="canToggleProductStatus(item)"
                 rounded="pill"
                 variant="outlined"
                 color="black"
                 size="small"
-                class="tw:min-w-[110px] tw:font-semibold tw:normal-case"
+              class="tw:min-w-[88px] tw:font-semibold tw:normal-case"
                 :loading="statusUpdatingId === item.id"
                 @click="onToggleStatus(item)"
               >
                 {{ statusActionLabel(item) }}
               </v-btn>
-              <div v-else class="tw:min-w-[110px]"></div>
               <v-btn
                 v-if="canMarkSold(item)"
                 rounded="pill"
                 color="#f5962f"
                 size="small"
-                class="tw:min-w-[88px] tw:font-semibold tw:normal-case tw:text-white"
+                class="tw:min-w-[96px] tw:font-semibold tw:normal-case tw:text-white"
                 @click="openSaleDialog(item)"
               >
                 บันทึกการขาย
@@ -529,7 +556,6 @@ onMounted(loadProducts);
               >
                 ยกเลิกการขาย
               </v-btn>
-              <div v-else class="tw:min-w-[88px]"></div>
               </div>
             </v-col>
             
@@ -561,12 +587,13 @@ onMounted(loadProducts);
         <template #item.show="{ item }">
           <div class="tw:flex tw:items-center tw:gap-2">
             <form-vee-switch
-              v-model="item.show"
+              :model-value="Boolean(item.show)"
               color="primary"
               density="compact"
+              :loading="showUpdatingId === item.id"
               hide-details
               inset
-              :disabled="item.is_deleted"
+              :disabled="item.is_deleted || showUpdatingId === item.id"
               @update:model-value="onToggleShow(item, $event)"
             />
             <span class="tw:text-sm tw:text-neutral-700">{{ item.show ? "แสดง" : "ซ่อน" }}</span>
@@ -587,7 +614,7 @@ onMounted(loadProducts);
 
   <v-dialog v-model="saleDialog" max-width="520" persistent>
     <v-card rounded="xl">
-      <v-card-title class="tw:px-6 tw:pb-2 tw:pt-6 tw:text-xl tw:font-bold tw:text-slate-900">บันทึกการขายสินค้า</v-card-title>
+      <v-card-title class="tw:px-6 tw:pb-2 tw:pt-6 tw:text-xl tw:font-bold tw:text-slate-900">บันทึกการขาย</v-card-title>
       <v-card-text class="tw:grid tw:gap-4 tw:px-6 tw:pb-2 tw:pt-2">
         <div class="tw:rounded-2xl tw:border tw:border-slate-200 tw:bg-slate-50 tw:p-4">
           <div class="tw:mb-1 tw:text-sm tw:text-slate-500">สินค้า</div>
@@ -617,7 +644,7 @@ onMounted(loadProducts);
 
         <v-select
           v-model="saleForm.sold_channel"
-          label="ช่องทางการขาย"
+          label="ช่องทางขาย"
           :items="saleChannelOptions"
           variant="outlined"
           density="comfortable"
@@ -637,9 +664,20 @@ onMounted(loadProducts);
           class="tw:font-semibold tw:normal-case tw:text-white"
           @click="onConfirmSale()"
         >
-          ยืนยันการขาย
+          บันทึกการขาย
         </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+.product-list-table :deep(.v-data-table__td),
+.product-list-table :deep(.v-data-table__th) {
+  padding: 8px 10px !important;
+}
+
+.product-list-table :deep(.v-data-table__tr) {
+  height: 64px;
+}
+</style>

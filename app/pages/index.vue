@@ -26,6 +26,19 @@ const dashboardStats = computed(() => dashboard.dashboardStats.value);
 const totalProducts = computed(() => dashboardStats.value?.total_products ?? 0);
 const totalSold = computed(() => dashboardStats.value?.total_sales_count ?? 0);
 const totalReserved = computed(() => dashboardStats.value?.reserved_products ?? 0);
+const totalCostAmount = computed(() => Number(dashboardStats.value?.total_cost_amount ?? 0));
+const totalSalesAmount = computed(() => Number(dashboardStats.value?.total_sales_amount ?? 0));
+const totalProfitAmount = computed(() => Number(dashboardStats.value?.total_profit_amount ?? 0));
+
+const formatInteger = (value: number | null | undefined) =>
+  Number(value ?? 0).toLocaleString("th-TH");
+
+const formatCurrency = (value: number | null | undefined) =>
+  `฿ ${Number(value ?? 0).toLocaleString("th-TH")}`;
+
+const profitToneClass = computed(() =>
+  totalProfitAmount.value < 0 ? "text-error" : "text-success"
+);
 
 const chartRows = computed<ChartRow[]>(() => {
   if (dashboard.brandSeries.value.length > 0) {
@@ -79,7 +92,7 @@ onMounted(() => {
         <v-card rounded="lg" elevation="2">
           <v-card-text class="pa-6">
             <div class="text-body-2 font-weight-medium text-medium-emphasis">สินค้าทั้งหมด</div>
-            <div class="text-h4 font-weight-black mt-3">{{ totalProducts }}</div>
+            <div class="text-h4 font-weight-black mt-3">{{ formatInteger(totalProducts) }}</div>
             <div class="text-body-2 text-medium-emphasis mt-2">รวมสินค้าที่พร้อมขาย จองแล้ว และขายแล้ว</div>
           </v-card-text>
         </v-card>
@@ -88,7 +101,7 @@ onMounted(() => {
         <v-card rounded="lg" elevation="2">
           <v-card-text class="pa-6">
             <div class="text-body-2 font-weight-medium text-medium-emphasis">ขายไปแล้ว</div>
-            <div class="text-h4 font-weight-black mt-3">{{ totalSold }}</div>
+            <div class="text-h4 font-weight-black mt-3 text-primary">{{ formatInteger(totalSold) }}</div>
             <div class="text-body-2 text-medium-emphasis mt-2">จำนวนรายการที่บันทึกการขายเรียบร้อยแล้ว</div>
           </v-card-text>
         </v-card>
@@ -97,7 +110,7 @@ onMounted(() => {
         <v-card rounded="lg" elevation="2">
           <v-card-text class="pa-6">
             <div class="text-body-2 font-weight-medium text-medium-emphasis">สินค้าที่ถูกจอง</div>
-            <div class="text-h4 font-weight-black mt-3">{{ totalReserved }}</div>
+            <div class="text-h4 font-weight-black mt-3 text-warning">{{ formatInteger(totalReserved) }}</div>
             <div class="text-body-2 text-medium-emphasis mt-2">รายการที่มีการจองไว้และยังไม่บันทึกการขาย</div>
           </v-card-text>
         </v-card>
@@ -125,7 +138,7 @@ onMounted(() => {
             <v-card rounded="lg" elevation="2">
               <v-card-text class="pa-6 text-center">
                 <div class="text-body-2 font-weight-medium text-medium-emphasis">ต้นทุนทั้งหมด</div>
-                <div class="text-h4 font-weight-black mt-3">฿ {{ dashboardStats?.total_cost_amount }}</div>
+                <div class="text-h4 font-weight-black mt-3 text-orange-darken-2">{{ formatCurrency(totalCostAmount) }}</div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -133,7 +146,7 @@ onMounted(() => {
             <v-card rounded="lg" elevation="2">
               <v-card-text class="pa-6 text-center">
                 <div class="text-body-2 font-weight-medium text-medium-emphasis">ยอดขายทั้งหมด</div>
-                <div class="text-h4 font-weight-black mt-3">฿ {{ dashboardStats?.total_sales_amount }}</div>
+                <div class="text-h4 font-weight-black mt-3 text-primary">{{ formatCurrency(totalSalesAmount) }}</div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -141,7 +154,9 @@ onMounted(() => {
             <v-card rounded="lg" elevation="2">
               <v-card-text class="pa-6 text-center">
                 <div class="text-body-2 font-weight-medium text-medium-emphasis">กำไรสุทธิ</div>
-                <div class="text-h4 font-weight-black mt-3">฿ {{ dashboardStats?.total_profit_amount }}</div>
+                <div :class="profitToneClass" class="text-h4 font-weight-black mt-3">
+                  {{ formatCurrency(totalProfitAmount) }}
+                </div>
               </v-card-text>
             </v-card>
           </v-col>

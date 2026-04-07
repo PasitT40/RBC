@@ -46,7 +46,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
         <v-row align="center" class="mb-6">
           <v-col cols="7">
             <div class="text-h4 font-weight-black">{{ title }}</div>
-            <div class="text-body-2 text-medium-emphasis">กรอกข้อมูลสินค้าให้ครบก่อนบันทึก และเลือกแสดงบนเว็บไซต์ได้เมื่อพร้อม</div>
+            <div class="text-body-2 text-medium-emphasis">กรอกข้อมูลหลักให้ครบ แล้วค่อยเปิดขายบนหน้าเว็บเมื่อพร้อม</div>
           </v-col>
 
           <v-col cols="5">
@@ -95,7 +95,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                 class="mb-6"
               >
                 <slot name="warning-message">
-                  ยังเปิดแสดงบนเว็บไซต์ไม่ได้ เพราะข้อมูลยังขาดอยู่: {{ publicReadinessIssues?.join(", ") }}
+                  ยังเปิดขายบนหน้าเว็บไม่ได้ เพราะข้อมูลยังไม่ครบ: {{ publicReadinessIssues?.join(", ") }}
                 </slot>
               </v-alert>
 
@@ -113,7 +113,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
               <v-card rounded="xl" elevation="0">
                 <v-card-item>
                   <v-card-title>ข้อมูลหลัก</v-card-title>
-                  <v-card-subtitle>ข้อมูลส่วนนี้ใช้กับการขาย การค้นหา และการแสดงผลบนเว็บไซต์</v-card-subtitle>
+                  <v-card-subtitle>ใช้สำหรับขาย ค้นหา และแสดงผลบนหน้าเว็บ</v-card-subtitle>
                 </v-card-item>
                 <v-card-text>
                   <v-row>

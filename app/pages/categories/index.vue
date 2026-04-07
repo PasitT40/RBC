@@ -363,7 +363,7 @@ const submit = handleSubmit(async (values) => {
     }
   } catch (error) {
     console.error("เกิดข้อผิดพลาด:", error);
-    errorMessage.value = "เกิดข้อผิดพลาด กรุณาลองใหม่";
+    errorMessage.value = appToast.resolveErrorMessage(error, "เกิดข้อผิดพลาด กรุณาลองใหม่");
     appToast.error(errorMessage.value);
   }
 });
@@ -389,7 +389,7 @@ const handleDelete = async (
     appToast.success(successMessage);
   } catch (error) {
     console.error("ลบไม่สำเร็จ:", error);
-    appToast.error(errorToastMessage);
+    appToast.error(error, errorToastMessage);
   } finally {
     onFinally();
   }
@@ -433,7 +433,7 @@ const toggleCategoryActive = async (item: CategoryLikeItem, nextValue: boolean) 
   } catch (error) {
     item.is_active = previousValue;
     console.error("อัปเดตสถานะหมวดหมู่ไม่สำเร็จ:", error);
-    errorMessage.value = "อัปเดตสถานะหมวดหมู่ไม่สำเร็จ";
+    errorMessage.value = appToast.resolveErrorMessage(error, "อัปเดตสถานะหมวดหมู่ไม่สำเร็จ");
     appToast.error(errorMessage.value);
   }
 };
@@ -448,7 +448,7 @@ const toggleSubcategoryActive = async (item: CategoryLikeItem, nextValue: boolea
   } catch (error) {
     item.is_active = previousValue;
     console.error("อัปเดตสถานะแบรนด์ไม่สำเร็จ:", error);
-    errorMessage.value = "อัปเดตสถานะแบรนด์ไม่สำเร็จ";
+    errorMessage.value = appToast.resolveErrorMessage(error, "อัปเดตสถานะแบรนด์ไม่สำเร็จ");
     appToast.error(errorMessage.value);
   }
 };

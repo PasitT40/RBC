@@ -68,8 +68,13 @@ const formatDate = (value: unknown) => {
 };
 
 const formatMoney = (value?: number | null) => {
-  if (typeof value !== "number" || Number.isNaN(value)) return "฿ 0.00";
-  return `฿ ${value.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (typeof value !== "number" || Number.isNaN(value)) return "฿ 0";
+  return `฿ ${value.toLocaleString("th-TH")}`;
+};
+
+const formatNumber = (value?: number | null) => {
+  if (typeof value !== "number" || Number.isNaN(value)) return "0";
+  return value.toLocaleString("th-TH");
 };
 
 const chartData = computed(() =>
@@ -132,7 +137,7 @@ const loadReport = async () => {
     }));
   } catch (error) {
     console.error("โหลดรายงานไม่สำเร็จ", error);
-    appToast.error("โหลดข้อมูลรายงานไม่สำเร็จ");
+    appToast.error(error, "โหลดข้อมูลรายงานไม่สำเร็จ");
   } finally {
     loading.value = false;
   }
@@ -174,7 +179,7 @@ const exportCsv = async () => {
     appToast.success("ส่งออกรายงานสำเร็จ");
   } catch (error) {
     console.error("ส่งออกรายงานไม่สำเร็จ", error);
-    appToast.error("ส่งออกรายงานไม่สำเร็จ");
+    appToast.error(error, "ส่งออกรายงานไม่สำเร็จ");
   } finally {
     exporting.value = false;
   }
@@ -328,16 +333,16 @@ onMounted(loadReport);
                 </template>
 
                 <template #item.cost_price_at_sale="{ item }">
-                  <span>{{ Number(item.cost_price_at_sale).toLocaleString("th-TH") }}</span>
+                  <span>{{ formatNumber(item.cost_price_at_sale) }}</span>
                 </template>
 
                 <template #item.sold_price="{ item }">
-                  <span class="font-weight-medium">{{ Number(item.sold_price).toLocaleString("th-TH") }}</span>
+                  <span class="font-weight-medium">{{ formatNumber(item.sold_price) }}</span>
                 </template>
 
                 <template #item.profit="{ item }">
                   <span :class="Number(item.profit) >= 0 ? 'text-success' : 'text-error'" class="font-weight-bold">
-                    {{ Number(item.profit) > 0 ? "+" : "" }}{{ Number(item.profit).toLocaleString("th-TH") }}
+                    {{ Number(item.profit) > 0 ? "+" : "" }}{{ formatNumber(item.profit) }}
                   </span>
                 </template>
 

@@ -1,1 +1,10 @@
 @import "tailwindcss" prefix(tw);
+
+.iziToast .iziToast-body {
+  display: flex;
+  align-items: center;
+}
+
+.iziToast .iziToast-message {
+  white-space: pre-line;
+}

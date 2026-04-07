@@ -2,6 +2,12 @@ export function useAppToast() {
   const toast = useToast();
   const position = "topRight" as const;
 
+  const resolveErrorMessage = (input: unknown, fallback = "เกิดข้อผิดพลาด") => {
+    if (input instanceof Error && input.message.trim()) return input.message.trim();
+    if (typeof input === "string" && input.trim()) return input.trim();
+    return fallback;
+  };
+
   const success = (message: string) => {
     toast.success({
       title: "สำเร็จ",
@@ -10,10 +16,10 @@ export function useAppToast() {
     });
   };
 
-  const error = (message: string) => {
+  const error = (input: unknown, fallback?: string) => {
     toast.error({
       title: "เกิดข้อผิดพลาด",
-      message,
+      message: resolveErrorMessage(input, fallback),
       position,
     });
   };
@@ -21,5 +27,6 @@ export function useAppToast() {
   return {
     success,
     error,
+    resolveErrorMessage,
   };
 }

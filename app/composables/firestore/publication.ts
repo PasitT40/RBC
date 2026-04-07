@@ -74,9 +74,17 @@ export function getPublicProductIssues(product: Partial<ProductInput & ProductRe
   return issues;
 }
 
+export function formatPublicProductIssues(issues: string[]) {
+  return issues
+    .map((issue) => String(issue ?? "").trim())
+    .filter(Boolean)
+    .map((issue) => `• ${issue}`)
+    .join("<br>");
+}
+
 export function assertPublicReadyProduct(product: Partial<ProductInput & ProductRecord>) {
   if (!product.show) return;
 
   const issues = getPublicProductIssues(product);
-  if (issues.length > 0) throw new Error(issues[0]);
+  if (issues.length > 0) throw new Error(formatPublicProductIssues(issues));
 }
