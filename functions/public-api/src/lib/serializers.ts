@@ -25,6 +25,7 @@ export function serializeProductCard(doc: DocumentSnapshot, context: ProductRout
   const brandId = String(product.brand_id ?? "");
   return {
     id: doc.id,
+    sku: asTrimmedString(product.sku),
     name: String(product.name ?? ""),
     slug: String(product.slug ?? ""),
     category: {

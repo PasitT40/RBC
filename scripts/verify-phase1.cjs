@@ -95,6 +95,7 @@ async function main() {
   const dashboardBrandStats = new Map(dashboardBrandStatsSnap.docs.map((doc) => [doc.id, { id: doc.id, ...doc.data() }]));
 
   const issues = [];
+  const seenSkus = new Map();
 
   for (const mapping of categoryBrands.values()) {
     if (!categories.has(mapping.category_id)) {
@@ -111,6 +112,23 @@ async function main() {
     const isVisible = Boolean(product.show);
     const mappingId = `${product.category_id}__${product.brand_id}`;
     const mapping = categoryBrands.get(mappingId);
+    const sku = String(product.sku ?? "").trim();
+    const skuSeq = Number(product.sku_seq);
+
+    if (!/^RBC-\d{3,}$/.test(sku)) {
+      pushIssue(issues, "error", "invalid_product_sku", "Product SKU is missing or invalid", { productId: product.id, sku });
+    }
+    if (!Number.isInteger(skuSeq) || skuSeq <= 0) {
+      pushIssue(issues, "error", "invalid_product_sku_seq", "Product sku_seq is missing or invalid", { productId: product.id, sku_seq: product.sku_seq });
+    }
+    if (sku) {
+      const previousProductId = seenSkus.get(sku);
+      if (previousProductId && previousProductId !== product.id) {
+        pushIssue(issues, "error", "duplicate_product_sku", "Duplicate product SKU detected", { productId: product.id, sku, previousProductId });
+      } else {
+        seenSkus.set(sku, product.id);
+      }
+    }
 
     if (isDeleted && isVisible) {
       pushIssue(issues, "error", "deleted_visible", "Soft-deleted product is still visible", { productId: product.id });

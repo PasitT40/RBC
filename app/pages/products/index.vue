@@ -6,6 +6,7 @@ type ProductStatus = "ACTIVE" | "RESERVED" | "SOLD" | "DELETED";
 
 type ProductRow = {
   id: string;
+  sku?: string;
   slug?: string;
   name?: string;
   category_name?: string;
@@ -213,6 +214,7 @@ const validateSaleForm = () => {
 };
 
 const headers: DataTableHeader[] = [
+  { title: "SKU", key: "sku", sortable: true, width: 120 },
   { title: "รูป", key: "cover_image", sortable: false, width: 96 },
   { title: "สินค้า", key: "name", sortable: true, width: 320 },
   { title: "ราคาขาย", key: "sell_price", sortable: true, width: 120 },
@@ -444,6 +446,7 @@ onMounted(loadProducts);
         <template #item.name="{ item }">
           <div class="tw:py-1">
             <div class="tw:text-[15px] tw:font-semibold tw:text-slate-900">{{ item.name || "-" }}</div>
+            <div class="tw:text-[12px] tw:font-semibold tw:text-slate-600">SKU: {{ item.sku || "-" }}</div>
             <div class="tw:text-[12px] tw:text-slate-400">{{ item.slug || "-" }}</div>
             <div class="tw:text-[12px] tw:text-slate-600">
               {{ item.category_name || "-" }} / {{ item.brand_name || "-" }}

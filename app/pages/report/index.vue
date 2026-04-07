@@ -5,6 +5,7 @@ import type { DashboardBrandStatsRecord, DashboardStatsRecord, OrderRecord } fro
 
 type ReportRow = {
   id: string;
+  sku: string;
   category_name: string;
   name: string;
   brand_name: string;
@@ -29,6 +30,7 @@ const sortBy = ref<DataTableSortItem[]>([{ key: "sold_at", order: "desc" }]);
 
 const headers: DataTableHeader[] = [
   { title: "เลขที่รายการ", key: "id", sortable: false },
+  { title: "SKU", key: "sku", sortable: true },
   { title: "หมวดหมู่", key: "category_name", sortable: true },
   { title: "สินค้า", key: "name", sortable: true },
   { title: "แบรนด์", key: "brand_name", sortable: true },
@@ -118,6 +120,7 @@ const loadReport = async () => {
     brandStats.value = dashboardBrandStats;
     rows.value = reportPage.items.map((item: OrderRecord) => ({
       id: item.id,
+      sku: String(item.product_snapshot?.sku ?? "-"),
       category_name: String(item.product_snapshot?.category_name ?? "-"),
       name: String(item.product_snapshot?.name ?? "-"),
       brand_name: String(item.brand_name ?? item.product_snapshot?.brand_name ?? "-"),
@@ -143,9 +146,10 @@ const exportCsv = async () => {
 
   exporting.value = true;
   try {
-    const header = ["เลขที่รายการ", "หมวดหมู่", "สินค้า", "แบรนด์", "วันที่ขาย", "ราคาทุน", "ราคาขาย", "กำไรสุทธิ", "ช่องทางการขาย"];
+    const header = ["เลขที่รายการ", "SKU", "หมวดหมู่", "สินค้า", "แบรนด์", "วันที่ขาย", "ราคาทุน", "ราคาขาย", "กำไรสุทธิ", "ช่องทางการขาย"];
     const lines = rows.value.map((row) => [
       row.id,
+      row.sku,
       row.category_name,
       row.name,
       row.brand_name,
@@ -301,6 +305,10 @@ onMounted(loadReport);
               >
                 <template #item.id="{ item }">
                   <span class="font-weight-medium">{{ item.id || "-" }}</span>
+                </template>
+
+                <template #item.sku="{ item }">
+                  <span class="font-weight-medium">{{ item.sku || "-" }}</span>
                 </template>
 
                 <template #item.category_name="{ item }">

@@ -10,6 +10,7 @@ import {
 } from "./firestore/products";
 import { normalizeProductCondition } from "./firestore/condition";
 import { assertPublicReadyProduct, normalizeProductSlug, sanitizeProductImageUrls } from "./firestore/publication";
+import { allocateNextProductSku } from "./firestore/sku";
 import { globalRef } from "./firestore/utils";
 
 export function useProductsFirestore() {
@@ -128,6 +129,7 @@ export function useProductsFirestore() {
     const uploadedUrls = [uploadedCoverImage, ...uploadedImages].filter((url): url is string => Boolean(url));
     const images = sanitizeProductImageUrls([...(payload.images ?? []), ...uploadedImages]);
     const coverImage = String(uploadedImages[0] ?? payload.cover_image ?? uploadedCoverImage ?? images[0] ?? "").trim();
+    const { sku, sku_seq } = await allocateNextProductSku($db);
     assertPublicReadyProduct({
       ...payload,
       slug,
@@ -138,6 +140,8 @@ export function useProductsFirestore() {
     });
 
     batch.set(pRef, {
+      sku,
+      sku_seq,
       name: payload.name,
       slug,
       category_id: payload.category_id,
@@ -183,7 +187,7 @@ export function useProductsFirestore() {
     );
 
     await commitWithUploadRollback(() => batch.commit(), uploadedUrls);
-    return pRef.id;
+    return { id: pRef.id, sku };
   };
 
   const updateProduct = async (payload: ProductInput) => {

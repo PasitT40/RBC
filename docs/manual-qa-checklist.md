@@ -28,11 +28,12 @@ Use this checklist before deployment or after changing Firestore write flows.
 
 ## Product create and edit
 - Create a product with valid category, mapped brand, and at least one image.
-- Confirm product document contains `ACTIVE`, `show=true`, `is_sellable=true`, and ordered `images[]`.
+- Confirm product document contains `sku` in `RBC-001` style, integer `sku_seq`, `ACTIVE`, `show=true`, `is_sellable=true`, and ordered `images[]`.
 - Confirm the first image in the ordered list is persisted as `cover_image`.
 - Create a hidden draft product with `show=false` and no image, then confirm the save succeeds and the product stays hidden.
 - Edit product name and verify slug updates as expected.
 - Edit product name with special characters or extra spaces and confirm the stored slug is normalized deterministically.
+- Edit the same product and confirm `sku` does not change after save.
 - Edit product category and brand to another valid mapped pair.
 - Edit product images by removing one existing image and adding one new image.
 - Reorder product images on edit and confirm the new first image becomes `cover_image`.
@@ -97,6 +98,11 @@ Use this checklist before deployment or after changing Firestore write flows.
   - sales/cost/profit totals increment
 - After undo sale:
   - previous counter changes revert exactly once
+
+## SKU checks
+- Create two products in a row and confirm the second SKU increments from the first without duplication.
+- Confirm SKU format stays `RBC-###` and remains visible in product list and product edit surfaces.
+- If a product save fails after validation, confirm the next successful create still gets a unique SKU.
 
 ## Recovery drill
 - Run `node scripts/verify-phase1.cjs` after any manual repair, seed refresh, or aggregate rebuild.

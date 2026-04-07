@@ -42,6 +42,7 @@ const { getProductById, updateProduct } = useProductsFirestore();
 
 const loading = ref(false);
 const pageLoading = ref(true);
+const taxonomyRefreshing = ref(false);
 const categories = ref<Record<string, any>[]>([]);
 const brandMappings = ref<Record<string, any>[]>([]);
 const product = ref<ProductRecord | null>(null);
@@ -225,6 +226,26 @@ const loadCategories = async () => {
 
 const loadBrands = async (categoryId: string) => {
   brandMappings.value = categoryId ? await getBrandsByCategory(categoryId) : [];
+};
+
+const refreshTaxonomy = async () => {
+  taxonomyRefreshing.value = true;
+  try {
+    await loadCategories();
+    if (values.category_id) {
+      await loadBrands(values.category_id);
+      const hasSelectedBrand = brandMappings.value.some((item) => item.brand_id === values.brand_id);
+      if (!hasSelectedBrand) setFieldValue("brand_id", "");
+    } else {
+      brandMappings.value = [];
+    }
+    appToast.success("รีเฟรชหมวดหมู่และแบรนด์สำเร็จ");
+  } catch (error) {
+    console.error("รีเฟรชหมวดหมู่และแบรนด์ไม่สำเร็จ", error);
+    appToast.error("รีเฟรชหมวดหมู่และแบรนด์ไม่สำเร็จ");
+  } finally {
+    taxonomyRefreshing.value = false;
+  }
 };
 
 const normalizeNullableNumber = (value: number | null | undefined | "") =>
@@ -420,7 +441,9 @@ onBeforeUnmount(() => {
     :category-options="categoryOptions"
     :brand-options="brandOptions"
     :brand-disabled="!values.category_id"
+    :taxonomy-refresh-loading="taxonomyRefreshing"
     :slug-preview="slugPreview"
+    :sku-value="product?.sku || '-'"
     :seo-fallback-hint="'ถ้ายังไม่ได้กรอก SEO ระบบจะใช้ชื่อสินค้า รายละเอียด และรูปปกให้อัตโนมัติ'"
     :public-readiness-issues="publicReadinessIssues"
     :hidden-info-message="'สินค้านี้ยังถูกซ่อนไว้จากเว็บไซต์อยู่ จึงยังไม่จำเป็นต้องกรอกข้อมูลให้พร้อมแสดงครบทุกจุด'"
@@ -431,6 +454,7 @@ onBeforeUnmount(() => {
     :preview-urls="existingPreviewUrls"
     @cancel="goBack"
     @submit="submit()"
+    @refresh-taxonomy="refreshTaxonomy"
     @select-images="onDetailSelected"
     @reorder-previews="reorderExistingImages"
     @remove-preview="removeDetailImage"
@@ -458,6 +482,12 @@ onBeforeUnmount(() => {
           <v-row>
             <v-col cols="8">
               <v-row>
+                <v-col cols="6">
+                  <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
+                    <div class="text-caption text-medium-emphasis">SKU</div>
+                    <div class="text-body-2 font-weight-medium">{{ product?.sku || "-" }}</div>
+                  </v-sheet>
+                </v-col>
                 <v-col cols="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
                     <div class="text-caption text-medium-emphasis">หมวดหมู่ / แบรนด์</div>
@@ -531,6 +561,7 @@ onBeforeUnmount(() => {
                 >
                   ยังไม่มีรูปปกในตอนนี้
                 </v-sheet>
+                <div class="text-caption text-medium-emphasis">SKU: {{ product?.sku || "-" }}</div>
                 <div class="text-caption text-medium-emphasis">ลิงก์สินค้าที่ระบบจะสร้างให้: {{ slugPreview || "-" }}</div>
                 <div class="text-caption text-medium-emphasis">หากต้องการเปลี่ยนการแสดงผลบนเว็บไซต์ ให้ไปที่หน้ารายการสินค้า</div>
               </v-sheet>

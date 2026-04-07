@@ -283,6 +283,7 @@ sequenceDiagram
     actor User
     participant UI as Product Create Page
     participant P as Products Logic
+    participant C as counters/products
     participant ST as Storage
     participant FS as Firestore
     participant DB as dashboard_stats
@@ -292,6 +293,8 @@ sequenceDiagram
     P->>P: validate required fields
     P->>P: normalize slug
     P->>P: check duplicate slug
+    P->>C: reserve next SKU sequence
+    C-->>P: sku = RBC-###
     alt มีรูป
         P->>ST: upload images as WebP
         ST-->>P: image urls
@@ -605,6 +608,7 @@ collections:
 
 fields ใน `products/{productId}` ที่หน้า list ใช้บ่อย:
 
+- `sku`
 - `name`
 - `slug`
 - `category_id`
@@ -657,6 +661,8 @@ collections:
 
 fields หลักใน `products/{productId}`:
 
+- `sku`
+- `sku_seq`
 - `name`
 - `slug`
 - `category_id`
@@ -722,6 +728,13 @@ fields ใน `orders/{orderId}` ที่ report ใช้:
 - `profit`
 - `sold_at`
 - `product_snapshot`
+
+fields ใน `product_snapshot` ที่ report ใช้:
+
+- `sku`
+- `name`
+- `category_name`
+- `brand_name`
 
 ### 12.7 Settings Page
 

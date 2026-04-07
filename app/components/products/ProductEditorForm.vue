@@ -13,7 +13,9 @@ const props = defineProps<{
   categoryOptions: SelectOption[];
   brandOptions: SelectOption[];
   brandDisabled?: boolean;
+  taxonomyRefreshLoading?: boolean;
   slugPreview?: string;
+  skuValue?: string;
   seoFallbackHint?: string;
   publicReadinessIssues?: string[];
   hiddenInfoMessage?: string;
@@ -27,6 +29,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "cancel"): void;
   (e: "submit"): void;
+  (e: "refresh-taxonomy"): void;
   (e: "select-images", value: File | File[] | null): void;
   (e: "reorder-previews", value: string[]): void;
   (e: "remove-preview", index: number): void;
@@ -138,12 +141,27 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                       <slot name="top-aside">
                         <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4 fill-height">
                           <div class="text-body-2 font-weight-medium">{{ seoFallbackHint }}</div>
+                          <div class="text-caption text-medium-emphasis">SKU: {{ skuValue || "ระบบจะสร้างให้อัตโนมัติเมื่อบันทึก" }}</div>
                           <div class="text-caption text-medium-emphasis">ลิงก์สินค้าที่ระบบจะสร้างให้: {{ slugPreview || "-" }}</div>
                         </v-sheet>
                       </slot>
                     </v-col>
-
                     <v-col cols="6">
+                      <v-row>
+                                            <v-col cols="12" class="pt-0">
+                      <div class="d-flex justify-end">
+                        <v-btn
+                          variant="text"
+                          color="primary"
+                          :loading="taxonomyRefreshLoading"
+                          prepend-icon="mdi-refresh"
+                          @click="emit('refresh-taxonomy')"
+                        >
+                          รีเฟรชหมวดหมู่ / แบรนด์
+                        </v-btn>
+                      </div>
+                    </v-col>
+                    <v-col cols="12">
                       <form-vee-select
                         name="category_id"
                         label="ประเภทสินค้า *"
@@ -155,8 +173,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                         hide-details="auto"
                       />
                     </v-col>
-
-                    <v-col cols="6">
+                    <v-col cols="12">
                       <form-vee-select
                         name="brand_id"
                         label="แบรนด์ *"
@@ -169,6 +186,10 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                         hide-details="auto"
                       />
                     </v-col>
+                      </v-row>
+                    </v-col>
+
+
 
                     <v-col cols="6">
                       <form-vee-number-stepper
@@ -179,6 +200,20 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                         :step="0.5"
                       />
                     </v-col>
+
+
+                    <v-col cols="6" class="d-flex tw:items-center" >
+                      <form-vee-text-field 
+                        name="shutter"
+                        label="จำนวนชัตเตอร์ *"
+                        variant="outlined"
+                        density="comfortable"
+                        type="number"
+                        min="0"
+                        hide-details="auto"
+                      />
+                    </v-col>
+
 
                     <v-col cols="6">
                       <form-vee-text-field
@@ -204,17 +239,6 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                       />
                     </v-col>
 
-                    <v-col cols="6">
-                      <form-vee-text-field
-                        name="shutter"
-                        label="จำนวนชัตเตอร์ *"
-                        variant="outlined"
-                        density="comfortable"
-                        type="number"
-                        min="0"
-                        hide-details="auto"
-                      />
-                    </v-col>
                   </v-row>
                 </v-card-text>
               </v-card>

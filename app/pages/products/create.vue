@@ -40,6 +40,7 @@ const { getCategories, getBrandsByCategory } = useCategoriesFirestore();
 const { createProduct } = useProductsFirestore();
 
 const loading = ref(false);
+const taxonomyRefreshing = ref(false);
 const categories = ref<Record<string, any>[]>([]);
 const brandMappings = ref<Record<string, any>[]>([]);
 const detailImageSlots = ref<DetailImageSlot[]>(Array.from({ length: MAX_DETAIL_IMAGES }, () => ({ file: null, preview: "" })));
@@ -136,6 +137,7 @@ const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback;
 
 const slugPreview = computed(() => normalizeProductSlug(values.name ?? ""));
+const skuPreview = "ระบบจะสร้างให้อัตโนมัติเมื่อบันทึก";
 const derivedCoverImageLabel = computed(() => {
   const firstSlot = detailImageSlots.value.find((item) => item.file);
   return firstSlot?.file?.name || "";
@@ -168,6 +170,26 @@ const loadCategories = async () => {
 
 const loadBrands = async (categoryId: string) => {
   brandMappings.value = categoryId ? await getBrandsByCategory(categoryId) : [];
+};
+
+const refreshTaxonomy = async () => {
+  taxonomyRefreshing.value = true;
+  try {
+    await loadCategories();
+    if (values.category_id) {
+      await loadBrands(values.category_id);
+      const hasSelectedBrand = brandMappings.value.some((item) => item.brand_id === values.brand_id);
+      if (!hasSelectedBrand) setFieldValue("brand_id", "");
+    } else {
+      brandMappings.value = [];
+    }
+    appToast.success("รีเฟรชหมวดหมู่และแบรนด์สำเร็จ");
+  } catch (error) {
+    console.error("รีเฟรชหมวดหมู่และแบรนด์ไม่สำเร็จ", error);
+    appToast.error("รีเฟรชหมวดหมู่และแบรนด์ไม่สำเร็จ");
+  } finally {
+    taxonomyRefreshing.value = false;
+  }
 };
 
 const normalizeNullableNumber = (value: number | null | undefined | "") =>
@@ -246,7 +268,7 @@ const submit = handleSubmit(async (formValues) => {
   try {
     const imageFiles = normalizeFiles(formValues.image_files);
 
-    await createProduct({
+    const created = await createProduct({
       name: formValues.name.trim(),
       slug: slugPreview.value,
       category_id: selectedCategory.id,
@@ -267,7 +289,7 @@ const submit = handleSubmit(async (formValues) => {
       show: Boolean(formValues.show),
     });
 
-    appToast.success("สร้างสินค้าสำเร็จ");
+    appToast.success(`สร้างสินค้าสำเร็จ (${created.sku})`);
     router.push("/products");
   } catch (error) {
     console.error("สร้างสินค้าไม่สำเร็จ", error);
@@ -297,7 +319,9 @@ onBeforeUnmount(() => {
     :category-options="categoryOptions"
     :brand-options="brandOptions"
     :brand-disabled="!values.category_id"
+    :taxonomy-refresh-loading="taxonomyRefreshing"
     :slug-preview="slugPreview"
+    :sku-value="skuPreview"
     :seo-fallback-hint="'ถ้ายังไม่ได้กรอก SEO ระบบจะใช้ชื่อสินค้า รายละเอียด และรูปปกให้อัตโนมัติ'"
     :public-readiness-issues="publicReadinessIssues"
     :hidden-info-message="'สินค้านี้จะถูกบันทึกแบบซ่อนไว้ก่อน และค่อยเปิดแสดงบนเว็บไซต์ภายหลังได้'"
@@ -305,6 +329,7 @@ onBeforeUnmount(() => {
     :image-hint="`รูปแรกจะถูกใช้เป็นรูปปกอัตโนมัติ${derivedCoverImageLabel ? ` ตอนนี้รูปปกคือ ${derivedCoverImageLabel}` : ''}`"
     @cancel="goBack"
     @submit="submit()"
+    @refresh-taxonomy="refreshTaxonomy"
     @select-images="onDetailSelected"
   >
     <template #top-aside>
@@ -323,6 +348,7 @@ onBeforeUnmount(() => {
             />
           </v-col>
           <v-col cols="12">
+            <div class="text-caption text-medium-emphasis">SKU: {{ skuPreview }}</div>
             <div class="text-caption text-medium-emphasis">ลิงก์สินค้าที่ระบบจะสร้างให้: {{ slugPreview || "-" }}</div>
             <div class="text-caption text-medium-emphasis">ถ้ายังไม่กรอก SEO ระบบจะใช้ชื่อสินค้า รายละเอียด และรูปปกให้อัตโนมัติ</div>
           </v-col>

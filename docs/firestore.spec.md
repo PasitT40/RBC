@@ -109,6 +109,8 @@ Semantics:
 
 ### products
 `products/{productId}`
+- sku
+- sku_seq
 - name
 - slug
 - category_id
@@ -140,6 +142,9 @@ Semantics:
 - updated_at
 
 Semantics:
+- `productId` may remain an auto-generated Firestore id; operator-facing SKU should live in `sku`
+- `sku` is the immutable operator-facing product code, recommended format `RBC-001`
+- `sku_seq` stores the numeric sequence used to derive `sku`
 - `is_deleted = true` means the product is removed from normal listing/detail flows
 - deleted products should also have `show = false` and `is_sellable = false`
 - `last_status_before_sold` is used to restore the product on undo sale
@@ -151,6 +156,17 @@ Semantics:
 - SEO fields are optional but recommended for production public pages
 - if `seo_image` is absent, public pages may fall back to `cover_image`
 - if `show = true`, the referenced `category_brands/{categoryId__brandId}` mapping must exist and remain active
+
+### counters
+`counters/products`
+- prefix
+- last_sku_seq
+- updated_at
+
+Semantics:
+- stores the last reserved sequence for product SKU generation
+- `createProduct` should reserve the next sequence through a transaction-safe counter update before the product batch write
+- gaps in SKU numbering are acceptable if a reserved number is not later committed into a product document
 
 ### orders
 `orders/{orderId}`
@@ -171,6 +187,7 @@ Semantics:
 - product_snapshot
 
 `product_snapshot` should include at least:
+- sku
 - name
 - slug
 - cover_image
@@ -272,16 +289,19 @@ Type:
 - Batch
 
 Steps:
-1. create product document
-2. initialize derived fields:
+1. reserve the next SKU sequence from `counters/products` through a transaction-safe counter update
+2. create product document
+3. initialize derived fields:
+   - `sku = RBC-###`
+   - `sku_seq = next reserved sequence`
    - `status = ACTIVE` unless explicitly overridden
    - `show = true` unless explicitly overridden
    - `is_sellable = (status == ACTIVE)`
    - `is_deleted = false`
-3. normalize `slug` deterministically before write
-4. reject duplicate slug before write
-5. if `show == true`, enforce the minimum publishable product contract
-6. update cached dashboard counters
+4. normalize `slug` deterministically before write
+5. reject duplicate slug before write
+6. if `show == true`, enforce the minimum publishable product contract
+7. update cached dashboard counters
 
 Required effects:
 - increment `total_products`
@@ -297,9 +317,10 @@ Steps:
 2. reject if product does not exist or is soft-deleted
 3. normalize `slug` deterministically before write
 4. reject duplicate slug before write
-5. if current product is publicly visible, enforce the minimum publishable product contract
-6. update editable fields
-7. keep image ordering consistent with current payload
+5. keep existing `sku` and `sku_seq` unchanged
+6. if current product is publicly visible, enforce the minimum publishable product contract
+7. update editable fields
+8. keep image ordering consistent with current payload
 
 Required effects:
 - must not change dashboard counters unless lifecycle fields actually change

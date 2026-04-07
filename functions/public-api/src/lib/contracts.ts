@@ -2,6 +2,7 @@ export type SortKey = "updated_at_desc" | "sell_price_asc" | "sell_price_desc";
 
 export type ProductCard = {
   id: string;
+  sku: string | null;
   name: string;
   slug: string;
   category: {

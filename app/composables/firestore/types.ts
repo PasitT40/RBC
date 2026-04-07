@@ -38,6 +38,8 @@ export type ProductInput = {
 
 export type ProductRecord = ProductInput & {
   id: string;
+  sku?: string;
+  sku_seq?: number;
   is_sellable?: boolean;
   is_deleted?: boolean;
   last_status_before_sold?: ProductStatus | null;
@@ -138,6 +140,7 @@ export type OrderRecord = {
   created_at?: unknown;
   updated_at?: unknown;
   product_snapshot?: {
+    sku?: string;
     name?: string;
     slug?: string;
     cover_image?: string;

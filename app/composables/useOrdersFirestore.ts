@@ -118,6 +118,7 @@ export function useOrdersFirestore() {
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
         product_snapshot: {
+          sku: product.sku ?? "",
           name: product.name,
           slug: product.slug,
           cover_image: product.cover_image ?? "",

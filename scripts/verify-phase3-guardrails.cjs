@@ -2,6 +2,7 @@ const admin = require("firebase-admin");
 const { getFirestore } = require("firebase-admin/firestore");
 const fs = require("fs");
 const path = require("path");
+const { reserveNextProductSku } = require("./lib/product-sku.cjs");
 
 const projectRoot = path.resolve(__dirname, "..");
 function resolveEnvPath(rootDir) {
@@ -151,6 +152,7 @@ async function assertCategoryBrandMappingExists(categoryId, brandId) {
 
 async function createProduct(payload) {
   const productRef = db.collection("products").doc();
+  const { sku, sku_seq } = await reserveNextProductSku(db, TS);
   const slug = normalizeProductSlug(payload.slug || payload.name);
   const status = payload.status || "ACTIVE";
   const show = payload.show ?? true;
@@ -165,6 +167,8 @@ async function createProduct(payload) {
   }
 
   await productRef.set({
+    sku,
+    sku_seq,
     name: payload.name,
     slug,
     category_id: payload.category_id,

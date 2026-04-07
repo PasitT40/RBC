@@ -22,14 +22,16 @@ function main() {
 
   assertIncludes(categoriesPage, 'name="order"', "category order field");
   assertIncludes(categoriesPage, 'name="category_brand_order"', "category-brand order field");
-  assertIncludes(categoriesPage, "global `brands/{brandId}`", "global brand helper copy");
+  assertIncludes(categoriesPage, "`brands/{brandId}`", "global brand helper copy");
   assertIncludes(categoriesPage, "`category_brands.order`", "category-brand dropdown order helper copy");
 
-  assertIncludes(createProductPage, "`cover_image`", "create cover image helper");
-  assertIncludes(createProductPage, "SEO ว่างได้", "create seo fallback helper");
+  assertIncludes(createProductPage, "รูปแรกจะถูกใช้เป็นรูปปกอัตโนมัติ", "create cover image helper");
+  assertIncludes(createProductPage, "ถ้ายังไม่กรอก SEO ระบบจะใช้ชื่อสินค้า รายละเอียด และรูปปกให้อัตโนมัติ", "create seo fallback helper");
+  assertIncludes(createProductPage, "SKU:", "create sku helper");
 
-  assertIncludes(editProductPage, "`cover_image`", "edit cover image helper");
-  assertIncludes(editProductPage, "SEO ว่างได้", "edit seo fallback helper");
+  assertIncludes(editProductPage, "รูปแรกในลำดับจะถูกใช้เป็นรูปปกอัตโนมัติ", "edit cover image helper");
+  assertIncludes(editProductPage, "ถ้ายังไม่ได้กรอก SEO ระบบจะใช้ชื่อสินค้า รายละเอียด และรูปปกให้อัตโนมัติ", "edit seo fallback helper");
+  assertIncludes(editProductPage, "SKU", "edit sku helper");
 
   assertIncludes(settingsPage, "getSiteSettings", "settings read flow");
   assertIncludes(settingsPage, "updateSiteSettings", "settings write flow");

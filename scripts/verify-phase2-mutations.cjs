@@ -2,6 +2,7 @@ const admin = require("firebase-admin");
 const { getFirestore } = require("firebase-admin/firestore");
 const fs = require("fs");
 const path = require("path");
+const { reserveNextProductSku } = require("./lib/product-sku.cjs");
 
 const projectRoot = path.resolve(__dirname, "..");
 function resolveEnvPath(rootDir) {
@@ -144,11 +145,14 @@ async function createProduct(payload) {
   }
 
   const productRef = db.collection("products").doc();
+  const { sku, sku_seq } = await reserveNextProductSku(db, TS);
   const status = payload.status || "ACTIVE";
   const show = payload.show ?? true;
 
   const batch = db.batch();
   batch.set(productRef, {
+    sku,
+    sku_seq,
     name: payload.name,
     slug: payload.slug,
     category_id: payload.category_id,
@@ -473,6 +477,9 @@ async function main() {
   const created = (await db.collection("products").doc(createdProductId).get()).data();
   if (created.status !== "ACTIVE" || created.show !== true || created.is_sellable !== true || created.is_deleted !== false) {
     throw new Error("createProduct: derived lifecycle fields invalid");
+  }
+  if (!/^RBC-\d{3,}$/.test(String(created.sku || "")) || typeof created.sku_seq !== "number") {
+    throw new Error("createProduct: sku fields invalid");
   }
   results.push({ flow: "createProduct", status: "passed", productId: createdProductId });
 

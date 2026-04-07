@@ -4,6 +4,7 @@ const admin = require("firebase-admin");
 const { getFirestore } = require("firebase-admin/firestore");
 const fs = require("fs");
 const path = require("path");
+const { formatProductSku, PRODUCT_SKU_PREFIX } = require("./lib/product-sku.cjs");
 
 const projectRoot = path.resolve(__dirname, "..");
 function resolveEnvPath(rootDir) {
@@ -174,8 +175,11 @@ async function seed(){
 
     const pref=db.collection("products").doc();
     const pid=pref.id;
+    const skuSeq=i;
 
     const p={
+      sku:formatProductSku(skuSeq),
+      sku_seq:skuSeq,
       name:`${bname} ${cat.name} ${100+i}`,
       slug:`${bid}-${cat.id}-${i}`,
       category_id:cat.id, category_name:cat.name,
@@ -239,6 +243,11 @@ async function seed(){
   for(const [bid,s] of brandStats.entries()){
     ops.push(b=>b.set(db.collection("dashboard_brand_stats").doc(bid),{...s,updated_at:TS()},{merge:true}));
   }
+  ops.push(b=>b.set(db.collection("counters").doc("products"),{
+    prefix:PRODUCT_SKU_PREFIX,
+    last_sku_seq:products.length,
+    updated_at:TS(),
+  },{merge:true}));
 
   await commitInChunks(ops);
   console.log(`seed-final done for database ${databaseId}`);

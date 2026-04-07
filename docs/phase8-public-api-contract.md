@@ -111,6 +111,7 @@ Used by product listing endpoints.
 ```json
 {
   "id": "product_123",
+  "sku": "RBC-123",
   "name": "Canon AE-1 Program",
   "slug": "canon-ae-1-program",
   "category": {
@@ -137,6 +138,7 @@ Used by product detail endpoints.
 ```json
 {
   "id": "product_123",
+  "sku": "RBC-123",
   "name": "Canon AE-1 Program",
   "slug": "canon-ae-1-program",
   "category": {
@@ -253,6 +255,7 @@ Returns a paginated list of public-visible products.
   "items": [
     {
       "id": "product_123",
+      "sku": "RBC-123",
       "name": "Canon AE-1 Program",
       "slug": "canon-ae-1-program",
       "category": {
@@ -272,6 +275,7 @@ Returns a paginated list of public-visible products.
     },
     {
       "id": "product_456",
+      "sku": "RBC-456",
       "name": "Canon A-1",
       "slug": "canon-a-1",
       "category": {
@@ -321,6 +325,7 @@ Returns one public-visible product detail.
 {
   "item": {
     "id": "product_123",
+    "sku": "RBC-123",
     "name": "Canon AE-1 Program",
     "slug": "canon-ae-1-program",
     "category": {
@@ -523,6 +528,7 @@ These have the same meaning and validation rules as `GET /api/products`.
   "items": [
     {
       "id": "product_123",
+      "sku": "RBC-123",
       "name": "Canon AE-1 Program",
       "slug": "canon-ae-1-program",
       "category": {
