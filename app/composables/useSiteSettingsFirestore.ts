@@ -48,6 +48,12 @@ export function useSiteSettingsFirestore() {
     await deleteStorageUrls($storage, urls);
   };
 
+  const assertUploadSucceeded = (file: File | null | undefined, uploadedUrl: string | null, label: string) => {
+    if (!file) return;
+    if (uploadedUrl) return;
+    throw new Error(`${label}อัปโหลดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง`);
+  };
+
   const getSiteSettings = async (): Promise<SiteSettingsRecord> => {
     const ref = doc($db, "settings", "site");
     const snap = await getDoc(ref);
@@ -91,6 +97,7 @@ export function useSiteSettingsFirestore() {
       for (const [index, item] of (payload.banners ?? []).entries()) {
         const id = item.id?.trim() || `banner-${index + 1}`;
         const uploadedUrl = item.file ? await uploadBannerImage(item.file, `settings/site/banners/${id}`) : null;
+        assertUploadSucceeded(item.file, uploadedUrl, "รูปแบนเนอร์");
         if (uploadedUrl) uploadedUrls.push(uploadedUrl);
 
         const imageUrl = uploadedUrl ?? item.image_url?.trim() ?? "";
@@ -108,6 +115,7 @@ export function useSiteSettingsFirestore() {
       for (const [index, item] of (payload.credits ?? []).entries()) {
         const id = item.id?.trim() || `credit-${index + 1}`;
         const uploadedUrl = item.file ? await uploadCreditImage(item.file, `settings/site/credits/${id}`) : null;
+        assertUploadSucceeded(item.file, uploadedUrl, "รูปเครดิต");
         if (uploadedUrl) uploadedUrls.push(uploadedUrl);
 
         const imageUrl = uploadedUrl ?? item.image_url?.trim() ?? "";

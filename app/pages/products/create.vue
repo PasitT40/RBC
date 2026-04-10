@@ -32,7 +32,7 @@ type ProductCreateFormValues = {
   show: boolean;
 };
 
-const MAX_DETAIL_IMAGES = 4;
+const MAX_DETAIL_IMAGES = 10;
 
 const router = useRouter();
 const appToast = useAppToast();

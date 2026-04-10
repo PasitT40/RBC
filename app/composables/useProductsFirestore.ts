@@ -31,6 +31,14 @@ export function useProductsFirestore() {
     await deleteStorageUrls($storage, urls);
   };
 
+  const assertExpectedUploads = (selectedFiles: File[] | undefined, uploadedUrls: string[], label: string) => {
+    const expectedCount = Array.isArray(selectedFiles) ? selectedFiles.length : 0;
+    if (!expectedCount) return;
+    if (uploadedUrls.length === expectedCount) return;
+
+    throw new Error(`${label}อัปโหลดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง`);
+  };
+
   const commitWithUploadRollback = async (commit: () => Promise<void>, uploadedUrls: string[]) => {
     try {
       await commit();
@@ -126,6 +134,10 @@ export function useProductsFirestore() {
 
     const uploadedCoverImage = payload.cover_file ? await uploadImage(payload.cover_file, folderPath) : null;
     const uploadedImages = await uploadImages(payload.image_files, folderPath);
+    if (payload.cover_file && !uploadedCoverImage) {
+      throw new Error("รูปปกอัปโหลดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    }
+    assertExpectedUploads(payload.image_files, uploadedImages, "รูปสินค้า");
     const uploadedUrls = [uploadedCoverImage, ...uploadedImages].filter((url): url is string => Boolean(url));
     const images = sanitizeProductImageUrls([...(payload.images ?? []), ...uploadedImages]);
     const coverImage = String(uploadedImages[0] ?? payload.cover_image ?? uploadedCoverImage ?? images[0] ?? "").trim();
@@ -209,6 +221,10 @@ export function useProductsFirestore() {
     const hasExplicitImages = payload.images !== undefined || payload.image_files !== undefined;
     const uploadedCoverImage = payload.cover_file ? await uploadImage(payload.cover_file, folderPath) : null;
     const uploadedImages = await uploadImages(payload.image_files, folderPath);
+    if (payload.cover_file && !uploadedCoverImage) {
+      throw new Error("รูปปกอัปโหลดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    }
+    assertExpectedUploads(payload.image_files, uploadedImages, "รูปสินค้า");
     const uploadedUrls = [uploadedCoverImage, ...uploadedImages].filter((url): url is string => Boolean(url));
     const images = hasExplicitImages
       ? sanitizeProductImageUrls([...(payload.images ?? []), ...uploadedImages])

@@ -32,7 +32,7 @@ type ImageEntry =
   | { kind: "existing"; url: string }
   | { kind: "file"; file: File };
 
-const MAX_DETAIL_IMAGES = 4;
+const MAX_DETAIL_IMAGES = 10;
 
 const route = useRoute();
 const router = useRouter();

@@ -269,7 +269,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                           persistent-hint
                           multiple
                           :max-size="10000000"
-                          :max-files="4"
+                          :max-files="10"
                           :preview-urls="previewUrls"
                           sortable
                           removable
