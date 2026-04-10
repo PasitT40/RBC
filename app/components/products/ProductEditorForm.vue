@@ -205,7 +205,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                     <v-col cols="6" class="d-flex tw:items-center" >
                       <form-vee-text-field 
                         name="shutter"
-                        label="จำนวนชัตเตอร์ *"
+                        label="จำนวนชัตเตอร์"
                         variant="outlined"
                         density="comfortable"
                         type="number"
@@ -315,7 +315,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                     <v-col cols="12">
                       <form-vee-text-area
                         name="free_gift_detail"
-                        label="ของแถม *"
+                        label="ของแถม"
                         variant="outlined"
                         rows="5"
                         auto-grow

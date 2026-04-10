@@ -14,6 +14,7 @@ Project: Camera Marketplace Backoffice / Public Catalog
 - `dashboard_stats`
 - `dashboard_brand_stats`
 - `stats_ledger`
+- `counters`
 
 ## Backoffice-managed collections
 - `settings/site`
@@ -25,6 +26,7 @@ Project: Camera Marketplace Backoffice / Public Catalog
 - `dashboard_stats`
 - `dashboard_brand_stats`
 - `stats_ledger`
+- `counters`
 
 Expected write path:
 - authenticated owner user -> backoffice UI -> Firestore / Storage
@@ -41,7 +43,7 @@ Expected write path:
 ## Public catalog boundary
 - The current backoffice should not be treated as a public-read surface.
 - Public catalog reads should move through server routes or another controlled backend layer before any direct browser access is considered.
-- Until that read contract exists, keep product, category, brand, order, dashboard, and ledger Firestore documents private to owners in Security Rules.
+- Until that read contract exists, keep product, category, brand, order, dashboard, ledger, and counter Firestore documents private to owners in Security Rules.
 
 ## Important operational note
 - `storage.rules` do not depend on a Firestore database id anymore.

@@ -51,6 +51,10 @@ service cloud.firestore {
       allow read, write: if isOwner();
     }
 
+    match /counters/{docId} {
+      allow read, write: if isOwner();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

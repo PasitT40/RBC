@@ -77,6 +77,13 @@ const formatNumber = (value?: number | null) => {
   return value.toLocaleString("th-TH");
 };
 
+const getProfitToneClass = (value?: number | null) => {
+  const amount = Number(value ?? 0);
+  if (amount > 0) return "report-text-profit";
+  if (amount < 0) return "report-text-loss";
+  return "report-text-muted";
+};
+
 const chartData = computed(() =>
   brandStats.value.map((item) => ({
     label: String(item.brand_name || item.brand_id || "-"),
@@ -89,14 +96,17 @@ const summaryCards = computed(() => [
   {
     title: "ต้นทุนทั้งหมด",
     value: formatMoney(stats.value?.total_cost_amount ?? 0),
+    valueClass: "report-text-cost",
   },
   {
     title: "ยอดขายทั้งหมด",
     value: formatMoney(stats.value?.total_sales_amount ?? 0),
+    valueClass: "report-text-sales",
   },
   {
     title: "กำไรสุทธิ",
     value: formatMoney(stats.value?.total_profit_amount ?? 0),
+    valueClass: getProfitToneClass(stats.value?.total_profit_amount ?? 0),
   },
 ]);
 
@@ -281,7 +291,7 @@ onMounted(loadReport);
                     <div class="text-body-2 font-weight-medium text-medium-emphasis">
                       {{ card.title }}
                     </div>
-                    <div class="text-h4 font-weight-black mt-3">
+                    <div :class="card.valueClass" class="text-h4 font-weight-black mt-3">
                       {{ card.value }}
                     </div>
                   </v-card-text>
@@ -333,15 +343,15 @@ onMounted(loadReport);
                 </template>
 
                 <template #item.cost_price_at_sale="{ item }">
-                  <span>{{ formatNumber(item.cost_price_at_sale) }}</span>
+                  <span class="font-weight-medium report-text-cost">{{ formatNumber(item.cost_price_at_sale) }}</span>
                 </template>
 
                 <template #item.sold_price="{ item }">
-                  <span class="font-weight-medium">{{ formatNumber(item.sold_price) }}</span>
+                  <span class="font-weight-bold report-text-sales">{{ formatNumber(item.sold_price) }}</span>
                 </template>
 
                 <template #item.profit="{ item }">
-                  <span :class="Number(item.profit) >= 0 ? 'text-success' : 'text-error'" class="font-weight-bold">
+                  <span :class="getProfitToneClass(item.profit)" class="font-weight-bold">
                     {{ Number(item.profit) > 0 ? "+" : "" }}{{ formatNumber(item.profit) }}
                   </span>
                 </template>
@@ -363,3 +373,25 @@ onMounted(loadReport);
     </v-row>
   </v-container>
 </template>
+
+<style scoped>
+.report-text-cost {
+  color: rgb(var(--v-theme-warning));
+}
+
+.report-text-sales {
+  color: rgb(var(--v-theme-primary));
+}
+
+.report-text-profit {
+  color: rgb(var(--v-theme-success));
+}
+
+.report-text-loss {
+  color: rgb(var(--v-theme-error));
+}
+
+.report-text-muted {
+  color: rgba(var(--v-theme-on-surface), 0.68);
+}
+</style>

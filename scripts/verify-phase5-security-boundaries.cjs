@@ -28,6 +28,7 @@ function main() {
   assertIncludes(firestoreRules, "match /dashboard_stats/{docId}", "dashboard stats private rule");
   assertIncludes(firestoreRules, "match /dashboard_brand_stats/{docId}", "dashboard brand stats private rule");
   assertIncludes(firestoreRules, "match /stats_ledger/{docId}", "stats ledger private rule");
+  assertIncludes(firestoreRules, "match /counters/{docId}", "counters private rule");
   assertIncludes(firestoreRules, "match /{document=**}", "Firestore deny-all fallback");
   assertIncludes(firestoreRules, "allow read, write: if false;", "Firestore deny-all fallback policy");
 

@@ -71,8 +71,6 @@ function getPublicProductIssues(product) {
   const sellPrice = Number(product.sell_price);
   const condition = String(product.condition ?? "").trim();
   const defectDetail = String(product.defect_detail ?? "").trim();
-  const freeGiftDetail = String(product.free_gift_detail ?? "").trim();
-  const shutter = Number(product.shutter);
   const coverImage = String(product.cover_image ?? "").trim();
   const images = sanitizeProductImageUrls(product.images);
   const hasImage = Boolean(coverImage) || images.length > 0;
@@ -92,11 +90,7 @@ function getPublicProductIssues(product) {
     issues.push("กรุณาใส่ราคาขาย");
   }
   if (!condition) issues.push("กรุณาระบุสภาพสินค้า");
-  if (typeof product.shutter !== "number" || Number.isNaN(shutter)) {
-    issues.push("กรุณาใส่จำนวนชัตเตอร์");
-  }
   if (!defectDetail) issues.push("กรุณาใส่รายละเอียดตำหนิ");
-  if (!freeGiftDetail) issues.push("กรุณาใส่ของแถม");
   if (!hasImage) issues.push("กรุณาใส่รูปสินค้าอย่างน้อย 1 รูป");
 
   return issues;

@@ -95,9 +95,9 @@ const schema = yup.object({
     .typeError("กรุณากรอกจำนวนชัตเตอร์")
     .nullable()
     .min(0, "จำนวนชัตเตอร์ต้องเป็น 0 หรือมากกว่า")
-    .required("กรุณากรอกจำนวนชัตเตอร์"),
+    .optional(),
   defect_detail: yup.string().trim().required("กรุณากรอกรายละเอียดตำหนิ"),
-  free_gift_detail: yup.string().trim().required("กรุณากรอกรายละเอียดของแถม"),
+  free_gift_detail: yup.string().trim().default(""),
   image_files: yup.array().of(yup.mixed<File>()).nullable(),
 });
 
@@ -203,7 +203,7 @@ const publicReadinessIssues = computed(() =>
     cost_price: typeof values.cost_price === "number" ? values.cost_price : Number.NaN,
     sell_price: typeof values.sell_price === "number" ? values.sell_price : Number.NaN,
     condition: values.condition,
-    shutter: typeof values.shutter === "number" ? values.shutter : Number.NaN,
+    shutter: typeof values.shutter === "number" ? values.shutter : null,
     defect_detail: values.defect_detail,
     free_gift_detail: values.free_gift_detail,
     images: imageEntries.value.map((entry) => (entry.kind === "existing" ? entry.url : entry.file.name)),

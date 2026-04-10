@@ -37,6 +37,16 @@ Usage:
 - allowlist for backoffice access
 - should be readable only by authenticated backoffice owner accounts
 
+### counters
+`counters/products`
+- prefix
+- last_sku_seq
+- updated_at
+
+Usage:
+- internal counter for product SKU allocation
+- should remain private to authenticated backoffice owner accounts
+
 ### settings
 `settings/site`
 - banner_auto_slide_sec
