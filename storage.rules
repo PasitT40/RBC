@@ -21,6 +21,11 @@ service firebase.storage {
       allow write: if isOwner();
     }
 
+    match /settings/{docId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner();
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }
