@@ -6,9 +6,11 @@ import { getStorage } from "firebase/storage";
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig();
   const firestoreDatabaseId = config.public.firestoreDatabaseId || "(default)";
-  const selectedStorageBucket = firestoreDatabaseId === "(default)"
+  const selectedStorageBucket = firestoreDatabaseId === "ratchaburi-camera-prod"
     ? (config.public.firebaseStorageBucketProd || config.public.firebaseStorageBucket)
-    : (config.public.firebaseStorageBucketDev || config.public.firebaseStorageBucket);
+    : firestoreDatabaseId === "ratchaburi-camera-dev"
+      ? (config.public.firebaseStorageBucketDev || config.public.firebaseStorageBucket)
+      : config.public.firebaseStorageBucket;
   const normalizedStorageBucket = selectedStorageBucket?.replace(/^gs:\/\//, "") || "";
   const storageBucketUrl = normalizedStorageBucket ? `gs://${normalizedStorageBucket}` : "";
 

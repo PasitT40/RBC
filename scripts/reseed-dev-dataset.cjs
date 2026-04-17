@@ -24,7 +24,7 @@ function runStep(label, scriptName, args = []) {
 
 function main() {
   runStep("Cleanup dev dataset", "cleanup-dev-dataset.cjs", ["--execute"]);
-  runStep("Seed demo dataset", "seed-final.cjs");
+  runStep("Seed baseline dataset", "seed-final.cjs");
   runStep("Rebuild dashboard aggregates", "rebuild-dashboard-aggregates.cjs");
 
   if (argv.has("--verify")) {

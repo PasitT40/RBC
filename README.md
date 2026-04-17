@@ -13,6 +13,22 @@ yarn install
 yarn dev
 ```
 
+## Recommended scripts
+
+Use these as the default command set for day-to-day work:
+
+- `yarn dev` - run the backoffice with `.env.development`
+- `yarn dev:prod` - run the backoffice locally against `.env.production`
+- `yarn typecheck` - run Nuxt typecheck with a safe temporary npm cache
+- `yarn data:cleanup:dry-run` - preview dev-data cleanup
+- `yarn data:cleanup:apply` - execute dev-data cleanup
+- `yarn data:reseed` - reseed the dev dataset
+- `yarn data:reseed:verify` - reseed dev data and run verification steps
+- `yarn deploy:hosting:prod` - build and deploy Hosting
+- `yarn deploy:backoffice:prod` - build and deploy Hosting + public API + indexes + rules + storage
+- `yarn deploy:hosting:dev` - build and deploy Hosting for the dev environment
+- `yarn deploy:backoffice:dev` - build and deploy Hosting + public API for the dev environment
+
 ## Firebase configuration
 
 Client and admin scripts read values directly from `.env.development` or `.env.production` depending on the script.
@@ -27,16 +43,17 @@ Important variables:
 - `SERVICE_ACCOUNT_KEY_FILE`
 
 The browser app uses `NUXT_PUBLIC_FIRESTORE_DATABASE_ID` when present, otherwise falls back to `FIRESTORE_DATABASE_ID`.
-Storage bucket selection now follows the Firestore database:
-- Firestore `(default)` uses `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD`
-- any named Firestore database uses `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV`
-- `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET` remains as a backward-compatible fallback
+Storage bucket selection now follows the Firestore database id explicitly:
+- Firestore `ratchaburi-camera-prod` uses `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD`
+- Firestore `ratchaburi-camera-dev` uses `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV`
+- `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET` remains as a backward-compatible fallback for any other database id
 
 Recommended rollout for this repository:
 - keep the existing Firebase project `ratchaburi-camera`
-- use Firestore database `(default)`
-- use Storage bucket `gs://ratchaburi-camera`
-- avoid named Firestore databases unless there is a strong operational reason
+- use Firestore database `ratchaburi-camera-prod` for production
+- use Firestore database `ratchaburi-camera-dev` for development
+- use Storage bucket `gs://ratchaburi-camera-prod` with the prod database
+- use Storage bucket `gs://ratchaburi-camera-dev` with the dev database
 
 Security boundary notes:
 - backoffice access is allowlisted from `owners/{uid}`
@@ -69,9 +86,7 @@ If `verify-phase1.cjs` reports `stats_ledger` shape errors, run `repair-stats-le
 
 Generate the static backoffice bundle for Firebase Hosting:
 
-```bash
-yarn generate:hosting
-```
+Production Hosting deploy builds the static bundle automatically.
 
 ## Firebase deploy
 
@@ -84,15 +99,13 @@ Prepare:
 Deploy commands:
 
 ```bash
-yarn deploy:indexes
-yarn deploy:rules
-yarn deploy:hosting
+yarn deploy:hosting:prod
 ```
 
 Or deploy all backoffice artifacts together:
 
 ```bash
-yarn deploy:backoffice
+yarn deploy:backoffice:prod
 ```
 
 ## Docs

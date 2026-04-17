@@ -41,9 +41,11 @@ function parseEnvFile(filePath) {
 
 const env = parseEnvFile(envPath);
 const databaseId = env.FIRESTORE_DATABASE_ID || "(default)";
-const bucketName = databaseId === "(default)"
+const bucketName = databaseId === "ratchaburi-camera-prod"
   ? (env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD || env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET || serviceAccount.storage_bucket)
-  : (env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV || env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET || serviceAccount.storage_bucket);
+  : databaseId === "ratchaburi-camera-dev"
+    ? (env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV || env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET || serviceAccount.storage_bucket)
+    : (env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET || serviceAccount.storage_bucket);
 if (!bucketName) {
   throw new Error("Missing Firebase storage bucket configuration");
 }

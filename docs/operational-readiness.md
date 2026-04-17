@@ -79,7 +79,7 @@ Permanent fix:
 Single environment:
 - use `.env`
 - set Firebase project values explicitly
-- set `FIRESTORE_DATABASE_ID` to `(default)` unless a named database is intentionally required
+- set `FIRESTORE_DATABASE_ID` explicitly to `ratchaburi-camera-prod` or `ratchaburi-camera-dev`
 - keep `SERVICE_ACCOUNT_KEY_FILE` outside version control
 - make sure the file referenced by `SERVICE_ACCOUNT_KEY_FILE` actually exists locally before running admin scripts
 

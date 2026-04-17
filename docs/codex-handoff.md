@@ -40,17 +40,17 @@ Execute [`docs/implementation-plan.md`](./implementation-plan.md) phase by phase
   - `scripts/cleanup-dev-dataset.cjs`
   - `scripts/reseed-dev-dataset.cjs`
   - package scripts:
-    - `yarn cleanup:dev-data`
-    - `yarn cleanup:dev-data:apply`
-    - `yarn reseed:dev-data`
-    - `yarn reseed:dev-data:verify`
+    - `yarn data:cleanup:dry-run`
+    - `yarn data:cleanup:apply`
+    - `yarn data:reseed`
+    - `yarn data:reseed:verify`
 - Updated `scripts/seed-final.cjs` and `scripts/seed-final.js` so products without images are seeded with `show=false`, which keeps Phase 1 integrity checks clean for demo data
 
 ## Latest verification status
 
 - Passed:
   - `npm_config_cache=/tmp/rbc-npm-cache yarn -s nuxi typecheck`
-  - `yarn generate:hosting`
+  - `yarn deploy:hosting:prod`
   - `APP_ENV=development node scripts/verify-phase1.cjs`
   - `APP_ENV=development node scripts/verify-phase2-mutations.cjs`
   - `APP_ENV=development node scripts/verify-phase3-guardrails.cjs`

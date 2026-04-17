@@ -27,18 +27,20 @@ Reasoning:
 1. Copy `.firebaserc.example` to `.firebaserc`.
 2. Set the default Firebase project id.
 3. Bind hosting target `backoffice` to the intended Firebase Hosting site.
-4. Fill `.env` with the real Firebase values for the single environment.
+4. Fill `.env` with the real Firebase values for the target environment.
 5. Make sure the production owner allowlist exists in `owners/{uid}`.
 6. Grant Firebase Auth custom claim `backoffice_owner=true` to each owner account that should upload media.
 7. After granting or revoking the storage-owner claim, force the user to sign out and sign in again so Firebase refreshes the auth token.
-8. Set storage bucket envs to match the Firestore database policy:
-   - `(default)` Firestore -> `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD`
-   - named Firestore database -> `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV`
+8. Set Firestore database id and storage bucket envs to the explicit environment mapping:
+   - `ratchaburi-camera-prod` -> `gs://ratchaburi-camera-prod`
+   - `ratchaburi-camera-dev` -> `gs://ratchaburi-camera-dev`
 
 Recommended values for this project:
 - Firebase project id: `ratchaburi-camera`
-- Firestore database id: `(default)`
-- Storage bucket: `ratchaburi-camera`
+- Firestore database id for production: `ratchaburi-camera-prod`
+- Firestore database id for development: `ratchaburi-camera-dev`
+- Storage bucket for production: `gs://ratchaburi-camera-prod`
+- Storage bucket for development: `gs://ratchaburi-camera-dev`
 
 Example target binding:
 
@@ -48,9 +50,7 @@ firebase target:apply hosting backoffice your-hosting-site-id
 
 ## Build
 
-```bash
-yarn generate:hosting
-```
+`yarn deploy:hosting:prod` and `yarn deploy:backoffice:prod` build the static bundle automatically before deploy.
 
 Expected output:
 - static files in `.output/public`
@@ -58,23 +58,16 @@ Expected output:
 
 ## Deploy
 
-Rules and indexes:
-
-```bash
-yarn deploy:indexes
-yarn deploy:rules
-```
-
 Hosting:
 
 ```bash
-yarn deploy:hosting
+yarn deploy:hosting:prod
 ```
 
 All at once:
 
 ```bash
-yarn deploy:backoffice
+yarn deploy:backoffice:prod
 ```
 
 ## Production smoke test
