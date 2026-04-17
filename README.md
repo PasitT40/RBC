@@ -20,6 +20,7 @@ Use these as the default command set for day-to-day work:
 - `yarn dev` - run the backoffice with `.env.development`
 - `yarn dev:prod` - run the backoffice locally against `.env.production`
 - `yarn typecheck` - run Nuxt typecheck with a safe temporary npm cache
+- `yarn deploy:check:prod` - verify the production env, hosting target, and service-account file before deploy
 - `yarn data:cleanup:dry-run` - preview dev-data cleanup
 - `yarn data:cleanup:apply` - execute dev-data cleanup
 - `yarn data:reseed` - reseed the dev dataset
@@ -42,7 +43,7 @@ Important variables:
 - `FIRESTORE_DATABASE_ID`
 - `SERVICE_ACCOUNT_KEY_FILE`
 
-The browser app uses `NUXT_PUBLIC_FIRESTORE_DATABASE_ID` when present, otherwise falls back to `FIRESTORE_DATABASE_ID`.
+The browser app requires `NUXT_PUBLIC_FIRESTORE_DATABASE_ID` explicitly and does not fall back to `FIRESTORE_DATABASE_ID`.
 Storage bucket selection now follows the Firestore database id explicitly:
 - Firestore `ratchaburi-camera-prod` uses `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD`
 - Firestore `ratchaburi-camera-dev` uses `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV`
@@ -99,12 +100,14 @@ Prepare:
 Deploy commands:
 
 ```bash
+yarn deploy:check:prod
 yarn deploy:hosting:prod
 ```
 
 Or deploy all backoffice artifacts together:
 
 ```bash
+yarn deploy:check:prod
 yarn deploy:backoffice:prod
 ```
 

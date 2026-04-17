@@ -51,7 +51,7 @@ const menu = ref([
         </v-btn>
 
         <div class="backoffice-sidebar__meta">
-          ฐานข้อมูล Firestore: <strong>{{ firestoreDatabaseId || "(default)" }}</strong><br>
+          ฐานข้อมูล Firestore: <strong>{{ firestoreDatabaseId || "missing" }}</strong><br>
           การอัปโหลดไฟล์ต้องใช้ Firebase Auth custom claim <code>backoffice_owner=true</code>
         </div>
       </div>

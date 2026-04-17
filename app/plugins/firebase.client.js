@@ -5,13 +5,24 @@ import { getStorage } from "firebase/storage";
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig();
-  const firestoreDatabaseId = config.public.firestoreDatabaseId || "(default)";
-  const selectedStorageBucket = firestoreDatabaseId === "ratchaburi-camera-prod"
-    ? (config.public.firebaseStorageBucketProd || config.public.firebaseStorageBucket)
-    : firestoreDatabaseId === "ratchaburi-camera-dev"
-      ? (config.public.firebaseStorageBucketDev || config.public.firebaseStorageBucket)
-      : config.public.firebaseStorageBucket;
+  const firestoreDatabaseId = String(config.public.firestoreDatabaseId || "").trim();
+  if (!firestoreDatabaseId) {
+    throw new Error("Missing NUXT_PUBLIC_FIRESTORE_DATABASE_ID");
+  }
+
+  const storageBucketByDatabaseId = {
+    "ratchaburi-camera-prod": config.public.firebaseStorageBucketProd || config.public.firebaseStorageBucket,
+    "ratchaburi-camera-dev": config.public.firebaseStorageBucketDev || config.public.firebaseStorageBucket,
+  };
+  const selectedStorageBucket = storageBucketByDatabaseId[firestoreDatabaseId];
+  if (!selectedStorageBucket) {
+    throw new Error(`Unsupported Firestore database id: ${firestoreDatabaseId}`);
+  }
+
   const normalizedStorageBucket = selectedStorageBucket?.replace(/^gs:\/\//, "") || "";
+  if (!normalizedStorageBucket) {
+    throw new Error(`Missing storage bucket mapping for Firestore database id: ${firestoreDatabaseId}`);
+  }
   const storageBucketUrl = normalizedStorageBucket ? `gs://${normalizedStorageBucket}` : "";
 
   const firebaseConfig = {

@@ -28,6 +28,7 @@
     "format:check": "prettier --check .",
     "postinstall": "nuxt prepare",
     "typecheck": "/bin/zsh -lc 'npm_config_cache=/tmp/rbc-npm-cache yarn -s nuxi typecheck'",
+    "deploy:check:prod": "node scripts/check-prod-env.cjs",
     "auth:set-storage-owner": "node scripts/set-storage-owner-claim.cjs",
     "data:cleanup:dry-run": "APP_ENV=development node scripts/cleanup-dev-dataset.cjs",
     "data:cleanup:apply": "APP_ENV=development node scripts/cleanup-dev-dataset.cjs --execute",

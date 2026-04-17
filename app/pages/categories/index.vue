@@ -49,7 +49,6 @@ const subcategoryHeaders = [
   { title: "ชื่อ", key: "name", align: "center" as const },
   { title: "Slug", key: "slug", align: "center" as const },
   { title: "หมวดหมู่", key: "category_name", align: "center" as const },
-  { title: "ลำดับรวม", key: "order", align: "center" as const },
   { title: "ลำดับในหมวดหมู่", key: "category_brand_order", align: "center" as const },
   { title: "รูปภาพ", key: "image_url", align: "center" as const },
   { title: "อัปเดตล่าสุด", key: "updated_at" },
@@ -304,7 +303,7 @@ const submitCategory = async (values: CategoryFormValues, trimmedName: string) =
 
 const submitSubcategory = async (values: CategoryFormValues, trimmedName: string) => {
   if (isSubcategoryEditMode.value && editSubcategoryItem.value) {
-    const isDuplicate = await isSubcategoryNameDuplicate(trimmedName, editSubcategoryItem.value.id);
+    const isDuplicate = await isSubcategoryNameDuplicate(trimmedName, values.category_id, editSubcategoryItem.value.id);
     if (isDuplicate) {
       showDuplicateError("แบรนด์", trimmedName);
       return false;
@@ -316,7 +315,6 @@ const submitSubcategory = async (values: CategoryFormValues, trimmedName: string
       seo_title: values.seo_title?.trim() || "",
       seo_description: values.seo_description?.trim() || "",
       seo_image: values.seo_image?.trim() || null,
-      order: normalizePositiveOrder(values.order),
       categoryBrandOrder: normalizePositiveOrder(values.category_brand_order),
       ...(values.image ? { file: values.image } : {}),
     });
@@ -325,7 +323,7 @@ const submitSubcategory = async (values: CategoryFormValues, trimmedName: string
     return true;
   }
 
-  const isDuplicate = await isSubcategoryNameDuplicate(trimmedName);
+  const isDuplicate = await isSubcategoryNameDuplicate(trimmedName, values.category_id);
   if (isDuplicate) {
     showDuplicateError("แบรนด์", trimmedName);
     return false;
@@ -337,7 +335,6 @@ const submitSubcategory = async (values: CategoryFormValues, trimmedName: string
     seo_title: values.seo_title?.trim() || "",
     seo_description: values.seo_description?.trim() || "",
     seo_image: values.seo_image?.trim() || null,
-    order: normalizePositiveOrder(values.order),
     categoryBrandOrder: normalizePositiveOrder(values.category_brand_order),
     ...(values.image ? { file: values.image } : {}),
   });
@@ -503,7 +500,6 @@ onMounted(loadPageData);
           หน้านี้จะบันทึกข้อมูลไปที่ `brands/{brandId}` และ `category_brands/{categoryId__brandId}` เท่านั้น โดยไม่ได้เก็บแบรนด์เป็น subcollection ใต้หมวดหมู่
         </div>
         <form-vee-text-field variant="outlined" name="name" label="ชื่อแบรนด์" />
-        <form-vee-text-field variant="outlined" name="order" label="ลำดับรวม" type="number" min="1" />
         <form-vee-text-field variant="outlined" name="seo_title" label="ชื่อ SEO" />
         <form-vee-text-area variant="outlined" name="seo_description" label="คำอธิบาย SEO" rows="3" auto-grow />
         <form-vee-text-field variant="outlined" name="seo_image" label="ลิงก์รูป SEO" />
@@ -707,10 +703,6 @@ onMounted(loadPageData);
 
             <template v-slot:item.category_name="{ item }">
               <span class="tw:text-md tw:font-bold tw:text-black">{{ item.category_name || "-" }}</span>
-            </template>
-
-            <template v-slot:item.order="{ item }">
-              <span class="tw:text-md tw:font-semibold tw:text-black">{{ item.order ?? "-" }}</span>
             </template>
 
             <template v-slot:item.category_brand_order="{ item }">

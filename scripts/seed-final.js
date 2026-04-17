@@ -49,7 +49,17 @@ async function commitInChunks(db, ops, size = 450) {
 
 const envPath = resolveEnvPath(projectRoot);
 const env = parseEnvFile(envPath);
-const serviceAccount = require(path.join(projectRoot, "serviceAccountKey.json"));
+const argv = new Set(process.argv.slice(2));
+const appEnv = process.env.APP_ENV || process.env.NODE_ENV || "development";
+const serviceAccountFile = env.SERVICE_ACCOUNT_KEY_FILE || "serviceAccountKey.json";
+const serviceAccountPath = path.join(projectRoot, serviceAccountFile);
+if (!fs.existsSync(serviceAccountPath)) {
+  throw new Error(`Missing service account file: ${serviceAccountPath}`);
+}
+if (appEnv === "production" && !argv.has("--allow-production")) {
+  throw new Error("seed-final.js blocks production by default. Use --allow-production explicitly.");
+}
+const serviceAccount = require(serviceAccountPath);
 const databaseId = env.FIRESTORE_DATABASE_ID || "(default)";
 const app = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = getFirestore(app, databaseId);

@@ -84,8 +84,20 @@ export function useCategoriesFirestore() {
 
   // "Subcategory" is only a backoffice label. Persisted data stays in global
   // brands/{brandId} plus category_brands/{categoryId__brandId}.
-  const isSubcategoryNameDuplicate = async (name: string, excludeId?: string): Promise<boolean> => {
-    return isNameDuplicate("brands", name, excludeId);
+  const isSubcategoryNameDuplicate = async (name: string, categoryId?: string, excludeId?: string): Promise<boolean> => {
+    const normalizedTarget = normalizeName(name);
+    if (!normalizedTarget || !categoryId) return false;
+
+    const snap = await getDocs(
+      query(collection($db, "category_brands"), where("category_id", "==", categoryId))
+    );
+
+    return snap.docs.some((docSnap) => {
+      const data = docSnap.data();
+      if (excludeId && data.brand_id === excludeId) return false;
+      const docName = typeof data.brand_name === "string" ? normalizeName(data.brand_name) : "";
+      return docName === normalizedTarget;
+    });
   };
 
   // paginate หมวดหมู่ (categories)
@@ -356,6 +368,10 @@ export function useCategoriesFirestore() {
   const addSubcategory = async (data: any) => {
     const name = `${data.name ?? ""}`.trim();
     if (!name) throw new Error("Subcategory name is required");
+    if (!data.category_id) throw new Error("Category is required");
+    if (await isSubcategoryNameDuplicate(name, String(data.category_id))) {
+      throw new Error("Duplicate brand name in the selected category");
+    }
 
     let orderToUse = normalizeOrderInput(data.order);
     if (typeof orderToUse === 'number') {
@@ -525,17 +541,24 @@ export function useCategoriesFirestore() {
     const categoryMappings = snapCatBrand.docs;
     const existingPrimaryMapping = categoryMappings[0] ?? null;
     const previousCategoryId = existingPrimaryMapping?.data().category_id ?? null;
+    const targetCategoryId = Object.prototype.hasOwnProperty.call(data, "category_id")
+      ? (data.category_id ? String(data.category_id) : null)
+      : previousCategoryId;
+
+    if (targetCategoryId && await isSubcategoryNameDuplicate(nextName, targetCategoryId, id)) {
+      throw new Error("Duplicate brand name in the selected category");
+    }
+
     const previousCategoryBrandOrder = getOrderValue(existingPrimaryMapping?.data().order);
     const batch = writeBatch($db);
     batch.update(docRef, brandPayload);
 
     if (Object.prototype.hasOwnProperty.call(data, "category_id")) {
       if (data.category_id) {
-        const targetMappingId = `${data.category_id}__${id}`;
+        const targetMappingId = `${targetCategoryId}__${id}`;
         const targetDoc = categoryMappings.find((d) => d.id === targetMappingId);
 
         let categoryBrandOrder = normalizeOrderInput(data.categoryBrandOrder);
-        const targetCategoryId = String(data.category_id);
         const targetDocOrder = getOrderValue(targetDoc?.data().order);
 
         if (typeof categoryBrandOrder === "number") {
