@@ -25,7 +25,7 @@ export type ProductInput = {
   cost_price: number;
   sell_price: number;
   condition?: number | string;
-  shutter?: number | null;
+  shutter?: string | null;
   defect_detail?: string;
   free_gift_detail?: string;
   cover_image?: string;

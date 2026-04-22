@@ -49,34 +49,6 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
             <div class="text-body-2 text-medium-emphasis">กรอกข้อมูลหลักให้ครบ แล้วค่อยเปิดขายบนหน้าเว็บเมื่อพร้อม</div>
           </v-col>
 
-          <v-col cols="5">
-            <v-row dense justify="end">
-              <v-col cols="3">
-                <v-btn
-                  block
-                  variant="outlined"
-                  color="black"
-                  rounded="pill"
-                  @click="emit('cancel')"
-                >
-                  ยกเลิก
-                </v-btn>
-              </v-col>
-              <v-col cols="3">
-                <v-btn
-                  block
-                  color="#f5962f"
-                  class="text-white"
-                  rounded="pill"
-                  :loading="saveLoading"
-                  :disabled="saveDisabled"
-                  @click="emit('submit')"
-                >
-                  {{ saveLabel || "บันทึก" }}
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-col>
         </v-row>
 
         <div v-if="pageLoading" class="py-16 d-flex justify-center">
@@ -208,8 +180,7 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                         label="จำนวนชัตเตอร์"
                         variant="outlined"
                         density="comfortable"
-                        type="number"
-                        min="0"
+                        type="text"
                         hide-details="auto"
                       />
                     </v-col>
@@ -329,6 +300,35 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
             </v-col>
           </v-row>
         </template>
+
+          <v-col cols="12">
+            <v-row dense justify="end">
+              <v-col cols="1">
+                <v-btn
+                  block
+                  variant="outlined"
+                  color="black"
+                  rounded="pill"
+                  @click="emit('cancel')"
+                >
+                  ยกเลิก
+                </v-btn>
+              </v-col>
+              <v-col cols="1">
+                <v-btn
+                  block
+                  color="#f5962f"
+                  class="text-white"
+                  rounded="pill"
+                  :loading="saveLoading"
+                  :disabled="saveDisabled"
+                  @click="emit('submit')"
+                >
+                  {{ saveLabel || "บันทึก" }}
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-col>
       </v-col>
     </v-row>
   </v-container>

@@ -10,7 +10,7 @@ export function resolveProductSeo(product: Record<string, unknown>) {
   const fallbackDescription = compactText([
     product.name as string,
     product.condition ? `สภาพ ${product.condition}` : "",
-    product.shutter ? `ชัตเตอร์ ${product.shutter}` : "",
+    String(product.shutter ?? "").trim() ? `ชัตเตอร์ ${String(product.shutter).trim()}` : "",
     product.defect_detail as string,
   ]);
 

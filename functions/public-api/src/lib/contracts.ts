@@ -23,7 +23,7 @@ export type ProductCard = {
 
 export type ProductDetail = ProductCard & {
   images: string[];
-  shutter: number | null;
+  shutter: string | null;
   defect_detail: string | null;
   free_gift_detail: string | null;
   seo: {

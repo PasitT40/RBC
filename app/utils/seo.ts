@@ -6,7 +6,7 @@ type ProductSeoInput = {
   category_name?: string | null;
   brand_name?: string | null;
   condition?: string | number | null;
-  shutter?: number | null;
+  shutter?: string | null;
   defect_detail?: string | null;
   cover_image?: string | null;
 };
@@ -48,7 +48,7 @@ export function resolveProductSeo(input: ProductSeoInput) {
     normalizeText(input.brand_name),
     normalizeText(input.category_name),
     normalizeConditionText(input.condition),
-    typeof input.shutter === "number" ? `shutter ${input.shutter}` : "",
+    normalizeText(input.shutter),
     normalizeText(input.defect_detail),
   ], " | ");
 

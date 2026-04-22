@@ -22,7 +22,7 @@ type ProductEditFormValues = {
   cost_price: number | undefined;
   sell_price: number | undefined;
   condition: number;
-  shutter: number | null;
+  shutter: string | null;
   defect_detail: string;
   free_gift_detail: string;
   image_files: File[];
@@ -90,11 +90,10 @@ const schema = yup.object({
       typeof value === "number" ? Number.isInteger(value * 2) : false)
     .required("กรุณาระบุคุณภาพสินค้า"),
   shutter: yup
-    .number()
+    .string()
     .transform((value, originalValue) => (originalValue === "" || originalValue === null ? null : value))
     .typeError("กรุณากรอกจำนวนชัตเตอร์")
     .nullable()
-    .min(0, "จำนวนชัตเตอร์ต้องเป็น 0 หรือมากกว่า")
     .optional(),
   defect_detail: yup.string().trim().required("กรุณากรอกรายละเอียดตำหนิ"),
   free_gift_detail: yup.string().trim().default(""),
@@ -203,7 +202,7 @@ const publicReadinessIssues = computed(() =>
     cost_price: typeof values.cost_price === "number" ? values.cost_price : Number.NaN,
     sell_price: typeof values.sell_price === "number" ? values.sell_price : Number.NaN,
     condition: values.condition,
-    shutter: typeof values.shutter === "number" ? values.shutter : null,
+    shutter: values.shutter || null,
     defect_detail: values.defect_detail,
     free_gift_detail: values.free_gift_detail,
     images: imageEntries.value.map((entry) => (entry.kind === "existing" ? entry.url : entry.file.name)),
@@ -247,9 +246,6 @@ const refreshTaxonomy = async () => {
     taxonomyRefreshing.value = false;
   }
 };
-
-const normalizeNullableNumber = (value: number | null | undefined | "") =>
-  value === null || value === undefined || value === "" ? null : Number(value);
 
 const applyExistingImages = (images: string[]) => {
   imageEntries.value = images.slice(0, MAX_DETAIL_IMAGES).map((url) => ({ kind: "existing", url }));
@@ -343,7 +339,7 @@ const hydrateForm = async () => {
       cost_price: typeof foundProduct.cost_price === "number" ? foundProduct.cost_price : undefined,
       sell_price: typeof foundProduct.sell_price === "number" ? foundProduct.sell_price : undefined,
       condition: normalizeProductCondition(foundProduct.condition),
-      shutter: typeof foundProduct.shutter === "number" ? foundProduct.shutter : null,
+      shutter: typeof foundProduct.shutter === "string" ? foundProduct.shutter : null,
       defect_detail: foundProduct.defect_detail ?? "",
       free_gift_detail: foundProduct.free_gift_detail ?? "",
       image_files: [],
@@ -404,7 +400,7 @@ const submit = handleSubmit(async (formValues) => {
       cost_price: Number(formValues.cost_price),
       sell_price: Number(formValues.sell_price),
       condition: normalizeProductCondition(formValues.condition),
-      shutter: normalizeNullableNumber(formValues.shutter),
+      shutter: formValues.shutter || null,
       defect_detail: formValues.defect_detail?.trim() ?? "",
       free_gift_detail: formValues.free_gift_detail?.trim() ?? "",
       images: existingImages,

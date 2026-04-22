@@ -50,7 +50,7 @@ export function serializeProductDetail(doc: DocumentSnapshot, context: ProductRo
   return {
     ...serializeProductCard(doc, context),
     images: Array.isArray(product.images) ? product.images.map((item) => String(item)).filter(Boolean) : [],
-    shutter: asNumber(product.shutter),
+    shutter: asTrimmedString(product.shutter),
     defect_detail: asTrimmedString(product.defect_detail),
     free_gift_detail: asTrimmedString(product.free_gift_detail),
     seo: resolveProductSeo(product),
