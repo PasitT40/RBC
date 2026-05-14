@@ -28,6 +28,7 @@
     "format:check": "prettier --check .",
     "postinstall": "nuxt prepare",
     "typecheck": "/bin/zsh -lc 'npm_config_cache=/tmp/rbc-npm-cache yarn -s nuxi typecheck'",
+    "checkapi": "npm --prefix functions/public-api run build",
     "deploy:check:prod": "node scripts/check-prod-env.cjs",
     "auth:set-storage-owner": "node scripts/set-storage-owner-claim.cjs",
     "data:cleanup:dry-run": "APP_ENV=development node scripts/cleanup-dev-dataset.cjs",
@@ -36,8 +37,11 @@
     "data:reseed:verify": "APP_ENV=development node scripts/reseed-dev-dataset.cjs --verify",
     "deploy:hosting:dev": "set -a && . ./.env.development && set +a && nuxt generate && npx firebase-tools deploy --only hosting:backoffice",
     "deploy:hosting:prod": "set -a && . ./.env.production && set +a && nuxt generate && npx firebase-tools deploy --only hosting:backoffice",
-    "deploy:backoffice:dev": "set -a && . ./.env.development && set +a && nuxt generate && npm --prefix functions/public-api run build && npx firebase-tools deploy --only hosting:backoffice,functions:public-api,firestore:indexes",
-    "deploy:backoffice:prod": "set -a && . ./.env.production && set +a && nuxt generate && npm --prefix functions/public-api run build && npx firebase-tools deploy --only hosting:backoffice,functions:public-api,firestore:indexes,firestore:rules,storage"
+    "deploy:firestore": "npx firebase-tools deploy --only firestore",
+    "deploy:indexes": "npx firebase-tools deploy --only firestore:indexes",
+    "deploy:public-api": "npm --prefix functions/public-api run build && npx firebase-tools deploy --only functions:public-api",
+    "deploy:backoffice:dev": "set -a && . ./.env.development && set +a && nuxt generate && npm --prefix functions/public-api run build && npx firebase-tools deploy --only hosting:backoffice,functions:public-api,firestore",
+    "deploy:backoffice:prod": "set -a && . ./.env.production && set +a && nuxt generate && npm --prefix functions/public-api run build && npx firebase-tools deploy --only hosting:backoffice,functions:public-api,firestore,storage"
   },
   "type": "module",
   "devDependencies": {

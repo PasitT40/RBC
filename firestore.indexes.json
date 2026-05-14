@@ -37,6 +37,14 @@
       "collectionGroup": "category_brands",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "category_id", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "category_brands",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "brand_id", "order": "ASCENDING" },
         { "fieldPath": "order", "order": "ASCENDING" }
       ]
@@ -273,7 +281,8 @@
         { "fieldPath": "show", "order": "ASCENDING" },
         { "fieldPath": "is_deleted", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "updated_at", "order": "DESCENDING" }
+        { "fieldPath": "updated_at", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
       ]
     },
     {
@@ -284,30 +293,8 @@
         { "fieldPath": "show", "order": "ASCENDING" },
         { "fieldPath": "is_deleted", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "updated_at", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "products",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "category_id", "order": "ASCENDING" },
-        { "fieldPath": "brand_id", "order": "ASCENDING" },
-        { "fieldPath": "show", "order": "ASCENDING" },
-        { "fieldPath": "is_deleted", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "updated_at", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "products",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "category_id", "order": "ASCENDING" },
-        { "fieldPath": "show", "order": "ASCENDING" },
-        { "fieldPath": "is_deleted", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "sell_price", "order": "ASCENDING" }
+        { "fieldPath": "updated_at", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
       ]
     },
     {
@@ -319,27 +306,8 @@
         { "fieldPath": "show", "order": "ASCENDING" },
         { "fieldPath": "is_deleted", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "sell_price", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "products",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "show", "order": "ASCENDING" },
-        { "fieldPath": "is_deleted", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "sell_price", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "products",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "show", "order": "ASCENDING" },
-        { "fieldPath": "is_deleted", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "sell_price", "order": "DESCENDING" }
+        { "fieldPath": "updated_at", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
       ]
     },
     {
@@ -350,7 +318,8 @@
         { "fieldPath": "show", "order": "ASCENDING" },
         { "fieldPath": "is_deleted", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "sell_price", "order": "DESCENDING" }
+        { "fieldPath": "sell_price", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
     },
     {
@@ -362,7 +331,55 @@
         { "fieldPath": "show", "order": "ASCENDING" },
         { "fieldPath": "is_deleted", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "sell_price", "order": "DESCENDING" }
+        { "fieldPath": "sell_price", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "show", "order": "ASCENDING" },
+        { "fieldPath": "is_deleted", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "sell_price", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "show", "order": "ASCENDING" },
+        { "fieldPath": "is_deleted", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "sell_price", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "category_id", "order": "ASCENDING" },
+        { "fieldPath": "show", "order": "ASCENDING" },
+        { "fieldPath": "is_deleted", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "sell_price", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "category_id", "order": "ASCENDING" },
+        { "fieldPath": "brand_id", "order": "ASCENDING" },
+        { "fieldPath": "show", "order": "ASCENDING" },
+        { "fieldPath": "is_deleted", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "sell_price", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
       ]
     }
   ],

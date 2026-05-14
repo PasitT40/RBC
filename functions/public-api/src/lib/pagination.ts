@@ -7,17 +7,22 @@ type CursorPayload = {
   fieldValue: string | number | null;
   fieldKind: "number" | "timestamp" | "string" | "null";
   id: string;
+  sort?: string;
 };
 
 export function encodeCursor(payload: Omit<CursorPayload, "v">) {
   return Buffer.from(JSON.stringify({ v: 1, ...payload }), "utf8").toString("base64url");
 }
 
+const VALID_FIELD_KINDS = new Set<string>(["number", "timestamp", "string", "null"]);
+
 export function decodeCursor(value: string | null): CursorPayload | null {
   if (!value) return null;
+  if (value.length > 512) throw badRequest("Invalid cursor");
   try {
     const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as CursorPayload;
     if (parsed?.v !== 1 || typeof parsed.id !== "string") throw new Error("Invalid cursor");
+    if (!VALID_FIELD_KINDS.has(parsed.fieldKind)) throw new Error("Invalid cursor");
     return parsed;
   } catch {
     throw badRequest("Invalid cursor");

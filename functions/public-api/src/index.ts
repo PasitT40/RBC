@@ -1,6 +1,8 @@
+import type { Firestore } from "firebase-admin/firestore";
 import { onRequest } from "firebase-functions/v2/https";
 import { setGlobalOptions } from "firebase-functions/v2/options";
-import { createHttpError, methodNotAllowed, notFound, sendJson } from "./lib/http.js";
+import { getDbForDatabase } from "./lib/admin.js";
+import { createHttpError, methodNotAllowed, notFound, sendJson, sendNoContent } from "./lib/http.js";
 import {
   getCategoryBySlugRoute,
   getCategoryBrandsRoute,
@@ -16,6 +18,26 @@ setGlobalOptions({
   maxInstances: 10,
 });
 
+const DATABASE_IDS = {
+  dev: "ratchaburi-camera-dev",
+  prod: "ratchaburi-camera-prod",
+} as const;
+
+type ApiEnvironment = keyof typeof DATABASE_IDS;
+
+const CACHE_HEADERS = {
+  navigation: "public, s-maxage=300, stale-while-revalidate=1800",
+  productList: "public, s-maxage=60, stale-while-revalidate=300",
+  productDetail: "public, s-maxage=30, stale-while-revalidate=120",
+} as const;
+
+const CORS_PREFLIGHT_HEADERS = {
+  "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Max-Age": "86400",
+  Allow: "GET, HEAD, OPTIONS",
+};
+
 function normalizePath(pathname: string) {
   return pathname.replace(/\/+$/, "") || "/";
 }
@@ -25,65 +47,117 @@ function matchPath(pathname: string, pattern: RegExp) {
   return matched ? matched.slice(1).map(decodeURIComponent) : null;
 }
 
-export const publicApi = onRequest(async (req, res) => {
-  try {
-    if (req.method !== "GET") throw methodNotAllowed();
+function createPublicApiHandler(environment: ApiEnvironment, db: Firestore) {
+  const databaseId = DATABASE_IDS[environment];
 
-    const pathname = normalizePath(new URL(req.url, "https://public-api.local").pathname);
+  return onRequest(async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") {
+        return sendNoContent(res, 204, CORS_PREFLIGHT_HEADERS);
+      }
 
-    if (pathname === "/api/products") {
-      const payload = await listProductsRoute(req);
-      return sendJson(res, 200, payload);
-    }
+      if (req.method !== "GET" && req.method !== "HEAD") throw methodNotAllowed();
 
-    const productDetailMatch = matchPath(pathname, /^\/api\/products\/([^/]+)$/);
-    if (productDetailMatch) {
-      const payload = await getProductBySlugRoute(productDetailMatch[0]);
-      return sendJson(res, 200, payload);
-    }
+      const pathname = normalizePath(new URL(req.url, "https://public-api.local").pathname);
 
-    if (pathname === "/api/categories") {
-      const payload = await listCategoriesRoute();
-      return sendJson(res, 200, payload, {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=1800",
-      });
-    }
+      if (pathname === "/api/health") {
+        return sendJson(
+          res,
+          200,
+          {
+            item: {
+              environment,
+              database_id: databaseId,
+              function_region: region,
+            },
+          },
+          {
+            "Cache-Control": "no-store",
+          }
+        );
+      }
 
-    const categoryBrandsMatch = matchPath(pathname, /^\/api\/categories\/([^/]+)\/brands$/);
-    if (categoryBrandsMatch) {
-      const payload = await getCategoryBrandsRoute(categoryBrandsMatch[0]);
-      return sendJson(res, 200, payload, {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=1800",
-      });
-    }
+      if (pathname === "/api/products") {
+        const payload = await listProductsRoute(db, req);
+        return sendJson(res, 200, payload, {
+          "Cache-Control": CACHE_HEADERS.productList,
+        });
+      }
 
-    const categoryBrandProductsMatch = matchPath(pathname, /^\/api\/categories\/([^/]+)\/([^/]+)\/products$/);
-    if (categoryBrandProductsMatch) {
-      const payload = await getCategoryBrandProductsRoute(req, categoryBrandProductsMatch[0], categoryBrandProductsMatch[1]);
-      return sendJson(res, 200, payload);
-    }
+      const productDetailMatch = matchPath(pathname, /^\/api\/products\/([^/]+)$/);
+      if (productDetailMatch) {
+        const payload = await getProductBySlugRoute(db, productDetailMatch[0]);
+        return sendJson(res, 200, payload, {
+          "Cache-Control": CACHE_HEADERS.productDetail,
+        });
+      }
 
-    const categoryDetailMatch = matchPath(pathname, /^\/api\/categories\/([^/]+)$/);
-    if (categoryDetailMatch) {
-      const payload = await getCategoryBySlugRoute(categoryDetailMatch[0]);
-      return sendJson(res, 200, payload, {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=1800",
-      });
-    }
+      if (pathname === "/api/categories") {
+        const payload = await listCategoriesRoute(db);
+        return sendJson(res, 200, payload, {
+          "Cache-Control": CACHE_HEADERS.navigation,
+        });
+      }
 
-    throw notFound("Route not found");
-  } catch (error) {
-    const httpError = createHttpError(error);
-    return sendJson(
-      res,
-      httpError.status,
-      {
-        error: {
-          code: httpError.code,
-          message: httpError.message,
+      const categoryBrandsMatch = matchPath(pathname, /^\/api\/categories\/([^/]+)\/brands$/);
+      if (categoryBrandsMatch) {
+        const payload = await getCategoryBrandsRoute(db, categoryBrandsMatch[0]);
+        return sendJson(res, 200, payload, {
+          "Cache-Control": CACHE_HEADERS.navigation,
+        });
+      }
+
+      const categoryBrandProductsMatch = matchPath(pathname, /^\/api\/categories\/([^/]+)\/([^/]+)\/products$/);
+      if (categoryBrandProductsMatch) {
+        const payload = await getCategoryBrandProductsRoute(db, req, categoryBrandProductsMatch[0], categoryBrandProductsMatch[1]);
+        return sendJson(res, 200, payload, {
+          "Cache-Control": CACHE_HEADERS.productList,
+        });
+      }
+
+      const categoryDetailMatch = matchPath(pathname, /^\/api\/categories\/([^/]+)$/);
+      if (categoryDetailMatch) {
+        const payload = await getCategoryBySlugRoute(db, categoryDetailMatch[0]);
+        return sendJson(res, 200, payload, {
+          "Cache-Control": CACHE_HEADERS.navigation,
+        });
+      }
+
+      throw notFound("Route not found");
+    } catch (error) {
+      const httpError = createHttpError(error);
+      if (httpError.status >= 500) {
+        const safeError = error instanceof Error
+          ? { message: error.message, code: (error as { code?: string }).code }
+          : { message: String(error) };
+        console.error("public-api request failed", {
+          environment,
+          databaseId,
+          method: req.method,
+          url: req.url,
+          error: safeError,
+        });
+      }
+      return sendJson(
+        res,
+        httpError.status,
+        {
+          error: {
+            code: httpError.code,
+            message: httpError.message,
+          },
         },
-      },
-      httpError.headers
-    );
-  }
-});
+        httpError.headers
+      );
+    }
+  });
+}
+
+const devDb = getDbForDatabase(DATABASE_IDS.dev);
+const prodDb = getDbForDatabase(DATABASE_IDS.prod);
+
+export const publicApiDev = createPublicApiHandler("dev", devDb);
+export const publicApiProd = createPublicApiHandler("prod", prodDb);
+
+// Keep the existing hosting rewrite stable. The hosted /api/** surface remains production.
+export const publicApi = publicApiProd;

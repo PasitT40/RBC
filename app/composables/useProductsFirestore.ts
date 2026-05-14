@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, increment, limit, orderBy, query, serverTimestamp, startAfter, where, writeBatch, type QueryConstraint } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, increment, limit, orderBy, query, runTransaction, serverTimestamp, startAfter, where, writeBatch, type QueryConstraint } from "firebase/firestore";
 import type { PageCursor, PageResult, ProductInput, ProductRecord, ProductsPageInput, ProductStatus } from "./firestore/types";
 import { IMAGE_UPLOAD_PROFILES, deleteStorageUrls, uploadImageAsWebP } from "./firestore/media";
 import {
@@ -338,54 +338,26 @@ export function useProductsFirestore() {
 
   const setReserved = async (productId: string) => {
     const pRef = doc($db, "products", productId);
-    const snap = await getDoc(pRef);
-    if (!snap.exists()) throw new Error("Product not found");
-
-    const current = { id: snap.id, ...snap.data() } as ProductRecord;
-    assertReservableProduct(current);
-
-    const batch = writeBatch($db);
-    batch.update(pRef, {
-      status: "RESERVED",
-      is_sellable: false,
-      updated_at: serverTimestamp(),
+    return runTransaction($db, async (tx) => {
+      const snap = await tx.get(pRef);
+      if (!snap.exists()) throw new Error("Product not found");
+      const current = { id: snap.id, ...snap.data() } as ProductRecord;
+      assertReservableProduct(current);
+      tx.update(pRef, { status: "RESERVED", is_sellable: false, updated_at: serverTimestamp() });
+      tx.set(globalRef($db), { active_products: increment(-1), reserved_products: increment(1), updated_at: serverTimestamp() }, { merge: true });
     });
-    batch.set(
-      globalRef($db),
-      {
-        active_products: increment(-1),
-        reserved_products: increment(1),
-        updated_at: serverTimestamp(),
-      },
-      { merge: true }
-    );
-    await batch.commit();
   };
 
   const setActive = async (productId: string) => {
     const pRef = doc($db, "products", productId);
-    const snap = await getDoc(pRef);
-    if (!snap.exists()) throw new Error("Product not found");
-
-    const current = { id: snap.id, ...snap.data() } as ProductRecord;
-    assertActivatableProduct(current);
-
-    const batch = writeBatch($db);
-    batch.update(pRef, {
-      status: "ACTIVE",
-      is_sellable: true,
-      updated_at: serverTimestamp(),
+    return runTransaction($db, async (tx) => {
+      const snap = await tx.get(pRef);
+      if (!snap.exists()) throw new Error("Product not found");
+      const current = { id: snap.id, ...snap.data() } as ProductRecord;
+      assertActivatableProduct(current);
+      tx.update(pRef, { status: "ACTIVE", is_sellable: true, updated_at: serverTimestamp() });
+      tx.set(globalRef($db), { active_products: increment(1), reserved_products: increment(-1), updated_at: serverTimestamp() }, { merge: true });
     });
-    batch.set(
-      globalRef($db),
-      {
-        active_products: increment(1),
-        reserved_products: increment(-1),
-        updated_at: serverTimestamp(),
-      },
-      { merge: true }
-    );
-    await batch.commit();
   };
 
   return {

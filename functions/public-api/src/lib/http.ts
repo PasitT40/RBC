@@ -1,6 +1,11 @@
 import type { Request } from "firebase-functions/v2/https";
 import type { Response } from "express";
 
+const DEFAULT_RESPONSE_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "X-Content-Type-Options": "nosniff",
+} as const;
+
 export class HttpError extends Error {
   status: number;
   code: string;
@@ -25,7 +30,9 @@ export function notFound(message: string) {
 }
 
 export function methodNotAllowed() {
-  return new HttpError(405, "METHOD_NOT_ALLOWED", "Method not allowed");
+  return new HttpError(405, "METHOD_NOT_ALLOWED", "Method not allowed", {
+    Allow: "GET, HEAD, OPTIONS",
+  });
 }
 
 export function createHttpError(error: unknown) {
@@ -41,10 +48,18 @@ export function sendJson(
 ) {
   res.status(status);
   res.set("Content-Type", "application/json; charset=utf-8");
-  for (const [key, value] of Object.entries(headers)) {
+  for (const [key, value] of Object.entries({ ...DEFAULT_RESPONSE_HEADERS, ...headers })) {
     res.set(key, value);
   }
   res.send(JSON.stringify(payload));
+}
+
+export function sendNoContent(res: Response, status: number, headers: Record<string, string> = {}) {
+  res.status(status);
+  for (const [key, value] of Object.entries({ ...DEFAULT_RESPONSE_HEADERS, ...headers })) {
+    res.set(key, value);
+  }
+  res.end();
 }
 
 export function getRequiredString(value: unknown, message: string) {
@@ -53,12 +68,19 @@ export function getRequiredString(value: unknown, message: string) {
   return trimmed;
 }
 
-export function getQueryParam(req: Request, key: string) {
+export function getQueryParam(req: Request, key: string, maxLen = 200) {
   const raw = req.query[key];
-  if (typeof raw === "string") return raw;
+  if (typeof raw === "string") {
+    if (raw.length > maxLen) throw badRequest(`Parameter '${key}' is too long`);
+    return raw;
+  }
   if (Array.isArray(raw)) {
     const first = raw[0];
-    return typeof first === "string" ? first : null;
+    if (typeof first === "string") {
+      if (first.length > maxLen) throw badRequest(`Parameter '${key}' is too long`);
+      return first;
+    }
+    return null;
   }
   return null;
 }

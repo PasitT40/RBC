@@ -20,6 +20,7 @@ Use these as the default command set for day-to-day work:
 - `yarn dev` - run the backoffice with `.env.development`
 - `yarn dev:prod` - run the backoffice locally against `.env.production`
 - `yarn typecheck` - run Nuxt typecheck with a safe temporary npm cache
+- `yarn checkapi` - build/type-check the Firebase public API package
 - `yarn deploy:check:prod` - verify the production env, hosting target, and service-account file before deploy
 - `yarn data:cleanup:dry-run` - preview dev-data cleanup
 - `yarn data:cleanup:apply` - execute dev-data cleanup
@@ -29,6 +30,7 @@ Use these as the default command set for day-to-day work:
 - `yarn deploy:backoffice:prod` - build and deploy Hosting + public API + indexes + rules + storage
 - `yarn deploy:hosting:dev` - build and deploy Hosting for the dev environment
 - `yarn deploy:backoffice:dev` - build and deploy Hosting + public API for the dev environment
+- `yarn deploy:public-api` - deploy all public API functions with explicit dev/prod database bindings
 
 ## Firebase configuration
 
@@ -48,6 +50,12 @@ Storage bucket selection now follows the Firestore database id explicitly:
 - Firestore `ratchaburi-camera-prod` uses `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_PROD`
 - Firestore `ratchaburi-camera-dev` uses `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET_DEV`
 - `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET` remains as a backward-compatible fallback for any other database id
+
+Public API environment split:
+- `publicApi` is the stable production alias behind Hosting `/api/**`
+- `publicApiProd` is pinned to Firestore `ratchaburi-camera-prod`
+- `publicApiDev` is pinned to Firestore `ratchaburi-camera-dev`
+- use `GET /api/health` on each surface to confirm which Firestore database is active before pointing a public frontend at it
 
 Recommended rollout for this repository:
 - keep the existing Firebase project `ratchaburi-camera`

@@ -381,6 +381,21 @@ export function useCategoriesFirestore() {
     }
 
     const brandRef = doc(collection($db, "brands"));
+
+    // Validate category and compute mapping order BEFORE uploading image so that
+    // a missing category throws before any storage write happens.
+    const categoryRef = doc($db, "categories", data.category_id);
+    const categorySnap = await getDoc(categoryRef);
+    if (!categorySnap.exists()) throw new Error("Category not found");
+    const categoryData = { id: categorySnap.id, ...categorySnap.data() } as CategoryRecord;
+
+    let catBrandOrderToUse = normalizeOrderInput(data.categoryBrandOrder);
+    if (typeof catBrandOrderToUse === "number") {
+      await insertOrder("category_brands", catBrandOrderToUse, { categoryId: data.category_id });
+    } else {
+      catBrandOrderToUse = await getNextCollectionOrder("category_brands", { categoryId: data.category_id });
+    }
+
     const imageUrl = data.file ? await uploadImage(data.file, `brands/${brandRef.id}`) : (data.image_url ?? null);
     if (data.file && !imageUrl) {
       throw new Error("Brand image upload failed");
@@ -401,33 +416,19 @@ export function useCategoriesFirestore() {
     const batch = writeBatch($db);
     batch.set(brandRef, brandPayload);
 
-    if (data.category_id) {
-      const categoryRef = doc($db, "categories", data.category_id);
-      const categorySnap = await getDoc(categoryRef);
-      if (!categorySnap.exists()) throw new Error("Category not found");
-
-      let catBrandOrderToUse = normalizeOrderInput(data.categoryBrandOrder);
-      if (typeof catBrandOrderToUse === "number") {
-        await insertOrder("category_brands", catBrandOrderToUse, { categoryId: data.category_id });
-      } else {
-        catBrandOrderToUse = await getNextCollectionOrder("category_brands", { categoryId: data.category_id });
-      }
-
-      const categoryData = { id: categorySnap.id, ...categorySnap.data() } as CategoryRecord;
-      const mappingRef = doc($db, "category_brands", `${data.category_id}__${brandRef.id}`);
-      batch.set(mappingRef, {
-        category_id: data.category_id,
-        category_name: categoryData.name ?? "",
-        category_slug: categoryData.slug || toSlug(categoryData.name ?? data.category_id),
-        brand_id: brandRef.id,
-        brand_name: name,
-        brand_image_url: imageUrl,
-        is_active: data.is_active ?? true,
-        order: catBrandOrderToUse,
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp(),
-      }, { merge: true });
-    }
+    const mappingRef = doc($db, "category_brands", `${data.category_id}__${brandRef.id}`);
+    batch.set(mappingRef, {
+      category_id: data.category_id,
+      category_name: categoryData.name ?? "",
+      category_slug: categoryData.slug || toSlug(categoryData.name ?? data.category_id),
+      brand_id: brandRef.id,
+      brand_name: name,
+      brand_image_url: imageUrl,
+      is_active: data.is_active ?? true,
+      order: catBrandOrderToUse,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+    }, { merge: true });
 
     await commitWithUploadRollback(() => batch.commit(), imageUrl ? [imageUrl] : []);
     return brandRef.id;
@@ -479,10 +480,28 @@ export function useCategoriesFirestore() {
     if (uploadedImageUrl && oldImageUrl) {
       await deleteImage(oldImageUrl);
     }
+
+    if (typeof firestoreData.name === "string") {
+      const newName = firestoreData.name;
+      const newSlug = firestoreData.slug || toSlug(newName);
+      const mappingsSnap = await getDocs(
+        query(collection($db, "category_brands"), where("category_id", "==", id))
+      );
+      if (!mappingsSnap.empty) {
+        const syncBatch = writeBatch($db);
+        for (const mappingDoc of mappingsSnap.docs) {
+          syncBatch.update(mappingDoc.ref, {
+            category_name: newName,
+            category_slug: newSlug,
+            updated_at: serverTimestamp(),
+          });
+        }
+        await syncBatch.commit();
+      }
+    }
   };
 
   const deleteCategory = async (id: string) => {
-    await deleteFolder(`categories/${id}`);
     const qCatBrand = query(collection($db, "category_brands"), where("category_id", "==", id));
     const snapCatBrand = await getDocs(qCatBrand);
 
@@ -492,6 +511,7 @@ export function useCategoriesFirestore() {
       batch.delete(mappingDoc.ref);
     }
     await batch.commit();
+    await deleteFolder(`categories/${id}`).catch((err) => console.error("Storage cleanup failed after category delete", err));
   };
 
   const updateSubcategory = async (id: string, data: any) => {
@@ -512,6 +532,22 @@ export function useCategoriesFirestore() {
 
     const nextName = typeof data.name === "string" ? data.name.trim() : (oldData.name ?? "");
     const nextIsActive = typeof data.is_active === "boolean" ? data.is_active : Boolean(oldData.is_active);
+
+    // Resolve category mappings and run duplicate check BEFORE uploading image so
+    // that a validation failure never leaves an orphaned file in storage.
+    const qCatBrand = query(collection($db, "category_brands"), where("brand_id", "==", id));
+    const snapCatBrand = await getDocs(qCatBrand);
+    const categoryMappings = snapCatBrand.docs;
+    const existingPrimaryMapping = categoryMappings[0] ?? null;
+    const previousCategoryId = existingPrimaryMapping?.data().category_id ?? null;
+    const targetCategoryId = Object.prototype.hasOwnProperty.call(data, "category_id")
+      ? (data.category_id ? String(data.category_id) : null)
+      : previousCategoryId;
+
+    if (targetCategoryId && await isSubcategoryNameDuplicate(nextName, targetCategoryId, id)) {
+      throw new Error("Duplicate brand name in the selected category");
+    }
+
     const uploadedImageUrl = data.file
       ? await uploadImage(data.file, `brands/${id}`)
       : null;
@@ -534,19 +570,6 @@ export function useCategoriesFirestore() {
     };
     if (typeof nextBrandOrder === "number") {
       brandPayload.order = nextBrandOrder;
-    }
-
-    const qCatBrand = query(collection($db, "category_brands"), where("brand_id", "==", id));
-    const snapCatBrand = await getDocs(qCatBrand);
-    const categoryMappings = snapCatBrand.docs;
-    const existingPrimaryMapping = categoryMappings[0] ?? null;
-    const previousCategoryId = existingPrimaryMapping?.data().category_id ?? null;
-    const targetCategoryId = Object.prototype.hasOwnProperty.call(data, "category_id")
-      ? (data.category_id ? String(data.category_id) : null)
-      : previousCategoryId;
-
-    if (targetCategoryId && await isSubcategoryNameDuplicate(nextName, targetCategoryId, id)) {
-      throw new Error("Duplicate brand name in the selected category");
     }
 
     const previousCategoryBrandOrder = getOrderValue(existingPrimaryMapping?.data().order);
@@ -630,8 +653,6 @@ export function useCategoriesFirestore() {
   };
 
   const deleteSubcategory = async (id: string) => {
-    await deleteFolder(`brands/${id}`);
-
     const qCatBrand = query(collection($db, "category_brands"), where("brand_id", "==", id));
     const snapCatBrand = await getDocs(qCatBrand);
 
@@ -641,6 +662,7 @@ export function useCategoriesFirestore() {
       batch.delete(mappingDoc.ref);
     }
     await batch.commit();
+    await deleteFolder(`brands/${id}`).catch((err) => console.error("Storage cleanup failed after brand delete", err));
   };
 
   return {

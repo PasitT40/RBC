@@ -70,6 +70,40 @@ All at once:
 yarn deploy:backoffice:prod
 ```
 
+Public API only:
+
+```bash
+yarn deploy:public-api
+```
+
+## Public API environment split
+
+The public catalog API is intentionally split into separate Cloud Functions so
+dev and prod no longer depend on a shared runtime `FIRESTORE_DATABASE_ID`.
+
+- `publicApi`
+  - stable production alias used by the current Hosting rewrite on `/api/**`
+- `publicApiProd`
+  - pinned to Firestore database `ratchaburi-camera-prod`
+- `publicApiDev`
+  - pinned to Firestore database `ratchaburi-camera-dev`
+
+Recommended verification after deploy:
+
+```bash
+curl https://ratchaburi-camera.web.app/api/health
+```
+
+And check the direct dev function URL once deployed:
+
+```bash
+curl "https://asia-southeast1-ratchaburi-camera.cloudfunctions.net/publicApiDev/api/health"
+```
+
+Expected result:
+- production Hosting `/api/**` returns `database_id = ratchaburi-camera-prod`
+- direct `publicApiDev` function returns `database_id = ratchaburi-camera-dev`
+
 ## Production smoke test
 
 After deploy, verify:

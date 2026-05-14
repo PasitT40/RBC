@@ -1,4 +1,4 @@
-import { getDb } from "../lib/admin.js";
+import type { Firestore } from "firebase-admin/firestore";
 import type { PaginatedResponse, ProductCard } from "../lib/contracts.js";
 import {
   assertActiveCategoryBrandMapping,
@@ -16,14 +16,13 @@ import type { Request } from "firebase-functions/v2/https";
 import { FieldPath } from "firebase-admin/firestore";
 import type { SortKey } from "../lib/contracts.js";
 
-function getProductSort(sort: string | null): SortKey {
-  const resolved = (sort ?? "updated_at_desc") as SortKey;
+function getProductSort(sort: string | null, hasPriceRange: boolean): SortKey {
+  const resolved = (sort ?? (hasPriceRange ? "sell_price_asc" : "updated_at_desc")) as SortKey;
   if (resolved === "updated_at_desc" || resolved === "sell_price_asc" || resolved === "sell_price_desc") return resolved;
   throw badRequest("Invalid sort");
 }
 
-function buildCategoryBrandProductsQuery(sort: SortKey) {
-  const db = getDb();
+function buildCategoryBrandProductsQuery(db: Firestore, sort: SortKey) {
   let query = db
     .collection("products")
     .where("show", "==", true)
@@ -50,24 +49,21 @@ function getCursorValueForSort(sort: SortKey, product: Record<string, unknown>) 
   return typeof product.sell_price === "number" ? product.sell_price : null;
 }
 
-export async function listCategoriesRoute() {
-  const db = getDb();
+export async function listCategoriesRoute(db: Firestore) {
   const snap = await db.collection("categories").where("is_active", "==", true).orderBy("order", "asc").get();
   return {
     items: snap.docs.map((doc) => serializeCategory(doc)),
   };
 }
 
-export async function getCategoryBySlugRoute(categorySlug: string) {
-  const db = getDb();
+export async function getCategoryBySlugRoute(db: Firestore, categorySlug: string) {
   const categoryDoc = await resolveActiveCategoryBySlug(db, categorySlug);
   return {
     item: serializeCategory(categoryDoc),
   };
 }
 
-export async function getCategoryBrandsRoute(categorySlug: string) {
-  const db = getDb();
+export async function getCategoryBrandsRoute(db: Firestore, categorySlug: string) {
   const categoryDoc = await resolveActiveCategoryBySlug(db, categorySlug);
   const mappingsSnap = await db
     .collection("category_brands")
@@ -93,24 +89,29 @@ export async function getCategoryBrandsRoute(categorySlug: string) {
 }
 
 export async function getCategoryBrandProductsRoute(
+  db: Firestore,
   req: Request,
   categorySlug: string,
   brandSlug: string
 ): Promise<PaginatedResponse<ProductCard>> {
-  const db = getDb();
   const categoryDoc = await resolveActiveCategoryBySlug(db, categorySlug);
   const brandDoc = await resolveActiveBrandBySlug(db, brandSlug);
   await assertActiveCategoryBrandMapping(db, categoryDoc.id, brandDoc.id);
 
-  const sort = getProductSort(getQueryParam(req, "sort"));
   const limit = parsePositiveInt(getQueryParam(req, "limit"), "limit", 24, 60);
   const minPrice = parseOptionalMoney(getQueryParam(req, "minPrice"), "minPrice");
   const maxPrice = parseOptionalMoney(getQueryParam(req, "maxPrice"), "maxPrice");
-  const cursor = decodeCursor(getQueryParam(req, "cursor"));
+  const hasPriceRange = minPrice !== null || maxPrice !== null;
+  const sort = getProductSort(getQueryParam(req, "sort"), hasPriceRange);
+  const cursor = decodeCursor(getQueryParam(req, "cursor", 512));
+  const expectedCursorKind = sort === "updated_at_desc" ? "timestamp" : "number";
 
   if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) throw badRequest("Invalid price range");
+  if (hasPriceRange && sort === "updated_at_desc") throw badRequest("Price range requires price sort");
+  if (cursor?.sort && cursor.sort !== sort) throw badRequest("Cursor does not match sort");
+  if (cursor && cursor.fieldKind !== expectedCursorKind) throw badRequest("Cursor does not match sort");
 
-  let query = buildCategoryBrandProductsQuery(sort)
+  let query = buildCategoryBrandProductsQuery(db, sort)
     .where("category_id", "==", categoryDoc.id)
     .where("brand_id", "==", brandDoc.id);
 
@@ -126,12 +127,9 @@ export async function getCategoryBrandProductsRoute(
   const items = docs.map((doc) => serializeProductCard(doc, context));
   const hasMore = snap.docs.length > limit;
   const lastDoc = docs.at(-1);
-  const nextCursor = hasMore && lastDoc
-    ? encodeCursor({
-        fieldValue: getCursorValueForSort(sort, lastDoc.data() ?? {}),
-        fieldKind: sort === "updated_at_desc" ? "timestamp" : "number",
-        id: lastDoc.id,
-      })
+  const cursorFieldValue = hasMore && lastDoc ? getCursorValueForSort(sort, lastDoc.data() ?? {}) : null;
+  const nextCursor = hasMore && lastDoc && cursorFieldValue !== null
+    ? encodeCursor({ fieldValue: cursorFieldValue, fieldKind: expectedCursorKind, id: lastDoc.id, sort })
     : null;
 
   return {

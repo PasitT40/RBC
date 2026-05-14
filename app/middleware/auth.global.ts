@@ -3,6 +3,8 @@ import { signOut } from "firebase/auth";
 export default defineNuxtRouteMiddleware(async (to, from) => {
   if (import.meta.server) return;
 
+  if (to.path === "/public" || to.path.startsWith("/public/")) return;
+
   const { user, waitUntilReady } = useAuthSession();
   const { $auth } = useNuxtApp() as { $auth: any };
   const { ensureOwnerAccess, clearOwnerAccess } = useOwnerAccess();

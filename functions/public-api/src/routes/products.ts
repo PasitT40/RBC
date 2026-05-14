@@ -1,21 +1,20 @@
 import { FieldPath } from "firebase-admin/firestore";
 import type { Request } from "firebase-functions/v2/https";
 import type { PaginatedResponse, ProductCard, SortKey } from "../lib/contracts.js";
-import { getDb } from "../lib/admin.js";
+import type { Firestore } from "firebase-admin/firestore";
 import { buildProductRouteContext, parseOptionalMoney, parsePositiveInt, resolveActiveBrandBySlug, resolveActiveCategoryBySlug } from "../lib/firestore-helpers.js";
 import { badRequest, getQueryParam, notFound } from "../lib/http.js";
 import { applyCursor, decodeCursor, encodeCursor } from "../lib/pagination.js";
 import { isPublicVisibleProduct } from "../lib/public-visibility.js";
 import { serializeProductCard, serializeProductDetail } from "../lib/serializers.js";
 
-function getProductSort(sort: string | null): SortKey {
-  const resolved = (sort ?? "updated_at_desc") as SortKey;
+function getProductSort(sort: string | null, hasPriceRange: boolean): SortKey {
+  const resolved = (sort ?? (hasPriceRange ? "sell_price_asc" : "updated_at_desc")) as SortKey;
   if (resolved === "updated_at_desc" || resolved === "sell_price_asc" || resolved === "sell_price_desc") return resolved;
   throw badRequest("Invalid sort");
 }
 
-function buildSortedProductsQuery(sort: SortKey) {
-  const db = getDb();
+function buildSortedProductsQuery(db: Firestore, sort: SortKey) {
   let query = db
     .collection("products")
     .where("show", "==", true)
@@ -42,18 +41,22 @@ function getCursorValueForSort(sort: SortKey, product: Record<string, unknown>) 
   return typeof product.sell_price === "number" ? product.sell_price : null;
 }
 
-export async function listProductsRoute(req: Request): Promise<PaginatedResponse<ProductCard>> {
-  const db = getDb();
+export async function listProductsRoute(db: Firestore, req: Request): Promise<PaginatedResponse<ProductCard>> {
   const categorySlug = getQueryParam(req, "category");
   const brandSlug = getQueryParam(req, "brand");
-  const sort = getProductSort(getQueryParam(req, "sort"));
   const limit = parsePositiveInt(getQueryParam(req, "limit"), "limit", 24, 60);
   const minPrice = parseOptionalMoney(getQueryParam(req, "minPrice"), "minPrice");
   const maxPrice = parseOptionalMoney(getQueryParam(req, "maxPrice"), "maxPrice");
-  const cursor = decodeCursor(getQueryParam(req, "cursor"));
+  const hasPriceRange = minPrice !== null || maxPrice !== null;
+  const sort = getProductSort(getQueryParam(req, "sort"), hasPriceRange);
+  const cursor = decodeCursor(getQueryParam(req, "cursor", 512));
+  const expectedCursorKind = sort === "updated_at_desc" ? "timestamp" : "number";
 
   if (brandSlug && !categorySlug) throw badRequest("Brand filter requires category");
   if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) throw badRequest("Invalid price range");
+  if (hasPriceRange && sort === "updated_at_desc") throw badRequest("Price range requires price sort");
+  if (cursor?.sort && cursor.sort !== sort) throw badRequest("Cursor does not match sort");
+  if (cursor && cursor.fieldKind !== expectedCursorKind) throw badRequest("Cursor does not match sort");
 
   let categoryId: string | null = null;
   let brandId: string | null = null;
@@ -72,7 +75,7 @@ export async function listProductsRoute(req: Request): Promise<PaginatedResponse
     }
   }
 
-  let query = buildSortedProductsQuery(sort);
+  let query = buildSortedProductsQuery(db, sort);
 
   if (categoryId) query = query.where("category_id", "==", categoryId);
   if (brandId) query = query.where("brand_id", "==", brandId);
@@ -88,12 +91,9 @@ export async function listProductsRoute(req: Request): Promise<PaginatedResponse
   const items = docs.map((doc) => serializeProductCard(doc, context));
   const hasMore = snap.docs.length > limit;
   const lastDoc = docs.at(-1);
-  const nextCursor = hasMore && lastDoc
-    ? encodeCursor({
-        fieldValue: getCursorValueForSort(sort, lastDoc.data() ?? {}),
-        fieldKind: sort === "updated_at_desc" ? "timestamp" : "number",
-        id: lastDoc.id,
-      })
+  const cursorFieldValue = hasMore && lastDoc ? getCursorValueForSort(sort, lastDoc.data() ?? {}) : null;
+  const nextCursor = hasMore && lastDoc && cursorFieldValue !== null
+    ? encodeCursor({ fieldValue: cursorFieldValue, fieldKind: expectedCursorKind, id: lastDoc.id, sort })
     : null;
 
   return {
@@ -103,8 +103,7 @@ export async function listProductsRoute(req: Request): Promise<PaginatedResponse
   };
 }
 
-export async function getProductBySlugRoute(slug: string) {
-  const db = getDb();
+export async function getProductBySlugRoute(db: Firestore, slug: string) {
   const snap = await db.collection("products").where("slug", "==", slug).limit(1).get();
   const doc = snap.docs[0];
 

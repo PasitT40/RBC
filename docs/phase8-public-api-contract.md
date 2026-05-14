@@ -240,6 +240,10 @@ Returns a paginated list of public-visible products.
   - optional
   - integer
 
+Price-range note:
+- if `minPrice` or `maxPrice` is present and `sort` is omitted, the API may default to `sell_price_asc`
+- `sort=updated_at_desc` with a price range should return `400 Bad Request` rather than relying on a Firestore query shape that cannot be indexed correctly
+
 ### Semantics
 
 - Always apply the central product visibility rule.

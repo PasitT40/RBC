@@ -5,10 +5,18 @@
       "codebase": "public-api"
     }
   ],
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
+  "firestore": [
+    {
+      "database": "ratchaburi-camera-dev",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    },
+    {
+      "database": "ratchaburi-camera-prod",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    }
+  ],
   "storage": [
     {
       "target": "dev",

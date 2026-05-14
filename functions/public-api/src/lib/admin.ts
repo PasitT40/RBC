@@ -15,3 +15,8 @@ export function getDb() {
   const databaseId = process.env.FIRESTORE_DATABASE_ID || "(default)";
   return databaseId === "(default)" ? getFirestore(firebaseApp) : getFirestore(firebaseApp, databaseId);
 }
+
+export function getDbForDatabase(databaseId: string) {
+  const firebaseApp = getAdminApp();
+  return databaseId === "(default)" ? getFirestore(firebaseApp) : getFirestore(firebaseApp, databaseId);
+}

@@ -137,6 +137,10 @@ Recommended launch filters:
 - brand within category
 - price range
 
+Price-range implementation note:
+- when a price range is used, order by `sell_price`
+- if a client explicitly combines price range with `updated_at desc`, return `400 Bad Request` instead of letting Firestore raise a runtime query error
+
 Optional later filters:
 - condition
 - shutter range

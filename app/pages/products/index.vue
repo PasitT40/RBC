@@ -313,6 +313,7 @@ const onToggleStatus = async (item: ProductRow) => {
 };
 
 const onConfirmSale = async () => {
+  if (saleSubmitting.value) return;
   if (!saleTarget.value || !validateSaleForm()) return;
 
   const item = saleTarget.value;
