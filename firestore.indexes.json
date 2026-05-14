@@ -381,6 +381,16 @@
         { "fieldPath": "sell_price", "order": "DESCENDING" },
         { "fieldPath": "__name__", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "show", "order": "ASCENDING" },
+        { "fieldPath": "is_deleted", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

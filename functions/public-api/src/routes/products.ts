@@ -103,6 +103,31 @@ export async function listProductsRoute(db: Firestore, req: Request): Promise<Pa
   };
 }
 
+export async function searchProductsRoute(db: Firestore, req: Request): Promise<{ items: ProductCard[] }> {
+  const q = getQueryParam(req, "q", 100)?.trim() ?? "";
+  if (!q) throw badRequest("q is required");
+  if (q.length < 1) throw badRequest("q must be at least 1 character");
+
+  const limit = parsePositiveInt(getQueryParam(req, "limit"), "limit", 10, 20);
+  const qEnd = q + "";
+
+  const snap = await db
+    .collection("products")
+    .where("show", "==", true)
+    .where("is_deleted", "==", false)
+    .where("status", "==", "ACTIVE")
+    .orderBy("name")
+    .startAt(q)
+    .endAt(qEnd)
+    .limit(limit)
+    .get();
+
+  const context = await buildProductRouteContext(db, snap.docs);
+  return {
+    items: snap.docs.map((doc) => serializeProductCard(doc, context)),
+  };
+}
+
 export async function getProductBySlugRoute(db: Firestore, slug: string) {
   const snap = await db.collection("products").where("slug", "==", slug).limit(1).get();
   const doc = snap.docs[0];

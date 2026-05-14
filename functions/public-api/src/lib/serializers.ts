@@ -1,5 +1,5 @@
 import type { DocumentSnapshot } from "firebase-admin/firestore";
-import type { BrandSummary, CategorySummary, ProductCard, ProductDetail, ProductRouteContext } from "./contracts.js";
+import type { BrandItem, BrandSummary, CategorySummary, ProductCard, ProductDetail, ProductRouteContext } from "./contracts.js";
 import { resolveCategorySeo, resolveProductSeo } from "./seo.js";
 
 function asIso(value: unknown) {
@@ -67,6 +67,18 @@ export function serializeCategory(doc: DocumentSnapshot): CategorySummary {
     order: asNumber(category.order) ?? 0,
     seo: resolveCategorySeo(category),
     updated_at: asIso(category.updated_at),
+  };
+}
+
+export function serializeBrand(doc: DocumentSnapshot): BrandItem {
+  const brand = doc.data() ?? {};
+  return {
+    id: doc.id,
+    name: String(brand.name ?? ""),
+    slug: String(brand.slug ?? ""),
+    image_url: asTrimmedString(brand.image_url),
+    order: asNumber(brand.order) ?? 0,
+    updated_at: asIso(brand.updated_at),
   };
 }
 

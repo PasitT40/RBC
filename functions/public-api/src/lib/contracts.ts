@@ -47,6 +47,15 @@ export type CategorySummary = {
   updated_at: string | null;
 };
 
+export type BrandItem = {
+  id: string;
+  name: string;
+  slug: string;
+  image_url: string | null;
+  order: number;
+  updated_at: string | null;
+};
+
 export type BrandSummary = {
   id: string;
   name: string;
@@ -56,6 +65,24 @@ export type BrandSummary = {
   category_id: string;
   category_slug: string;
   updated_at: string | null;
+};
+
+export type SiteBanner = {
+  id: string;
+  image_url: string;
+  order: number;
+};
+
+export type SiteCredit = {
+  id: string;
+  image_url: string;
+  order: number;
+};
+
+export type SiteSettings = {
+  banner_auto_slide_sec: number;
+  banners: SiteBanner[];
+  credits: SiteCredit[];
 };
 
 export type PaginatedResponse<T> = {

@@ -9,7 +9,9 @@ import {
   getCategoryBrandProductsRoute,
   listCategoriesRoute,
 } from "./routes/categories.js";
-import { getProductBySlugRoute, listProductsRoute } from "./routes/products.js";
+import { listBrandsRoute } from "./routes/brands.js";
+import { getProductBySlugRoute, listProductsRoute, searchProductsRoute } from "./routes/products.js";
+import { getSiteSettingsRoute } from "./routes/settings.js";
 
 const region = process.env.FUNCTION_REGION || "asia-southeast1";
 
@@ -26,6 +28,8 @@ const DATABASE_IDS = {
 type ApiEnvironment = keyof typeof DATABASE_IDS;
 
 const CACHE_HEADERS = {
+  search: "public, s-maxage=10, stale-while-revalidate=60",
+  siteSettings: "public, s-maxage=60, stale-while-revalidate=300",
   navigation: "public, s-maxage=300, stale-while-revalidate=1800",
   productList: "public, s-maxage=60, stale-while-revalidate=300",
   productDetail: "public, s-maxage=30, stale-while-revalidate=120",
@@ -75,6 +79,27 @@ function createPublicApiHandler(environment: ApiEnvironment, db: Firestore) {
             "Cache-Control": "no-store",
           }
         );
+      }
+
+      if (pathname === "/api/search") {
+        const payload = await searchProductsRoute(db, req);
+        return sendJson(res, 200, payload, {
+          "Cache-Control": CACHE_HEADERS.search,
+        });
+      }
+
+      if (pathname === "/api/brands") {
+        const payload = await listBrandsRoute(db);
+        return sendJson(res, 200, payload, {
+          "Cache-Control": CACHE_HEADERS.navigation,
+        });
+      }
+
+      if (pathname === "/api/settings/site") {
+        const payload = await getSiteSettingsRoute(db);
+        return sendJson(res, 200, payload, {
+          "Cache-Control": CACHE_HEADERS.siteSettings,
+        });
       }
 
       if (pathname === "/api/products") {
