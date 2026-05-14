@@ -1,4 +1,6 @@
-export type SortKey = "updated_at_desc" | "sell_price_asc" | "sell_price_desc";
+export type SortKey = "updated_at_desc" | "sell_price_asc" | "sell_price_desc" | "condition_asc" | "condition_desc";
+
+export type AvailabilityStatus = "available" | "reserved" | "sold";
 
 export type ProductCard = {
   id: string;
@@ -18,6 +20,7 @@ export type ProductCard = {
   sell_price: number | null;
   cover_image: string | null;
   condition: number | null;
+  availability_status: AvailabilityStatus;
   updated_at: string | null;
 };
 

@@ -1,6 +1,12 @@
 import type { DocumentSnapshot } from "firebase-admin/firestore";
-import type { BrandItem, BrandSummary, CategorySummary, ProductCard, ProductDetail, ProductRouteContext } from "./contracts.js";
+import type { AvailabilityStatus, BrandItem, BrandSummary, CategorySummary, ProductCard, ProductDetail, ProductRouteContext } from "./contracts.js";
 import { resolveCategorySeo, resolveProductSeo } from "./seo.js";
+
+function toAvailabilityStatus(status: unknown): AvailabilityStatus {
+  if (status === "RESERVED") return "reserved";
+  if (status === "SOLD") return "sold";
+  return "available";
+}
 
 function asIso(value: unknown) {
   if (!value || typeof value !== "object") return null;
@@ -41,6 +47,7 @@ export function serializeProductCard(doc: DocumentSnapshot, context: ProductRout
     sell_price: asNumber(product.sell_price),
     cover_image: asTrimmedString(product.cover_image),
     condition: asNumber(product.condition),
+    availability_status: toAvailabilityStatus(product.status),
     updated_at: asIso(product.updated_at),
   };
 }

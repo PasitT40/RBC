@@ -58,6 +58,20 @@ export function parseOptionalMoney(value: string | null, label: string) {
   return parsed;
 }
 
+export function parseOptionalCondition(value: string | null, label: string) {
+  if (value === null || value === "") return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 5) throw badRequest(`Invalid ${label}`);
+  return parsed;
+}
+
+export function resolveStatusFilter(availability: string | null): string[] {
+  if (availability === "available") return ["ACTIVE"];
+  if (availability === "sold") return ["SOLD"];
+  if (availability === "reserved") return ["RESERVED"];
+  return ["ACTIVE", "RESERVED", "SOLD"];
+}
+
 export async function buildProductRouteContext(
   db: Firestore,
   products: Array<DocumentSnapshot<DocumentData>>
