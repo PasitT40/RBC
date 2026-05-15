@@ -4,8 +4,8 @@ import { badRequest } from "./http.js";
 
 type CursorPayload = {
   v: 1;
-  fieldValue: string | number | null;
-  fieldKind: "number" | "timestamp" | "string" | "null";
+  fieldValue: number | null;
+  fieldKind: "number" | "timestamp" | "null";
   id: string;
   sort?: string;
 };
@@ -14,7 +14,7 @@ export function encodeCursor(payload: Omit<CursorPayload, "v">) {
   return Buffer.from(JSON.stringify({ v: 1, ...payload }), "utf8").toString("base64url");
 }
 
-const VALID_FIELD_KINDS = new Set<string>(["number", "timestamp", "string", "null"]);
+const VALID_FIELD_KINDS = new Set<string>(["number", "timestamp", "null"]);
 
 export function decodeCursor(value: string | null): CursorPayload | null {
   if (!value) return null;
@@ -32,7 +32,8 @@ export function decodeCursor(value: string | null): CursorPayload | null {
 export function applyCursor(query: Query, cursor: CursorPayload | null) {
   if (!cursor) return query;
 
-  if (cursor.fieldKind === "timestamp" && typeof cursor.fieldValue === "number") {
+  if (cursor.fieldKind === "timestamp") {
+    if (typeof cursor.fieldValue !== "number") throw badRequest("Invalid cursor");
     return query.startAfter(Timestamp.fromMillis(cursor.fieldValue), cursor.id);
   }
 

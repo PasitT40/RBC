@@ -21,8 +21,8 @@ function getProductSort(sort: string | null, hasPriceRange: boolean, hasConditio
   if (hasConditionFilter && resolved !== "condition_asc" && resolved !== "condition_desc") {
     throw badRequest("Condition filter requires condition_asc or condition_desc sort");
   }
-  if (hasPriceRange && (resolved === "condition_asc" || resolved === "condition_desc")) {
-    throw badRequest("Price range requires price sort");
+  if (hasPriceRange && resolved !== "sell_price_asc" && resolved !== "sell_price_desc") {
+    throw badRequest("Price range requires sell_price_asc or sell_price_desc sort");
   }
 
   return resolved;
@@ -86,7 +86,7 @@ export async function listProductsRoute(db: Firestore, req: Request): Promise<Pa
   if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) throw badRequest("Invalid price range");
   if (hasConditionFilter && hasPriceRange) throw badRequest("Cannot use condition filter with price range");
   if (cursor?.sort && cursor.sort !== sort) throw badRequest("Cursor does not match sort");
-  if (cursor && cursor.fieldKind !== expectedCursorKind) throw badRequest("Cursor does not match sort");
+  if (cursor && cursor.fieldKind !== expectedCursorKind && cursor.fieldKind !== "null") throw badRequest("Cursor does not match sort");
 
   const statusFilter = resolveStatusFilter(availability);
 
@@ -128,8 +128,8 @@ export async function listProductsRoute(db: Firestore, req: Request): Promise<Pa
   const hasMore = snap.docs.length > limit;
   const lastDoc = docs.at(-1);
   const cursorFieldValue = hasMore && lastDoc ? getCursorValueForSort(sort, lastDoc.data() ?? {}) : null;
-  const nextCursor = hasMore && lastDoc && cursorFieldValue !== null
-    ? encodeCursor({ fieldValue: cursorFieldValue, fieldKind: expectedCursorKind, id: lastDoc.id, sort })
+  const nextCursor = hasMore && lastDoc
+    ? encodeCursor({ fieldValue: cursorFieldValue, fieldKind: cursorFieldValue === null ? "null" : expectedCursorKind, id: lastDoc.id, sort })
     : null;
 
   return {
@@ -145,7 +145,7 @@ export async function searchProductsRoute(db: Firestore, req: Request): Promise<
   if (q.length < 1) throw badRequest("q must be at least 1 character");
 
   const limit = parsePositiveInt(getQueryParam(req, "limit"), "limit", 10, 20);
-  const qEnd = q + "";
+  const qEnd = q + "￿";
 
   const snap = await db
     .collection("products")

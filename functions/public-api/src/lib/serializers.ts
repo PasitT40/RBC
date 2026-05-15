@@ -10,8 +10,14 @@ function toAvailabilityStatus(status: unknown): AvailabilityStatus {
 
 function asIso(value: unknown) {
   if (!value || typeof value !== "object") return null;
-  if ("toDate" in (value as Record<string, unknown>) && typeof (value as { toDate: () => Date }).toDate === "function") {
-    return (value as { toDate: () => Date }).toDate().toISOString();
+  if ("toDate" in (value as Record<string, unknown>) && typeof (value as { toDate: () => unknown }).toDate === "function") {
+    try {
+      const date = (value as { toDate: () => unknown }).toDate();
+      if (!(date instanceof Date) || !Number.isFinite(date.getTime())) return null;
+      return date.toISOString();
+    } catch {
+      return null;
+    }
   }
   return null;
 }
