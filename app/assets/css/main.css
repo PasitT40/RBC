@@ -1,5 +1,506 @@
 @import "tailwindcss" prefix(tw);
 
+/* ===== RBC Design Tokens ===== */
+:root {
+  --rbc-orange-50: #fff7ed;
+  --rbc-orange-100: #ffedd5;
+  --rbc-orange-200: #fed7aa;
+  --rbc-orange-300: #fdba74;
+  --rbc-orange-400: #fb923c;
+  --rbc-orange-500: #f97316;
+  --rbc-orange-600: #ea580c;
+  --rbc-orange-700: #c2410c;
+  --rbc-orange-800: #9a3412;
+
+  --rbc-slate-50: #f8fafc;
+  --rbc-slate-100: #f1f5f9;
+  --rbc-slate-200: #e2e8f0;
+  --rbc-slate-400: #94a3b8;
+  --rbc-slate-500: #64748b;
+  --rbc-slate-700: #334155;
+  --rbc-slate-900: #0f172a;
+
+  --rbc-shadow-card: 0 4px 20px rgba(249, 115, 22, 0.10);
+  --rbc-shadow-modal: 0 20px 60px rgba(15, 23, 42, 0.18);
+  --rbc-shadow-soft: 0 2px 12px rgba(15, 23, 42, 0.06);
+
+  --rbc-radius-card: 14px;
+  --rbc-radius-btn: 8px;
+  --rbc-radius-badge: 20px;
+  --rbc-radius-input: 8px;
+}
+
+/* ===== Page shell ===== */
+.rbc-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  background: var(--rbc-slate-50);
+}
+
+/* ===== Sidebar ===== */
+.rbc-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-right: 1px solid var(--rbc-slate-200);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+}
+
+.rbc-sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid var(--rbc-slate-100);
+}
+
+.rbc-sidebar__logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--rbc-orange-500), var(--rbc-orange-600));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.rbc-sidebar__logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rbc-sidebar__logo-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rbc-slate-900);
+  line-height: 1.2;
+}
+
+.rbc-sidebar__logo-sub {
+  font-size: 10px;
+  color: var(--rbc-slate-400);
+  margin-top: 1px;
+}
+
+.rbc-sidebar__nav {
+  flex: 1;
+  padding: 10px 8px;
+}
+
+.rbc-sidebar__nav-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--rbc-slate-400);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 10px 4px;
+}
+
+.rbc-sidebar__footer {
+  padding: 10px 8px 12px;
+  border-top: 1px solid var(--rbc-slate-100);
+}
+
+.rbc-sidebar__meta {
+  margin-top: 8px;
+  font-size: 9px;
+  line-height: 1.6;
+  color: var(--rbc-slate-400);
+  padding: 0 10px;
+}
+
+/* ===== Main area ===== */
+.rbc-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rbc-topbar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--rbc-slate-200);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.rbc-topbar__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--rbc-slate-900);
+  line-height: 1.2;
+}
+
+.rbc-topbar__sub {
+  font-size: 11px;
+  color: var(--rbc-slate-400);
+  margin-top: 2px;
+}
+
+.rbc-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rbc-page {
+  padding: 20px 24px;
+  flex: 1;
+}
+
+/* ===== Buttons ===== */
+.rbc-btn-primary {
+  background: linear-gradient(135deg, var(--rbc-orange-500), var(--rbc-orange-600)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.30) !important;
+  border-radius: var(--rbc-radius-btn) !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+}
+
+.rbc-btn-ghost {
+  background: #ffffff !important;
+  color: var(--rbc-slate-700) !important;
+  border: 1px solid var(--rbc-slate-200) !important;
+  border-radius: var(--rbc-radius-btn) !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+
+/* ===== Cards ===== */
+.rbc-card {
+  background: #ffffff;
+  border-radius: var(--rbc-radius-card);
+  box-shadow: var(--rbc-shadow-card);
+  overflow: hidden;
+}
+
+.rbc-card__header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rbc-slate-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rbc-card__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rbc-slate-900);
+}
+
+.rbc-card__body {
+  padding: 16px 18px;
+}
+
+/* ===== Stat cards ===== */
+.rbc-stat-card {
+  background: #ffffff;
+  border-radius: var(--rbc-radius-card);
+  box-shadow: var(--rbc-shadow-card);
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.rbc-stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.rbc-stat-card--orange::after { background: linear-gradient(90deg, var(--rbc-orange-500), var(--rbc-orange-300)); }
+.rbc-stat-card--green::after  { background: linear-gradient(90deg, #22c55e, #86efac); }
+.rbc-stat-card--blue::after   { background: linear-gradient(90deg, #3b82f6, #93c5fd); }
+.rbc-stat-card--purple::after { background: linear-gradient(90deg, #a855f7, #d8b4fe); }
+
+.rbc-stat-card__label {
+  font-size: 11px;
+  color: var(--rbc-slate-400);
+  margin-bottom: 6px;
+}
+
+.rbc-stat-card__value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--rbc-slate-900);
+  line-height: 1;
+}
+
+.rbc-stat-card__delta {
+  font-size: 10px;
+  color: #16a34a;
+  margin-top: 5px;
+}
+
+.rbc-stat-card__icon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== Data table wrapper ===== */
+.rbc-table-wrap {
+  background: #ffffff;
+  border-radius: var(--rbc-radius-card);
+  box-shadow: var(--rbc-shadow-card);
+  overflow: hidden;
+}
+
+.rbc-table-toolbar {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--rbc-slate-100);
+  flex-wrap: wrap;
+}
+
+/* Override Vuetify data-table header */
+.rbc-table-wrap .v-data-table-header th {
+  background: var(--rbc-orange-50) !important;
+  color: var(--rbc-orange-800) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.rbc-table-wrap .v-data-table__tr:hover td {
+  background: var(--rbc-orange-50) !important;
+}
+
+/* ===== Badges ===== */
+.rbc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--rbc-radius-badge);
+  font-size: 10px;
+  font-weight: 600;
+}
+.rbc-badge--green  { background: #dcfce7; color: #166534; }
+.rbc-badge--blue   { background: #dbeafe; color: #1e40af; }
+.rbc-badge--orange { background: var(--rbc-orange-100); color: var(--rbc-orange-700); }
+.rbc-badge--red    { background: #fee2e2; color: #991b1b; }
+.rbc-badge--gray   { background: var(--rbc-slate-100); color: var(--rbc-slate-500); }
+
+/* ===== Filter chips ===== */
+.rbc-filter-chip {
+  padding: 5px 14px;
+  border-radius: var(--rbc-radius-badge);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--rbc-slate-200);
+  background: #ffffff;
+  color: var(--rbc-slate-500);
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.rbc-filter-chip:hover {
+  border-color: var(--rbc-orange-200);
+  color: var(--rbc-orange-700);
+}
+
+.rbc-filter-chip--active {
+  background: var(--rbc-orange-50);
+  border-color: var(--rbc-orange-200);
+  color: var(--rbc-orange-700);
+  font-weight: 600;
+}
+
+/* ===== Form fields ===== */
+.rbc-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rbc-slate-500);
+  margin-bottom: 4px;
+}
+
+.rbc-field-label .req {
+  color: var(--rbc-orange-600);
+  margin-left: 2px;
+}
+
+/* Override Vuetify outlined inputs */
+.rbc-input-wrap .v-field {
+  border-radius: var(--rbc-radius-input) !important;
+}
+
+.rbc-input-wrap .v-field--focused .v-field__outline {
+  --v-field-border-width: 2px;
+}
+
+/* ===== Upload zone ===== */
+.rbc-upload-zone {
+  border: 2px dashed var(--rbc-orange-200);
+  background: var(--rbc-orange-50);
+  border-radius: 10px;
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.rbc-upload-zone:hover {
+  border-color: var(--rbc-orange-500);
+  background: var(--rbc-orange-100);
+}
+
+.rbc-upload-zone--error {
+  border-color: #f87171;
+  background: #fff5f5;
+}
+
+.rbc-upload-zone__text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rbc-orange-700);
+  margin-top: 4px;
+}
+
+.rbc-upload-zone__constraint {
+  font-size: 10px;
+  color: var(--rbc-slate-500);
+  background: #ffffff;
+  border: 1px solid var(--rbc-slate-200);
+  border-radius: 6px;
+  padding: 2px 10px;
+  display: inline-block;
+  margin-top: 5px;
+}
+
+/* ===== Step indicator ===== */
+.rbc-steps {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rbc-slate-100);
+}
+
+.rbc-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rbc-step__dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.rbc-step__dot--done   { background: var(--rbc-orange-500); color: #ffffff; }
+.rbc-step__dot--active { background: var(--rbc-orange-100); color: var(--rbc-orange-700); border: 2px solid var(--rbc-orange-500); }
+.rbc-step__dot--pending{ background: var(--rbc-slate-100); color: var(--rbc-slate-400); }
+
+.rbc-step__label {
+  font-size: 11px;
+  color: var(--rbc-slate-500);
+}
+
+.rbc-step__label--active {
+  color: var(--rbc-orange-700);
+  font-weight: 600;
+}
+
+.rbc-step__line {
+  flex: 1;
+  height: 1px;
+  background: var(--rbc-slate-200);
+  margin: 0 6px;
+}
+
+.rbc-step__line--done { background: var(--rbc-orange-300); }
+
+/* ===== Alert / warning boxes ===== */
+.rbc-alert {
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.rbc-alert--warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.rbc-alert--error {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.rbc-alert--info {
+  background: var(--rbc-orange-50);
+  border: 1px solid var(--rbc-orange-200);
+  color: var(--rbc-orange-800);
+}
+
+/* ===== Section header ===== */
+.rbc-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--rbc-orange-700);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--rbc-orange-100);
+  padding-bottom: 6px;
+  margin-bottom: 14px;
+}
+
+/* ===== Vuetify nav-list active item override ===== */
+.rbc-sidebar .v-list-item--active {
+  background: var(--rbc-orange-50) !important;
+  color: var(--rbc-orange-700) !important;
+  border-left: 3px solid var(--rbc-orange-500) !important;
+  border-radius: 0 8px 8px 0 !important;
+  font-weight: 600;
+}
+
+.rbc-sidebar .v-list-item--active .v-icon {
+  color: var(--rbc-orange-600) !important;
+}
+
+.rbc-sidebar .v-list-item:not(.v-list-item--active):hover {
+  background: var(--rbc-slate-50) !important;
+  border-radius: 8px !important;
+}
+
+/* ===== iziToast overrides ===== */
 .iziToast .iziToast-body {
   display: flex;
   align-items: center;

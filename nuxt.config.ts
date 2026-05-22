@@ -1,6 +1,5 @@
 import tailwindcss from "@tailwindcss/vite";
 
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
@@ -9,17 +8,46 @@ export default defineNuxtConfig({
     moduleOptions: {
       disableVuetifyStyles: true,
     },
+    vuetifyOptions: {
+      theme: {
+        themes: {
+          light: {
+            colors: {
+              primary: "#f97316",
+              "primary-darken-1": "#ea580c",
+              secondary: "#64748b",
+              error: "#ef4444",
+              warning: "#f59e0b",
+              success: "#22c55e",
+              info: "#3b82f6",
+              surface: "#ffffff",
+              background: "#f8fafc",
+            },
+          },
+        },
+      },
+      defaults: {
+        VBtn: {
+          rounded: "lg",
+          style: "text-transform: none; letter-spacing: 0; font-weight: 600;",
+        },
+        VCard: { rounded: "xl" },
+        VTextField: { variant: "outlined", density: "comfortable", rounded: "lg" },
+        VSelect: { variant: "outlined", density: "comfortable", rounded: "lg" },
+        VTextarea: { variant: "outlined", density: "comfortable", rounded: "lg" },
+      },
+    },
   },
   toast: {
     settings: {
-      position: 'topRight',
+      position: "topRight",
       timeout: 3000,
-    }
+    },
   },
   echarts: {
-     renderer: [ 'svg'],
-     charts: ['BarChart'],
-     components: ['DatasetComponent', 'GridComponent', 'TooltipComponent'],
+    renderer: ["svg"],
+    charts: ["BarChart"],
+    components: ["DatasetComponent", "GridComponent", "TooltipComponent"],
   },
   vite: {
     plugins: [tailwindcss() as never],
