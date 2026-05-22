@@ -21,6 +21,14 @@ onMounted(() => {
 <template>
   <div class="login-card">
     <div class="login-card__header">
+      <div class="login-card__logo">
+        <div class="login-card__logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="white"/>
+          </svg>
+        </div>
+        <div class="login-card__logo-name">RBC Camera</div>
+      </div>
       <h1 class="login-card__title">เข้าสู่ระบบหลังบ้าน</h1>
       <p class="login-card__subtitle">
         ใช้บัญชี Google ที่ได้รับสิทธิ์เพื่อจัดการสินค้า รายงาน และการตั้งค่าหน้าเว็บ
@@ -77,11 +85,11 @@ onMounted(() => {
 .login-card__error {
   margin-top: 24px;
   padding: 14px 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(183, 28, 28, 0.18);
-  background: #fff1f1;
+  border-radius: 10px;
+  border-left: 4px solid #f87171;
+  background: #fff5f5;
   color: #9f1d1d;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.5;
 }
 
@@ -123,5 +131,31 @@ onMounted(() => {
 .login-card__google {
   width: auto;
   height: 32px;
+}
+
+.login-card__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.login-card__logo-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
+}
+
+.login-card__logo-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #20170f;
+  letter-spacing: -0.02em;
 }
 </style>
