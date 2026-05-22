@@ -295,11 +295,12 @@ onMounted(loadReport);
 
     <v-row>
       <v-col cols="12">
-        <div class="d-flex align-center justify-space-between mb-3">
-          <div>
-            <div class="text-subtitle-2 font-weight-bold">รายการขาย</div>
-            <div class="text-caption text-slate-400">เช็กรายการขายทีละรายการ พร้อมต้นทุน ราคาขาย และกำไรที่ได้</div>
+        <div class="rbc-table-section__header tw:mb-3">
+          <div class="rbc-table-section__title">
+            <span class="rbc-section-label">รายการขาย</span>
+            <span class="rbc-table-section__count">{{ rows.length }} รายการ</span>
           </div>
+          <span class="tw:text-xs tw:text-slate-400">ต้นทุน · ราคาขาย · กำไร ทีละรายการ</span>
         </div>
         <div class="rbc-table-wrap">
           <v-data-table
@@ -308,53 +309,53 @@ onMounted(loadReport);
             :loading="loading"
             v-model:sort-by="sortBy"
             item-value="id"
-            items-per-page="5"
+            items-per-page="10"
             hover
           >
             <template #item.id="{ item }">
-              <span class="font-weight-medium">{{ item.id || "-" }}</span>
+              <code class="tw:rounded tw:bg-slate-100 tw:px-2 tw:py-0.5 tw:text-xs tw:text-slate-500">{{ item.id || "-" }}</code>
             </template>
 
             <template #item.sku="{ item }">
-              <span class="font-weight-medium">{{ item.sku || "-" }}</span>
+              <span class="tw:text-xs tw:font-semibold tw:text-slate-700">{{ item.sku || "-" }}</span>
             </template>
 
             <template #item.category_name="{ item }">
-              <span class="font-weight-medium">{{ item.category_name }}</span>
+              <span class="tw:text-sm tw:text-slate-700">{{ item.category_name }}</span>
             </template>
 
             <template #item.name="{ item }">
-              <span>{{ item.name }}</span>
+              <span class="tw:text-sm tw:font-semibold tw:text-slate-800">{{ item.name }}</span>
             </template>
 
             <template #item.brand_name="{ item }">
-              <span class="font-weight-medium">{{ item.brand_name }}</span>
+              <span class="tw:text-sm tw:text-slate-700">{{ item.brand_name }}</span>
             </template>
 
             <template #item.sold_at="{ item }">
-              <span class="text-medium-emphasis">{{ formatDate(item.sold_at) }}</span>
+              <span class="tw:whitespace-nowrap tw:text-xs tw:text-slate-500">{{ formatDate(item.sold_at) }}</span>
             </template>
 
             <template #item.cost_price_at_sale="{ item }">
-              <span class="font-weight-medium report-text-cost">{{ formatNumber(item.cost_price_at_sale) }}</span>
+              <span class="tw:text-sm tw:font-semibold report-text-cost">{{ formatNumber(item.cost_price_at_sale) }}</span>
             </template>
 
             <template #item.sold_price="{ item }">
-              <span class="font-weight-bold report-text-sales">{{ formatNumber(item.sold_price) }}</span>
+              <span class="tw:text-sm tw:font-bold report-text-sales">{{ formatNumber(item.sold_price) }}</span>
             </template>
 
             <template #item.profit="{ item }">
-              <span :class="getProfitToneClass(item.profit)" class="font-weight-bold">
+              <span :class="getProfitToneClass(item.profit)" class="tw:text-sm tw:font-bold">
                 {{ Number(item.profit) > 0 ? "+" : "" }}{{ formatNumber(item.profit) }}
               </span>
             </template>
 
             <template #item.sold_channel="{ item }">
-              <span class="font-weight-medium">{{ item.sold_channel }}</span>
+              <span class="tw:rounded-full tw:bg-slate-100 tw:px-2 tw:py-0.5 tw:text-xs tw:font-semibold tw:text-slate-600">{{ item.sold_channel }}</span>
             </template>
 
             <template #no-data>
-              <div class="py-10 text-center text-medium-emphasis">
+              <div class="tw:py-10 tw:text-center tw:text-sm tw:text-slate-400">
                 ยังไม่มีข้อมูลรายงาน
               </div>
             </template>

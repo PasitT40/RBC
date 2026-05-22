@@ -267,6 +267,47 @@
   justify-content: center;
 }
 
+/* ===== Table section header ===== */
+.rbc-table-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rbc-table-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rbc-table-section__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rbc-table-section__count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rbc-orange-600);
+  background: var(--rbc-orange-50);
+  border: 1px solid var(--rbc-orange-200);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+/* Search bar */
+.rbc-search {
+  min-width: 220px;
+  max-width: 300px;
+}
+
+.rbc-search .v-field {
+  border-radius: 99px !important;
+}
+
 /* ===== Data table wrapper ===== */
 .rbc-table-wrap {
   background: #ffffff;
@@ -286,14 +327,67 @@
 
 /* Override Vuetify data-table header */
 .rbc-table-wrap .v-data-table__th {
-  background: var(--rbc-orange-50) !important;
-  color: var(--rbc-orange-800) !important;
+  background: var(--rbc-slate-50) !important;
+  color: var(--rbc-slate-500) !important;
   font-size: 11px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--rbc-orange-100) !important;
 }
 
-.rbc-table-wrap .v-data-table__tr:hover td {
+/* Table body cells */
+.rbc-table-wrap .v-data-table__td {
+  font-size: 13px !important;
+  color: var(--rbc-slate-700) !important;
+  vertical-align: middle !important;
+  border-bottom: 1px solid var(--rbc-slate-100) !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+.rbc-table-wrap .v-data-table__tr:hover .v-data-table__td {
   background: var(--rbc-orange-50) !important;
+}
+
+/* Pagination */
+.rbc-table-wrap .v-data-table-footer {
+  border-top: 1px solid var(--rbc-slate-100);
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+/* Table thumbnail */
+.rbc-table-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+}
+
+.rbc-table-thumb--empty {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--rbc-slate-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Action pill */
+.rbc-table-actions {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 99px;
+  border: 1px solid var(--rbc-slate-200);
+  background: var(--rbc-slate-50);
+  padding: 0 2px;
+  gap: 0;
 }
 
 /* ===== Badges ===== */

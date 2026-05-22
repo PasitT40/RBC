@@ -558,19 +558,26 @@ onMounted(loadPageData);
       </template>
     </ModalCategory>
 
-    <v-row class="tw:mt-1">
-      <v-col cols="12">
-        <div class="rbc-section-label mb-3">หมวดหมู่</div>
-        <v-text-field
-          v-model="categorySearch"
-          variant="outlined"
-          density="comfortable"
-          prepend-inner-icon="mdi-magnify"
-          label="ค้นหาหมวดหมู่"
-          hide-details
-          clearable
-          class="tw:mb-4"
-        />
+    <div class="tw:flex tw:flex-col tw:gap-8 tw:mt-2">
+
+      <!-- หมวดหมู่ section -->
+      <div class="rbc-table-section">
+        <div class="rbc-table-section__header">
+          <div class="rbc-table-section__title">
+            <span class="rbc-section-label">หมวดหมู่</span>
+            <span class="rbc-table-section__count">{{ itemCategory.length }} รายการ</span>
+          </div>
+          <v-text-field
+            v-model="categorySearch"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-magnify"
+            placeholder="ค้นหาหมวดหมู่..."
+            hide-details
+            clearable
+            class="rbc-search"
+          />
+        </div>
 
         <div class="rbc-table-wrap">
           <v-data-table
@@ -582,36 +589,39 @@ onMounted(loadPageData);
             no-data-text="ไม่พบข้อมูลหมวดหมู่"
             hover
           >
-            <template v-slot:item.image_url="{ item }">
-              <v-row>
-                <v-col v-if="item.image_url"  cols="12" class="d-flex tw:justify-center">
-                  <v-img :src="item.image_url" max-height="80px" max-width="80px" width="100%" height="100%" cover />
-                </v-col>
-                <v-col v-else cols="12" class="d-flex tw:justify-center">
-                 <v-icon icon="mdi-image-off" size="48" />
-                </v-col>
-              </v-row>
+            <template #item.image_url="{ item }">
+              <div class="tw:py-1">
+                <v-img
+                  v-if="item.image_url"
+                  :src="item.image_url"
+                  width="44" height="44"
+                  cover
+                  rounded="lg"
+                  class="rbc-table-thumb"
+                />
+                <div v-else class="rbc-table-thumb--empty">
+                  <v-icon size="18" color="grey-lighten-1">mdi-image-off</v-icon>
+                </div>
+              </div>
             </template>
 
-            <template v-slot:item.name="{ item }">
-              <span class="tw:text-md tw:text-black">{{ item.name || "-" }}</span>
+            <template #item.name="{ item }">
+              <span class="tw:text-sm tw:font-semibold tw:text-slate-800">{{ item.name || "-" }}</span>
             </template>
 
-            <template v-slot:item.slug="{ item }">
-              <span class="tw:text-xs tw:text-neutral-500">{{ item.slug || "-" }}</span>
+            <template #item.slug="{ item }">
+              <code class="tw:rounded tw:bg-slate-100 tw:px-2 tw:py-0.5 tw:text-xs tw:text-slate-500">{{ item.slug || "-" }}</code>
             </template>
 
-            <template v-slot:item.order="{ item }">
-              <span class="tw:text-md tw:font-semibold tw:text-black">{{ item.order ?? "-" }}</span>
+            <template #item.order="{ item }">
+              <span class="tw:text-sm tw:font-semibold tw:text-slate-700">{{ item.order ?? "-" }}</span>
             </template>
 
-            <template v-slot:item.updated_at="{ item }">
-              <span class="tw:text-md tw:font-semibold tw:text-black">
-                {{ formatDate(item.updated_at) }}
-              </span>
+            <template #item.updated_at="{ item }">
+              <span class="tw:whitespace-nowrap tw:text-xs tw:text-slate-500">{{ formatDate(item.updated_at) }}</span>
             </template>
 
-            <template v-slot:item.is_active="{ item }">
+            <template #item.is_active="{ item }">
               <div class="tw:flex tw:items-center tw:gap-2">
                 <form-vee-switch
                   v-model="item.is_active"
@@ -621,38 +631,45 @@ onMounted(loadPageData);
                   inset
                   @update:model-value="toggleCategoryActive(item, $event)"
                 />
-                <span class="tw:text-sm tw:text-neutral-700">{{ item.is_active ? "เปิดใช้งาน" : "ปิดใช้งาน" }}</span>
+                <span :class="['tw:text-xs tw:font-semibold', item.is_active ? 'tw:text-emerald-600' : 'tw:text-slate-400']">
+                  {{ item.is_active ? "เปิด" : "ปิด" }}
+                </span>
               </div>
             </template>
 
-            <template v-slot:item.Action="{ item }">
-              <div class="tw:flex tw:justify-center">
-                <div class="tw:flex tw:items-center tw:rounded-full tw:border tw:border-slate-200 tw:bg-slate-50 tw:px-1">
-                <v-btn icon variant="text" color="black" @click="toggleCategoryEdit(item)">
-                  <v-icon size="22">mdi-pencil</v-icon>
+            <template #item.Action="{ item }">
+              <div class="rbc-table-actions">
+                <v-btn icon variant="text" size="small" color="primary" @click="toggleCategoryEdit(item)">
+                  <v-icon size="16">mdi-pencil</v-icon>
                 </v-btn>
-                <v-btn icon variant="text" color="black" @click="confirmCategoryDelete(item.id)">
-                  <v-icon size="22">mdi-delete</v-icon>
+                <v-btn icon variant="text" size="small" color="error" @click="confirmCategoryDelete(item.id)">
+                  <v-icon size="16">mdi-delete</v-icon>
                 </v-btn>
-                </div>
               </div>
             </template>
           </v-data-table>
         </div>
-      </v-col>
+      </div>
 
-      <v-col cols="12">
-        <div class="rbc-section-label mb-3 mt-6">แบรนด์</div>
-        <v-text-field
-          v-model="brandSearch"
-          variant="outlined"
-          density="comfortable"
-          prepend-inner-icon="mdi-magnify"
-          label="ค้นหาแบรนด์"
-          hide-details
-          clearable
-          class="tw:mb-4"
-        />
+      <!-- แบรนด์ section -->
+      <div class="rbc-table-section">
+        <div class="rbc-table-section__header">
+          <div class="rbc-table-section__title">
+            <span class="rbc-section-label">แบรนด์</span>
+            <span class="rbc-table-section__count">{{ itemSubCategory.length }} รายการ</span>
+          </div>
+          <v-text-field
+            v-model="brandSearch"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-magnify"
+            placeholder="ค้นหาแบรนด์..."
+            hide-details
+            clearable
+            class="rbc-search"
+          />
+        </div>
+
         <div class="rbc-table-wrap">
           <v-data-table
             :headers="subcategoryHeaders"
@@ -663,40 +680,43 @@ onMounted(loadPageData);
             no-data-text="ไม่พบข้อมูลแบรนด์"
             hover
           >
-            <template v-slot:item.image_url="{ item }">
-              <v-row>
-                <v-col v-if="item.image_url"  cols="12" class="d-flex tw:justify-center">
-                  <v-img :src="item.image_url" max-height="80px" max-width="80px" width="100%" height="100%" cover />
-                </v-col>
-                <v-col v-else cols="12" class="d-flex tw:justify-center">
-                 <v-icon icon="mdi-image-off" size="48" />
-                </v-col>
-              </v-row>
+            <template #item.image_url="{ item }">
+              <div class="tw:py-1">
+                <v-img
+                  v-if="item.image_url"
+                  :src="item.image_url"
+                  width="44" height="44"
+                  cover
+                  rounded="lg"
+                  class="rbc-table-thumb"
+                />
+                <div v-else class="rbc-table-thumb--empty">
+                  <v-icon size="18" color="grey-lighten-1">mdi-image-off</v-icon>
+                </div>
+              </div>
             </template>
 
-            <template v-slot:item.name="{ item }">
-              <span class="tw:text-md tw:text-black">{{ item.name || "-" }}</span>
+            <template #item.name="{ item }">
+              <span class="tw:text-sm tw:font-semibold tw:text-slate-800">{{ item.name || "-" }}</span>
             </template>
 
-            <template v-slot:item.slug="{ item }">
-              <span class="tw:text-xs tw:text-neutral-500">{{ item.slug || "-" }}</span>
+            <template #item.slug="{ item }">
+              <code class="tw:rounded tw:bg-slate-100 tw:px-2 tw:py-0.5 tw:text-xs tw:text-slate-500">{{ item.slug || "-" }}</code>
             </template>
 
-            <template v-slot:item.category_name="{ item }">
-              <span class="tw:text-md tw:font-bold tw:text-black">{{ item.category_name || "-" }}</span>
+            <template #item.category_name="{ item }">
+              <span class="tw:text-sm tw:font-semibold tw:text-slate-800">{{ item.category_name || "-" }}</span>
             </template>
 
-            <template v-slot:item.category_brand_order="{ item }">
-              <span class="tw:text-md tw:font-semibold tw:text-black">{{ item.category_brand_order ?? "-" }}</span>
+            <template #item.category_brand_order="{ item }">
+              <span class="tw:text-sm tw:font-semibold tw:text-slate-700">{{ item.category_brand_order ?? "-" }}</span>
             </template>
 
-            <template v-slot:item.updated_at="{ item }">
-              <span class="tw:text-md tw:font-semibold tw:text-black">
-                {{ formatDate(item.updated_at) }}
-              </span>
+            <template #item.updated_at="{ item }">
+              <span class="tw:whitespace-nowrap tw:text-xs tw:text-slate-500">{{ formatDate(item.updated_at) }}</span>
             </template>
 
-            <template v-slot:item.is_active="{ item }">
+            <template #item.is_active="{ item }">
               <div class="tw:flex tw:items-center tw:gap-2">
                 <form-vee-switch
                   v-model="item.is_active"
@@ -706,26 +726,27 @@ onMounted(loadPageData);
                   inset
                   @update:model-value="toggleSubcategoryActive(item, $event)"
                 />
-                <span class="tw:text-sm tw:text-neutral-700">{{ item.is_active ? "เปิดใช้งาน" : "ปิดใช้งาน" }}</span>
+                <span :class="['tw:text-xs tw:font-semibold', item.is_active ? 'tw:text-emerald-600' : 'tw:text-slate-400']">
+                  {{ item.is_active ? "เปิด" : "ปิด" }}
+                </span>
               </div>
             </template>
 
-            <template v-slot:item.Action="{ item }">
-              <div class="tw:flex tw:justify-center">
-                <div class="tw:flex tw:items-center tw:rounded-full tw:border tw:border-slate-200 tw:bg-slate-50 tw:px-1">
-                <v-btn icon variant="text" color="black" @click="toggleSubcategoryEdit(item)">
-                  <v-icon size="22">mdi-pencil</v-icon>
+            <template #item.Action="{ item }">
+              <div class="rbc-table-actions">
+                <v-btn icon variant="text" size="small" color="primary" @click="toggleSubcategoryEdit(item)">
+                  <v-icon size="16">mdi-pencil</v-icon>
                 </v-btn>
-                <v-btn icon variant="text" color="black" @click="confirmSubcategoryDelete(item.id)">
-                  <v-icon size="22">mdi-delete</v-icon>
+                <v-btn icon variant="text" size="small" color="error" @click="confirmSubcategoryDelete(item.id)">
+                  <v-icon size="16">mdi-delete</v-icon>
                 </v-btn>
-                </div>
               </div>
             </template>
           </v-data-table>
         </div>
-      </v-col>
-    </v-row>
+      </div>
+
+    </div>
 
   </div>
 

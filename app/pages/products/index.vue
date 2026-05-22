@@ -408,61 +408,65 @@ onMounted(loadProducts);
       </v-btn>
     </Teleport>
 
-    <v-row class="pa-5">
-    <v-col cols="12">
-      <v-row class="tw:mb-4" align="center">
-        <v-col cols="7">
-          <div class="d-flex gap-2 flex-wrap mb-4">
-            <button
-              v-for="item in summaryItems"
-              :key="item.label"
-              :class="['rbc-filter-chip', statusFilter === filterKey(item.label) ? 'rbc-filter-chip--active' : '']"
-              @click="statusFilter = filterKey(item.label)"
-            >
-              {{ item.label }}
-              <span class="ml-1 text-xs">({{ item.value }})</span>
-            </button>
-          </div>
-        </v-col>
-        <v-col cols="5">
-          <v-text-field
-            v-model="search"
-            variant="outlined"
-            density="comfortable"
-            prepend-inner-icon="mdi-magnify"
-            label="ค้นหาสินค้า / หมวดหมู่ / แบรนด์"
-            hide-details
-            clearable
-          />
-        </v-col>
-      </v-row>
-    </v-col>
+    <div class="tw:px-5 tw:pt-5 tw:pb-6 tw:flex tw:flex-col tw:gap-4">
 
-    <v-col cols="12">
+      <!-- Filter + search row -->
+      <div class="tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-3">
+        <div class="tw:flex tw:flex-wrap tw:gap-2">
+          <button
+            v-for="item in summaryItems"
+            :key="item.label"
+            :class="['rbc-filter-chip', statusFilter === filterKey(item.label) ? 'rbc-filter-chip--active' : '']"
+            @click="statusFilter = filterKey(item.label)"
+          >
+            {{ item.label }}
+            <span class="tw:ml-1 tw:text-xs tw:opacity-70">({{ item.value }})</span>
+          </button>
+        </div>
+        <v-text-field
+          v-model="search"
+          variant="outlined"
+          density="compact"
+          prepend-inner-icon="mdi-magnify"
+          placeholder="ค้นหาสินค้า / หมวดหมู่ / แบรนด์..."
+          hide-details
+          clearable
+          class="rbc-search"
+          style="max-width: 320px;"
+        />
+      </div>
+
+      <!-- Table -->
       <div class="rbc-table-wrap">
         <v-data-table
-              class="product-list-table"
-              :headers="headers"
-              :items="filteredProducts"
-              :loading="loading"
-              :search="search"
-              v-model:sort-by="sortBy"
-              item-value="id"
-              items-per-page="10"
-              density="comfortable"
-              no-data-text="ไม่พบข้อมูลสินค้า"
-            hover
-            >
-            <template v-slot:item.cover_image="{ item }">
-              <v-row>
-                <v-col v-if="item.cover_image"  cols="12" class="d-flex tw:justify-center">
-                  <v-img :src="item.cover_image" max-height="80px" max-width="80px" width="100%" height="100%" cover />
-                </v-col>
-                <v-col v-else cols="12" class="d-flex tw:justify-center">
-                 <v-icon icon="mdi-image-off" size="48" />
-                </v-col>
-              </v-row>
-            </template>
+          class="product-list-table"
+          :headers="headers"
+          :items="filteredProducts"
+          :loading="loading"
+          :search="search"
+          v-model:sort-by="sortBy"
+          item-value="id"
+          items-per-page="10"
+          density="comfortable"
+          no-data-text="ไม่พบข้อมูลสินค้า"
+          hover
+        >
+          <template #item.cover_image="{ item }">
+            <div class="tw:py-1">
+              <v-img
+                v-if="item.cover_image"
+                :src="item.cover_image"
+                width="52" height="52"
+                cover
+                rounded="lg"
+                class="rbc-table-thumb"
+                style="width:52px;height:52px"
+              />
+              <div v-else class="rbc-table-thumb--empty" style="width:52px;height:52px">
+                <v-icon size="20" color="grey-lighten-1">mdi-image-off</v-icon>
+              </div>
+            </div>
+          </template>
         <template #item.name="{ item }">
           <div>
             <div class="tw:text-[15px] tw:font-semibold tw:text-slate-900">{{ item.name || "-" }}</div>
@@ -561,25 +565,27 @@ onMounted(loadProducts);
             </v-col>
             
             <v-col cols="3" class="tw:flex tw:justify-end">
-              <div class="tw:flex tw:items-center tw:rounded-full tw:border tw:border-slate-200 tw:bg-slate-50 tw:px-1">
-              <v-btn
-                icon
-                variant="text"
-                color="black"
-                :to="item.id ? `/products/edit-${item.id}` : undefined"
-                :disabled="!item.id || item.is_deleted"
-              >
-                <v-icon size="22">mdi-pencil</v-icon>
-              </v-btn>
-                            <v-btn
-                icon
-                variant="text"
-                color="black"
-                :disabled="!canDeleteProduct(item)"
-                @click="onDeleteProduct(item)"
-              >
-                <v-icon size="22">mdi-delete</v-icon>
-              </v-btn>
+              <div class="rbc-table-actions">
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  :to="item.id ? `/products/edit-${item.id}` : undefined"
+                  :disabled="!item.id || item.is_deleted"
+                >
+                  <v-icon size="16">mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  color="error"
+                  :disabled="!canDeleteProduct(item)"
+                  @click="onDeleteProduct(item)"
+                >
+                  <v-icon size="16">mdi-delete</v-icon>
+                </v-btn>
               </div>
             </v-col>
           </v-row>
@@ -597,19 +603,18 @@ onMounted(loadProducts);
               :disabled="item.is_deleted || showUpdatingId === item.id"
               @update:model-value="onToggleShow(item, $event)"
             />
-            <span class="tw:text-sm tw:text-neutral-700">{{ item.show ? "แสดง" : "ซ่อน" }}</span>
+            <span :class="['tw:text-xs tw:font-semibold', item.show ? 'tw:text-emerald-600' : 'tw:text-slate-400']">
+              {{ item.show ? "แสดง" : "ซ่อน" }}
+            </span>
           </div>
         </template>
 
         <template #no-data>
-          <div>
-            ยังไม่มีข้อมูลสินค้า
-          </div>
+          <div class="tw:py-8 tw:text-center tw:text-sm tw:text-slate-400">ยังไม่มีข้อมูลสินค้า</div>
         </template>
-            </v-data-table>
+        </v-data-table>
       </div>
-    </v-col>
-  </v-row>
+    </div>
 
   <v-dialog v-model="saleDialog" max-width="480" persistent>
     <div class="rbc-modal">
