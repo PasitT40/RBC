@@ -372,48 +372,56 @@ const onUndoSale = async (item: ProductRow) => {
   }
 };
 
+const statusFilter = ref<string>('ALL')
+
+const filteredProducts = computed(() => {
+  if (statusFilter.value === 'ALL') return products.value
+  return products.value.filter(p => getDisplayStatus(p) === statusFilter.value)
+})
+
+const filterKey = (label: string) => {
+  const map: Record<string, string> = { 'ทั้งหมด': 'ALL', 'พร้อมขาย': 'ACTIVE', 'จอง': 'RESERVED', 'ขายแล้ว': 'SOLD' }
+  return map[label] ?? 'ALL'
+}
+
+const statusBadgeClass = (item: ProductRow) => {
+  const status = getDisplayStatus(item)
+  return {
+    'rbc-badge--green': status === 'ACTIVE',
+    'rbc-badge--blue': status === 'RESERVED',
+    'rbc-badge--orange': status === 'SOLD',
+    'rbc-badge--gray': status === 'DELETED',
+  }
+}
+
 onMounted(loadProducts);
 </script>
 
 <template>
+  <template #topbar-subtitle>
+    <span>{{ products.length }} รายการ</span>
+  </template>
+  <template #topbar-actions>
+    <v-btn class="rbc-btn-primary" to="/products/create" prepend-icon="mdi-plus">
+      เพิ่มสินค้า
+    </v-btn>
+  </template>
+
   <v-row class="pa-5">
-    <v-col cols="12">
-      <v-row align="end" justify="space-between" class="tw:mb-6">
-        <v-col cols="8">
-          <h1 class="tw:text-4xl tw:font-black tw:tracking-tight tw:text-slate-900">สินค้า</h1>
-        </v-col>
-
-
-        <v-col cols="4" class="tw:flex tw:justify-end">
-          <v-btn
-            color="#f5962f"
-            rounded="pill"
-            size="large"
-            class="tw:px-6 tw:font-bold tw:normal-case tw:text-white!"
-            to="/products/create"
-          >
-            <v-icon start>mdi-plus</v-icon>
-            เพิ่มสินค้า
-          </v-btn>
-        </v-col>
-      </v-row>
-    </v-col>
-
     <v-col cols="12">
       <v-row class="tw:mb-4" align="center">
         <v-col cols="7">
-          <v-row>
-            <v-col
+          <div class="d-flex gap-2 flex-wrap mb-4">
+            <button
               v-for="item in summaryItems"
               :key="item.label"
-              cols="3"
+              :class="['rbc-filter-chip', statusFilter === filterKey(item.label) ? 'rbc-filter-chip--active' : '']"
+              @click="statusFilter = filterKey(item.label)"
             >
-              <div class="tw:rounded-2xl tw:border tw:border-slate-200 tw:bg-white tw:px-4 tw:py-3 tw:shadow-sm pa-3">
-                <div class="tw:text-xs tw:font-medium tw:text-slate-500">{{ item.label }}</div>
-                <div class="tw:mt-1 tw:text-2xl tw:font-black tw:text-slate-900">{{ item.value }}</div>
-              </div>
-            </v-col>
-          </v-row>
+              {{ item.label }}
+              <span class="ml-1 text-xs">({{ item.value }})</span>
+            </button>
+          </div>
         </v-col>
         <v-col cols="5">
           <v-text-field
@@ -430,13 +438,11 @@ onMounted(loadProducts);
     </v-col>
 
     <v-col cols="12">
-      <div class="tw:overflow-hidden tw:rounded-[28px] tw:border tw:border-slate-200 tw:bg-white tw:shadow-[0_14px_40px_rgba(15,23,42,0.07)]">
-        <div class="tw:overflow-x-auto tw:overflow-y-hidden">
-          <div class="tw:min-w-[1280px]">
-            <v-data-table
+      <div class="rbc-table-wrap">
+        <v-data-table
               class="product-list-table"
               :headers="headers"
-              :items="products"
+              :items="filteredProducts"
               :loading="loading"
               :search="search"
               v-model:sort-by="sortBy"
@@ -500,14 +506,7 @@ onMounted(loadProducts);
         <template #item.status="{ item }">
           <v-row no-gutters>
           <v-col cols="12">
-            <v-chip
-            :color="statusMeta(item).color"
-            rounded="pill"
-            size="large"
-            class="tw:min-w-[96px] tw:justify-center tw:font-semibold tw:text-white"
-          >
-            {{ statusMeta(item).label }}
-          </v-chip>
+            <span :class="statusBadgeClass(item)">{{ statusMeta(item).label }}</span>
           </v-col>
           <v-col cols="12"
             v-if="getDisplayStatus(item) === 'SOLD'"
@@ -516,7 +515,7 @@ onMounted(loadProducts);
             {{ formatDateTime(item.sold_at) }}
           </v-col>
           </v-row>
-       
+
         </template>
 
         <template #item.actions="{ item }">
@@ -607,8 +606,6 @@ onMounted(loadProducts);
           </div>
         </template>
             </v-data-table>
-          </div>
-        </div>
       </div>
     </v-col>
   </v-row>
@@ -617,9 +614,22 @@ onMounted(loadProducts);
     <v-card rounded="xl">
       <v-card-title class="tw:px-6 tw:pb-2 tw:pt-6 tw:text-xl tw:font-bold tw:text-slate-900">บันทึกการขาย</v-card-title>
       <v-card-text class="tw:grid tw:gap-4 tw:px-6 tw:pb-2 tw:pt-2">
-        <div class="tw:rounded-2xl tw:border tw:border-slate-200 tw:bg-slate-50 tw:p-4">
-          <div class="tw:mb-1 tw:text-sm tw:text-slate-500">สินค้า</div>
-          <div class="tw:text-base tw:font-semibold tw:text-slate-900">{{ saleTarget?.name || "-" }}</div>
+        <div class="rbc-card mb-4" style="background: #f8fafc;">
+          <div class="d-flex align-center gap-3 pa-3">
+            <v-img
+              v-if="saleTarget?.cover_image"
+              :src="saleTarget.cover_image"
+              width="60" height="60"
+              cover
+              rounded="lg"
+            />
+            <v-icon v-else size="48" color="grey-lighten-1">mdi-image-off</v-icon>
+            <div>
+              <div class="font-weight-semibold text-slate-900">{{ saleTarget?.name || '-' }}</div>
+              <div class="text-caption text-slate-500">SKU: {{ saleTarget?.sku || '-' }}</div>
+              <div class="text-caption text-primary font-weight-bold">ราคาตั้ง: {{ formatPrice(saleTarget?.sell_price) }} ฿</div>
+            </div>
+          </div>
         </div>
 
         <v-text-field
@@ -643,15 +653,20 @@ onMounted(loadProducts);
           :error-messages="saleErrors.sold_at"
         />
 
-        <v-select
-          v-model="saleForm.sold_channel"
-          label="ช่องทางขาย"
-          :items="saleChannelOptions"
-          variant="outlined"
-          density="comfortable"
-          hide-details="auto"
-          :error-messages="saleErrors.sold_channel"
-        />
+        <div>
+          <div class="rbc-section-label mb-2">ช่องทางขาย *</div>
+          <div class="d-flex flex-wrap gap-2">
+            <button
+              v-for="ch in saleChannelOptions"
+              :key="ch.value"
+              :class="['rbc-filter-chip', saleForm.sold_channel === ch.value ? 'rbc-filter-chip--active' : '']"
+              @click="saleForm.sold_channel = ch.value; saleErrors.sold_channel = ''"
+            >
+              {{ ch.title }}
+            </button>
+          </div>
+          <div v-if="saleErrors.sold_channel" class="text-caption text-error mt-1">{{ saleErrors.sold_channel }}</div>
+        </div>
       </v-card-text>
       <v-card-actions class="tw:justify-end tw:gap-2 tw:px-6 tw:pb-6">
         <v-btn variant="outlined" color="black" rounded="pill" :disabled="saleSubmitting" @click="closeSaleDialog()">
