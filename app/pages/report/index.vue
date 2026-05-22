@@ -203,172 +203,162 @@ onMounted(loadReport);
 </script>
 
 <template>
+  <template #topbar-subtitle>
+    <span v-if="fromMonth || toMonth">
+      {{ fromMonth || '?' }} — {{ toMonth || '?' }}
+    </span>
+    <span v-else>ทุกช่วงเวลา</span>
+  </template>
+  <template #topbar-actions>
+    <v-btn
+      variant="outlined"
+      color="grey-darken-1"
+      prepend-icon="mdi-close"
+      :disabled="!fromMonth && !toMonth"
+      @click="fromMonth = ''; toMonth = ''"
+    >
+      ล้างช่วง
+    </v-btn>
+    <v-btn
+      class="rbc-btn-primary ml-2"
+      prepend-icon="mdi-download"
+      :loading="exporting"
+      @click="exportCsv()"
+    >
+      Export CSV
+    </v-btn>
+  </template>
+
   <v-container fluid class="pa-6">
-    <v-row justify="center">
-      <v-col cols="10">
-        <v-row align="end" class="mb-6">
-          <v-col cols="5">
-            <div class="text-h4 font-weight-black">รายงานยอดขาย</div>
-            <div class="text-body-2 text-medium-emphasis">
-              ดูภาพรวมยอดขาย ต้นทุน กำไร และรายการขายในช่วงเวลาที่เลือก
+    <v-row class="mb-6" align="center">
+      <v-col cols="auto">
+        <div class="rbc-section-label mb-1">ช่วงเวลา</div>
+      </v-col>
+      <v-col cols="3">
+        <v-text-field
+          v-model="fromMonth"
+          type="month"
+          label="เดือนเริ่มต้น"
+          variant="outlined"
+          hide-details
+          density="comfortable"
+          clearable
+        />
+      </v-col>
+      <v-col cols="3">
+        <v-text-field
+          v-model="toMonth"
+          type="month"
+          label="เดือนสิ้นสุด"
+          variant="outlined"
+          hide-details
+          density="comfortable"
+          clearable
+        />
+      </v-col>
+      <v-col cols="auto">
+        <span class="text-caption text-slate-400">{{ rows.length }} รายการ</span>
+      </v-col>
+    </v-row>
+
+    <v-row class="mb-6">
+      <v-col cols="9">
+        <div class="rbc-card mb-6">
+          <div class="rbc-card__header">
+            <div>
+              <div class="text-subtitle-2 font-weight-bold">ยอดขายแยกตามแบรนด์</div>
+              <div class="text-caption text-slate-400">ดูว่าแต่ละแบรนด์ทำยอดขายได้มากน้อยแค่ไหนในช่วงเวลาที่เลือก</div>
+            </div>
+          </div>
+          <div class="rbc-card__body">
+            <BrandBarChart :data="chartData" metric="amount" :height="320" />
+          </div>
+        </div>
+      </v-col>
+
+      <v-col cols="3">
+        <v-row>
+          <v-col
+            v-for="card in summaryCards"
+            :key="card.title"
+            cols="12"
+          >
+            <div class="rbc-stat-card" style="--color: var(--rbc-orange-500)">
+              <div class="rbc-section-label">{{ card.title }}</div>
+              <div :class="card.valueClass" class="text-h5 font-weight-bold mt-1">{{ card.value }}</div>
             </div>
           </v-col>
-
-          <v-col cols="7">
-            <v-row align="center" justify="end">
-              <v-col cols="4">
-                <v-text-field
-                  v-model="fromMonth"
-                  type="month"
-                  label="เดือนเริ่มต้น"
-                  variant="outlined"
-                  hide-details
-                  density="comfortable"
-                  clearable
-                />
-              </v-col>
-              <v-col cols="4">
-                <v-text-field
-                  v-model="toMonth"
-                  type="month"
-                  label="เดือนสิ้นสุด"
-                  variant="outlined"
-                  hide-details
-                  density="comfortable"
-                  clearable
-                />
-              </v-col>
-              <v-col cols="2">
-                <v-btn
-                  block
-                  variant="outlined"
-                  rounded="pill"
-                  size="large"
-                  @click="fromMonth = ''; toMonth = ''"
-                >
-                  ล้างช่วง
-                </v-btn>
-              </v-col>
-              <v-col cols="2">
-                <v-btn
-                  block
-                  color="#f5962f"
-                  rounded="pill"
-                  size="large"
-                  class="text-white"
-                  :loading="exporting"
-                  @click="exportCsv()"
-                >
-                  ส่งออก
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-col>
         </v-row>
+      </v-col>
+    </v-row>
 
-        <v-row class="mb-6">
-          <v-col cols="9">
-            <v-card rounded="xl" elevation="1">
-              <v-card-item>
-                <v-card-title>ยอดขายแยกตามแบรนด์</v-card-title>
-                <v-card-subtitle>ดูว่าแต่ละแบรนด์ทำยอดขายได้มากน้อยแค่ไหนในช่วงเวลาที่เลือก</v-card-subtitle>
-              </v-card-item>
-              <v-card-text>
-                <BrandBarChart :data="chartData" metric="amount" :height="320" />
-              </v-card-text>
-            </v-card>
-          </v-col>
+    <v-row>
+      <v-col cols="12">
+        <div class="d-flex align-center justify-space-between mb-3">
+          <div>
+            <div class="text-subtitle-2 font-weight-bold">รายการขาย</div>
+            <div class="text-caption text-slate-400">เช็กรายการขายทีละรายการ พร้อมต้นทุน ราคาขาย และกำไรที่ได้</div>
+          </div>
+        </div>
+        <div class="rbc-table-wrap">
+          <v-data-table
+            :headers="headers"
+            :items="rows"
+            :loading="loading"
+            v-model:sort-by="sortBy"
+            item-value="id"
+            items-per-page="5"
+            hover
+          >
+            <template #item.id="{ item }">
+              <span class="font-weight-medium">{{ item.id || "-" }}</span>
+            </template>
 
-          <v-col cols="3">
-            <v-row>
-              <v-col
-                v-for="card in summaryCards"
-                :key="card.title"
-                cols="12"
-              >
-                <v-card rounded="xl" elevation="1">
-                  <v-card-text class="pa-6">
-                    <div class="text-body-2 font-weight-medium text-medium-emphasis">
-                      {{ card.title }}
-                    </div>
-                    <div :class="card.valueClass" class="text-h4 font-weight-black mt-3">
-                      {{ card.value }}
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
+            <template #item.sku="{ item }">
+              <span class="font-weight-medium">{{ item.sku || "-" }}</span>
+            </template>
 
-        <v-row>
-          <v-col cols="12">
-            <v-card rounded="xl" elevation="1">
-              <v-card-item>
-                <v-card-title>รายการขาย</v-card-title>
-                <v-card-subtitle>เช็กรายการขายทีละรายการ พร้อมต้นทุน ราคาขาย และกำไรที่ได้</v-card-subtitle>
-              </v-card-item>
-              <v-data-table
-                class="pa-4"
-                :headers="headers"
-                :items="rows"
-                :loading="loading"
-                v-model:sort-by="sortBy"
-                item-value="id"
-                items-per-page="5"
-                hover
-              >
-                <template #item.id="{ item }">
-                  <span class="font-weight-medium">{{ item.id || "-" }}</span>
-                </template>
+            <template #item.category_name="{ item }">
+              <span class="font-weight-medium">{{ item.category_name }}</span>
+            </template>
 
-                <template #item.sku="{ item }">
-                  <span class="font-weight-medium">{{ item.sku || "-" }}</span>
-                </template>
+            <template #item.name="{ item }">
+              <span>{{ item.name }}</span>
+            </template>
 
-                <template #item.category_name="{ item }">
-                  <span class="font-weight-medium">{{ item.category_name }}</span>
-                </template>
+            <template #item.brand_name="{ item }">
+              <span class="font-weight-medium">{{ item.brand_name }}</span>
+            </template>
 
-                <template #item.name="{ item }">
-                  <span>{{ item.name }}</span>
-                </template>
+            <template #item.sold_at="{ item }">
+              <span class="text-medium-emphasis">{{ formatDate(item.sold_at) }}</span>
+            </template>
 
-                <template #item.brand_name="{ item }">
-                  <span class="font-weight-medium">{{ item.brand_name }}</span>
-                </template>
+            <template #item.cost_price_at_sale="{ item }">
+              <span class="font-weight-medium report-text-cost">{{ formatNumber(item.cost_price_at_sale) }}</span>
+            </template>
 
-                <template #item.sold_at="{ item }">
-                  <span class="text-medium-emphasis">{{ formatDate(item.sold_at) }}</span>
-                </template>
+            <template #item.sold_price="{ item }">
+              <span class="font-weight-bold report-text-sales">{{ formatNumber(item.sold_price) }}</span>
+            </template>
 
-                <template #item.cost_price_at_sale="{ item }">
-                  <span class="font-weight-medium report-text-cost">{{ formatNumber(item.cost_price_at_sale) }}</span>
-                </template>
+            <template #item.profit="{ item }">
+              <span :class="getProfitToneClass(item.profit)" class="font-weight-bold">
+                {{ Number(item.profit) > 0 ? "+" : "" }}{{ formatNumber(item.profit) }}
+              </span>
+            </template>
 
-                <template #item.sold_price="{ item }">
-                  <span class="font-weight-bold report-text-sales">{{ formatNumber(item.sold_price) }}</span>
-                </template>
+            <template #item.sold_channel="{ item }">
+              <span class="font-weight-medium">{{ item.sold_channel }}</span>
+            </template>
 
-                <template #item.profit="{ item }">
-                  <span :class="getProfitToneClass(item.profit)" class="font-weight-bold">
-                    {{ Number(item.profit) > 0 ? "+" : "" }}{{ formatNumber(item.profit) }}
-                  </span>
-                </template>
-
-                <template #item.sold_channel="{ item }">
-                  <span class="font-weight-medium">{{ item.sold_channel }}</span>
-                </template>
-
-                <template #no-data>
-                  <div class="py-10 text-center text-medium-emphasis">
-                    ยังไม่มีข้อมูลรายงาน
-                  </div>
-                </template>
-              </v-data-table>
-            </v-card>
-          </v-col>
-        </v-row>
+            <template #no-data>
+              <div class="py-10 text-center text-medium-emphasis">
+                ยังไม่มีข้อมูลรายงาน
+              </div>
+            </template>
+          </v-data-table>
+        </div>
       </v-col>
     </v-row>
   </v-container>
