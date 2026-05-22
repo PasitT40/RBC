@@ -68,10 +68,34 @@ const chartOption = computed(() => ({
       type: "bar",
       encode: { x: "Product", y: "amount" },
       name: "มูลค่ายอดขาย",
-      colorBy: "data",
+      itemStyle: { color: "#f97316" },
     },
   ],
 }));
+
+// Period selector
+const selectedPeriod = ref<"month" | "3m" | "year" | null>(null);
+
+const setPeriod = (period: "month" | "3m" | "year") => {
+  selectedPeriod.value = period;
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  if (period === "month") {
+    dashboard.month.value = currentMonth;
+    dashboard.fromMonth.value = "";
+    dashboard.toMonth.value = "";
+  } else if (period === "3m") {
+    const d = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    dashboard.fromMonth.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    dashboard.toMonth.value = currentMonth;
+    dashboard.month.value = "";
+  } else {
+    dashboard.fromMonth.value = `${now.getFullYear()}-01`;
+    dashboard.toMonth.value = currentMonth;
+    dashboard.month.value = "";
+  }
+  dashboard.loadDashboard();
+};
 
 onMounted(() => {
   dashboard.loadDashboard();
@@ -79,89 +103,126 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container fluid class="pa-6">
+  <template #topbar-subtitle>
+    <span>ข้อมูล ณ วันนี้</span>
+  </template>
+
+  <template #topbar-actions>
+    <span
+      class="rbc-filter-chip"
+      :class="{ 'rbc-filter-chip--active': selectedPeriod === 'month' }"
+      @click="setPeriod('month')"
+    >เดือนนี้</span>
+    <span
+      class="rbc-filter-chip"
+      :class="{ 'rbc-filter-chip--active': selectedPeriod === '3m' }"
+      @click="setPeriod('3m')"
+    >3 เดือน</span>
+    <span
+      class="rbc-filter-chip"
+      :class="{ 'rbc-filter-chip--active': selectedPeriod === 'year' }"
+      @click="setPeriod('year')"
+    >ปีนี้</span>
+  </template>
+
+  <div v-if="!dashboard.loading.value">
+    <!-- KPI stat cards -->
     <v-row>
-      <v-col cols="12">
-        <div class="text-h4 font-weight-black">ภาพรวมวันนี้</div>
-        <div class="text-subtitle-1 text-medium-emphasis">
-          ดูจำนวนสินค้า ยอดขาย และภาพรวมแบรนด์ที่ทำยอดได้ดีในหน้าเดียว
+      <v-col cols="12" sm="6" md="3">
+        <div class="rbc-stat-card rbc-stat-card--orange">
+          <div class="rbc-stat-card__icon">
+            <v-icon color="#f97316">mdi-package-variant</v-icon>
+          </div>
+          <div class="rbc-stat-card__label">สินค้าทั้งหมด</div>
+          <div class="rbc-stat-card__value">{{ formatInteger(totalProducts) }}</div>
+          <div class="mt-1" style="font-size: 11px; color: var(--rbc-slate-400);">รวมสินค้าทุกสถานะ</div>
         </div>
       </v-col>
 
-      <v-col cols="4">
-        <v-card rounded="lg" elevation="2">
-          <v-card-text class="pa-6">
-            <div class="text-body-2 font-weight-medium text-medium-emphasis">สินค้าทั้งหมด</div>
-            <div class="text-h4 font-weight-black mt-3">{{ formatInteger(totalProducts) }}</div>
-            <div class="text-body-2 text-medium-emphasis mt-2">รวมสินค้าที่พร้อมขาย จองแล้ว และขายแล้ว</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="4">
-        <v-card rounded="lg" elevation="2">
-          <v-card-text class="pa-6">
-            <div class="text-body-2 font-weight-medium text-medium-emphasis">ขายไปแล้ว</div>
-            <div class="text-h4 font-weight-black mt-3 text-primary">{{ formatInteger(totalSold) }}</div>
-            <div class="text-body-2 text-medium-emphasis mt-2">จำนวนรายการที่บันทึกการขายเรียบร้อยแล้ว</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="4">
-        <v-card rounded="lg" elevation="2">
-          <v-card-text class="pa-6">
-            <div class="text-body-2 font-weight-medium text-medium-emphasis">สินค้าที่ถูกจอง</div>
-            <div class="text-h4 font-weight-black mt-3 text-warning">{{ formatInteger(totalReserved) }}</div>
-            <div class="text-body-2 text-medium-emphasis mt-2">รายการที่มีการจองไว้และยังไม่บันทึกการขาย</div>
-          </v-card-text>
-        </v-card>
+      <v-col cols="12" sm="6" md="3">
+        <div class="rbc-stat-card rbc-stat-card--green">
+          <div class="rbc-stat-card__icon">
+            <v-icon color="#22c55e">mdi-check-circle-outline</v-icon>
+          </div>
+          <div class="rbc-stat-card__label">ขายแล้ว</div>
+          <div class="rbc-stat-card__value">{{ formatInteger(totalSold) }}</div>
+          <div class="mt-1" style="font-size: 11px; color: var(--rbc-slate-400);">จำนวนรายการที่ขายแล้ว</div>
+        </div>
       </v-col>
 
-      <v-col cols="8">
-        <v-card rounded="lg" elevation="2">
-          <v-card-item>
-            <v-card-title>ยอดขายแยกตามแบรนด์</v-card-title>
-            <v-card-subtitle>เปรียบเทียบมูลค่ายอดขายของแต่ละแบรนด์จากข้อมูลล่าสุด</v-card-subtitle>
-          </v-card-item>
-          <v-card-text>
-            <v-sheet rounded="lg" color="grey-lighten-5" class="pa-4">
-              <div style="height: 400px; width: 100%">
-                <VChart class="chart" :option="chartOption" autoresize />
-              </div>
-            </v-sheet>
-          </v-card-text>
-        </v-card>
+      <v-col cols="12" sm="6" md="3">
+        <div class="rbc-stat-card rbc-stat-card--blue">
+          <div class="rbc-stat-card__icon">
+            <v-icon color="#3b82f6">mdi-clock-outline</v-icon>
+          </div>
+          <div class="rbc-stat-card__label">จองแล้ว</div>
+          <div class="rbc-stat-card__value">{{ formatInteger(totalReserved) }}</div>
+          <div class="mt-1" style="font-size: 11px; color: var(--rbc-slate-400);">รายการที่จองและรอปิดขาย</div>
+        </div>
       </v-col>
 
-      <v-col cols="4">
-        <v-row>
-          <v-col cols="12">
-            <v-card rounded="lg" elevation="2">
-              <v-card-text class="pa-6 text-center">
-                <div class="text-body-2 font-weight-medium text-medium-emphasis">ต้นทุนทั้งหมด</div>
-                <div class="text-h4 font-weight-black mt-3 text-orange-darken-2">{{ formatCurrency(totalCostAmount) }}</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <v-col cols="12">
-            <v-card rounded="lg" elevation="2">
-              <v-card-text class="pa-6 text-center">
-                <div class="text-body-2 font-weight-medium text-medium-emphasis">ยอดขายทั้งหมด</div>
-                <div class="text-h4 font-weight-black mt-3 text-primary">{{ formatCurrency(totalSalesAmount) }}</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <v-col cols="12">
-            <v-card rounded="lg" elevation="2">
-              <v-card-text class="pa-6 text-center">
-                <div class="text-body-2 font-weight-medium text-medium-emphasis">กำไรสุทธิ</div>
-                <div :class="profitToneClass" class="text-h4 font-weight-black mt-3">
-                  {{ formatCurrency(totalProfitAmount) }}
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
+      <v-col cols="12" sm="6" md="3">
+        <div class="rbc-stat-card rbc-stat-card--purple">
+          <div class="rbc-stat-card__icon">
+            <v-icon color="#a855f7">mdi-trending-up</v-icon>
+          </div>
+          <div class="rbc-stat-card__label">กำไรสุทธิ</div>
+          <div class="rbc-stat-card__value" :class="profitToneClass">{{ formatCurrency(totalProfitAmount) }}</div>
+          <div class="mt-1" style="font-size: 11px; color: var(--rbc-slate-400);">กำไรหลังหักต้นทุน</div>
+        </div>
       </v-col>
     </v-row>
-  </v-container>
+
+    <!-- Financial summary cards -->
+    <v-row class="mt-2">
+      <v-col cols="12" sm="4">
+        <div class="rbc-card">
+          <div class="rbc-card__body">
+            <div class="rbc-section-label mb-1">ต้นทุนทั้งหมด</div>
+            <div class="text-h5 font-weight-bold">{{ formatCurrency(totalCostAmount) }}</div>
+          </div>
+        </div>
+      </v-col>
+
+      <v-col cols="12" sm="4">
+        <div class="rbc-card">
+          <div class="rbc-card__body">
+            <div class="rbc-section-label mb-1">ยอดขายทั้งหมด</div>
+            <div class="text-h5 font-weight-bold">{{ formatCurrency(totalSalesAmount) }}</div>
+          </div>
+        </div>
+      </v-col>
+
+      <v-col cols="12" sm="4">
+        <div class="rbc-card">
+          <div class="rbc-card__body">
+            <div class="rbc-section-label mb-1">กำไรสุทธิ</div>
+            <div class="text-h5 font-weight-bold" :class="profitToneClass">{{ formatCurrency(totalProfitAmount) }}</div>
+          </div>
+        </div>
+      </v-col>
+    </v-row>
+
+    <!-- Chart card -->
+    <div class="rbc-card mt-4">
+      <div class="rbc-card__header">
+        <div>
+          <div class="rbc-card__title">ยอดขายแยกตามแบรนด์</div>
+          <div style="font-size: 11px; color: var(--rbc-slate-400); margin-top: 2px;">เปรียบเทียบมูลค่ายอดขายของแต่ละแบรนด์</div>
+        </div>
+        <NuxtLink to="/report" style="font-size: 12px; color: var(--rbc-orange-600); text-decoration: none; font-weight: 500;">
+          ดูรายงานทั้งหมด &rarr;
+        </NuxtLink>
+      </div>
+      <div class="rbc-card__body">
+        <div style="height: 300px; width: 100%">
+          <VChart class="chart" :option="chartOption" autoresize />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div v-else class="d-flex align-center justify-center" style="min-height: 300px;">
+    <v-progress-circular indeterminate color="primary" size="48" />
+  </div>
 </template>
