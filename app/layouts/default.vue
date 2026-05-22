@@ -59,7 +59,7 @@ const pageTitle = computed(() => {
             <v-icon :icon="item.icon" size="18" />
           </template>
           <template #title>
-            <span style="font-size: 13px;">{{ item.title }}</span>
+            <span class="rbc-sidebar__nav-title">{{ item.title }}</span>
           </template>
         </v-list-item>
       </v-list>
@@ -71,7 +71,7 @@ const pageTitle = computed(() => {
           variant="text"
           rounded="lg"
           class="text-none"
-          style="color: #dc2626;"
+          style="color: var(--rbc-red-600);"
           @click="logout()"
         >
           <v-icon start>mdi-logout</v-icon>

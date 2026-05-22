@@ -12,6 +12,8 @@
   --rbc-orange-700: #c2410c;
   --rbc-orange-800: #9a3412;
 
+  --rbc-red-600: #dc2626;
+
   --rbc-slate-50: #f8fafc;
   --rbc-slate-100: #f1f5f9;
   --rbc-slate-200: #e2e8f0;
@@ -101,6 +103,10 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 6px 10px 4px;
+}
+
+.rbc-sidebar__nav-title {
+  font-size: 13px;
 }
 
 .rbc-sidebar__footer {
