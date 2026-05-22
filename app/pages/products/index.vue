@@ -398,16 +398,17 @@ onMounted(loadProducts);
 </script>
 
 <template>
-  <template #topbar-subtitle>
-    <span>{{ products.length }} รายการ</span>
-  </template>
-  <template #topbar-actions>
-    <v-btn class="rbc-btn-primary" to="/products/create" prepend-icon="mdi-plus">
-      เพิ่มสินค้า
-    </v-btn>
-  </template>
+  <div>
+    <Teleport to="#rbc-topbar-subtitle">
+      <span>{{ products.length }} รายการ</span>
+    </Teleport>
+    <Teleport to="#rbc-topbar-actions">
+      <v-btn class="rbc-btn-primary" to="/products/create" prepend-icon="mdi-plus">
+        เพิ่มสินค้า
+      </v-btn>
+    </Teleport>
 
-  <v-row class="pa-5">
+    <v-row class="pa-5">
     <v-col cols="12">
       <v-row class="tw:mb-4" align="center">
         <v-col cols="7">
@@ -685,6 +686,7 @@ onMounted(loadProducts);
       </v-card-actions>
     </v-card>
   </v-dialog>
+  </div>
 </template>
 
 <style scoped>

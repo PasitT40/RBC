@@ -103,29 +103,30 @@ onMounted(() => {
 </script>
 
 <template>
-  <template #topbar-subtitle>
-    <span>ข้อมูล ณ วันนี้</span>
-  </template>
+  <div>
+    <Teleport to="#rbc-topbar-subtitle">
+      <span>ข้อมูล ณ วันนี้</span>
+    </Teleport>
 
-  <template #topbar-actions>
-    <span
-      class="rbc-filter-chip"
-      :class="{ 'rbc-filter-chip--active': selectedPeriod === 'month' }"
-      @click="setPeriod('month')"
-    >เดือนนี้</span>
-    <span
-      class="rbc-filter-chip"
-      :class="{ 'rbc-filter-chip--active': selectedPeriod === '3m' }"
-      @click="setPeriod('3m')"
-    >3 เดือน</span>
-    <span
-      class="rbc-filter-chip"
-      :class="{ 'rbc-filter-chip--active': selectedPeriod === 'year' }"
-      @click="setPeriod('year')"
-    >ปีนี้</span>
-  </template>
+    <Teleport to="#rbc-topbar-actions">
+      <span
+        class="rbc-filter-chip"
+        :class="{ 'rbc-filter-chip--active': selectedPeriod === 'month' }"
+        @click="setPeriod('month')"
+      >เดือนนี้</span>
+      <span
+        class="rbc-filter-chip"
+        :class="{ 'rbc-filter-chip--active': selectedPeriod === '3m' }"
+        @click="setPeriod('3m')"
+      >3 เดือน</span>
+      <span
+        class="rbc-filter-chip"
+        :class="{ 'rbc-filter-chip--active': selectedPeriod === 'year' }"
+        @click="setPeriod('year')"
+      >ปีนี้</span>
+    </Teleport>
 
-  <div v-if="!dashboard.loading.value">
+    <div v-if="!dashboard.loading.value">
     <!-- KPI stat cards -->
     <v-row>
       <v-col cols="12" sm="6" md="3">
@@ -222,7 +223,8 @@ onMounted(() => {
     </div>
   </div>
 
-  <div v-else class="d-flex align-center justify-center" style="min-height: 300px;">
-    <v-progress-circular indeterminate color="primary" size="48" />
+    <div v-else class="d-flex align-center justify-center" style="min-height: 300px;">
+      <v-progress-circular indeterminate color="primary" size="48" />
+    </div>
   </div>
 </template>

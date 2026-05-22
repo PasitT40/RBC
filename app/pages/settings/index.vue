@@ -182,19 +182,20 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <template #topbar-subtitle>
-    <span>{{ banners.length }} แบนเนอร์ · {{ credits.length }} โลโก้</span>
-  </template>
-  <template #topbar-actions>
-    <v-btn variant="outlined" color="grey-darken-1" :disabled="saving" @click="onCancel()">
-      ยกเลิกการแก้ไข
-    </v-btn>
-    <v-btn class="rbc-btn-primary ml-2" :loading="saving" @click="onSave()">
-      บันทึกการเปลี่ยนแปลง
-    </v-btn>
-  </template>
+  <div>
+    <Teleport to="#rbc-topbar-subtitle">
+      <span>{{ banners.length }} แบนเนอร์ · {{ credits.length }} โลโก้</span>
+    </Teleport>
+    <Teleport to="#rbc-topbar-actions">
+      <v-btn variant="outlined" color="grey-darken-1" :disabled="saving" @click="onCancel()">
+        ยกเลิกการแก้ไข
+      </v-btn>
+      <v-btn class="rbc-btn-primary ml-2" :loading="saving" @click="onSave()">
+        บันทึกการเปลี่ยนแปลง
+      </v-btn>
+    </Teleport>
 
-  <v-container fluid class="pa-6">
+    <v-container fluid class="pa-6">
     <v-row>
       <v-col v-if="loading" cols="12" class="d-flex justify-center py-16">
         <v-progress-circular indeterminate color="primary" size="48" />
@@ -446,5 +447,6 @@ onBeforeUnmount(() => {
         </v-col>
       </template>
     </v-row>
-  </v-container>
+    </v-container>
+  </div>
 </template>

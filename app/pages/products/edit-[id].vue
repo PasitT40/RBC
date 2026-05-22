@@ -429,14 +429,15 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <template #topbar-subtitle>
-    <span>แก้ไขข้อมูลสินค้า</span>
-  </template>
-  <template #topbar-actions>
-    <v-btn variant="text" color="slate" @click="goBack">ยกเลิก</v-btn>
-    <v-btn class="rbc-btn-primary" :loading="loading" @click="submit()">บันทึก</v-btn>
-  </template>
-  <product-editor-form
+  <div>
+    <Teleport to="#rbc-topbar-subtitle">
+      <span>แก้ไขข้อมูลสินค้า</span>
+    </Teleport>
+    <Teleport to="#rbc-topbar-actions">
+      <v-btn variant="text" color="slate" @click="goBack">ยกเลิก</v-btn>
+      <v-btn class="rbc-btn-primary" :loading="loading" @click="submit()">บันทึก</v-btn>
+    </Teleport>
+    <product-editor-form
     title="แก้ไขข้อมูลสินค้า"
     :save-loading="loading"
     :save-disabled="pageLoading"
@@ -581,4 +582,5 @@ onBeforeUnmount(() => {
       สินค้านี้กำลังแสดงอยู่บนเว็บไซต์ แต่ข้อมูลยังไม่ครบ: {{ publicReadinessIssues.join(", ") }}
     </template>
   </product-editor-form>
+  </div>
 </template>

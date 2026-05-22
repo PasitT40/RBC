@@ -308,14 +308,15 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <template #topbar-subtitle>
-    <span>กรอกข้อมูลสินค้าใหม่</span>
-  </template>
-  <template #topbar-actions>
-    <v-btn variant="text" color="slate" @click="goBack">ยกเลิก</v-btn>
-    <v-btn class="rbc-btn-primary" :loading="loading" @click="submit()">บันทึก</v-btn>
-  </template>
-  <product-editor-form
+  <div>
+    <Teleport to="#rbc-topbar-subtitle">
+      <span>กรอกข้อมูลสินค้าใหม่</span>
+    </Teleport>
+    <Teleport to="#rbc-topbar-actions">
+      <v-btn variant="text" color="slate" @click="goBack">ยกเลิก</v-btn>
+      <v-btn class="rbc-btn-primary" :loading="loading" @click="submit()">บันทึก</v-btn>
+    </Teleport>
+    <product-editor-form
     title="เพิ่มสินค้าใหม่"
     :save-loading="loading"
     :category-options="categoryOptions"
@@ -361,4 +362,5 @@ onBeforeUnmount(() => {
       </v-sheet>
     </template>
   </product-editor-form>
+  </div>
 </template>

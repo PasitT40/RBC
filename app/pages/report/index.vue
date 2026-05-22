@@ -203,33 +203,34 @@ onMounted(loadReport);
 </script>
 
 <template>
-  <template #topbar-subtitle>
-    <span v-if="fromMonth || toMonth">
-      {{ fromMonth || '?' }} — {{ toMonth || '?' }}
-    </span>
-    <span v-else>ทุกช่วงเวลา</span>
-  </template>
-  <template #topbar-actions>
-    <v-btn
-      variant="outlined"
-      color="grey-darken-1"
-      prepend-icon="mdi-close"
-      :disabled="!fromMonth && !toMonth"
-      @click="fromMonth = ''; toMonth = ''"
-    >
-      ล้างช่วง
-    </v-btn>
-    <v-btn
-      class="rbc-btn-primary ml-2"
-      prepend-icon="mdi-download"
-      :loading="exporting"
-      @click="exportCsv()"
-    >
-      Export CSV
-    </v-btn>
-  </template>
+  <div>
+    <Teleport to="#rbc-topbar-subtitle">
+      <span v-if="fromMonth || toMonth">
+        {{ fromMonth || '?' }} — {{ toMonth || '?' }}
+      </span>
+      <span v-else>ทุกช่วงเวลา</span>
+    </Teleport>
+    <Teleport to="#rbc-topbar-actions">
+      <v-btn
+        variant="outlined"
+        color="grey-darken-1"
+        prepend-icon="mdi-close"
+        :disabled="!fromMonth && !toMonth"
+        @click="fromMonth = ''; toMonth = ''"
+      >
+        ล้างช่วง
+      </v-btn>
+      <v-btn
+        class="rbc-btn-primary ml-2"
+        prepend-icon="mdi-download"
+        :loading="exporting"
+        @click="exportCsv()"
+      >
+        Export CSV
+      </v-btn>
+    </Teleport>
 
-  <v-container fluid class="pa-6">
+    <v-container fluid class="pa-6">
     <v-row class="mb-6" align="center">
       <v-col cols="auto">
         <div class="rbc-section-label mb-1">ช่วงเวลา</div>
@@ -361,7 +362,8 @@ onMounted(loadReport);
         </div>
       </v-col>
     </v-row>
-  </v-container>
+    </v-container>
+  </div>
 </template>
 
 <style scoped>

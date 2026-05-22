@@ -88,16 +88,10 @@ const pageTitle = computed(() => {
       <!-- Topbar -->
       <header class="rbc-topbar">
         <div>
-          <div class="rbc-topbar__title">
-            <slot name="topbar-title">{{ pageTitle }}</slot>
-          </div>
-          <div class="rbc-topbar__sub">
-            <slot name="topbar-subtitle" />
-          </div>
+          <div class="rbc-topbar__title">{{ pageTitle }}</div>
+          <div id="rbc-topbar-subtitle" class="rbc-topbar__sub" />
         </div>
-        <div class="rbc-topbar__actions">
-          <slot name="topbar-actions" />
-        </div>
+        <div id="rbc-topbar-actions" class="rbc-topbar__actions" />
       </header>
 
       <!-- Page content -->
