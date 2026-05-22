@@ -149,6 +149,56 @@
 ### Settings (`pages/settings/index.vue`)
 - Section headers ชัดขึ้น (banner / credit แยกส่วนชัดเจน)
 - Preview banner แบบ inline ก่อน save
+- **Image constraint enforcement** ต่อประเภท (ดูตาราง Image Specs ด้านล่าง)
+
+---
+
+## Image Upload Specifications
+
+Source of truth จาก FE project — backoffice ต้องแสดงและบังคับ constraint เหล่านี้ทุก upload field
+
+| ประเภท | ขนาด (px) | Ratio | Format | Max size | หมายเหตุ |
+|--------|-----------|-------|--------|----------|---------|
+| Banner slideshow | 1920 × 600 | ~16:5 | JPG / PNG | 500 KB | เนื้อหาสำคัญไว้กลางภาพ เผื่อขอบถูก crop บน mobile |
+| หมวดหมู่สินค้า | 800 × 450 | 16:9 | JPG / PNG | 300 KB | ใช้ใน category card บน storefront |
+| โลโก้แบรนด์ | 600 × 400 | 3:2 | PNG | 300 KB | พื้นหลังขาว/โปร่งใส โลโก้อยู่กลาง |
+| ภาพสินค้า | 800 × 600 | 4:3 | JPG / PNG | 300 KB | ถ่ายบนพื้นขาว/เรียบ |
+| ภาพรีวิวลูกค้า | 800 × 800 | 1:1 | JPG / PNG | 300 KB | square เหมือน Instagram |
+
+### UX ของ Upload Fields (ทุก field ที่รับรูป)
+
+1. **แสดง constraint ชัดเจนก่อน upload** — ใน upload zone ระบุ: ขนาด, ratio, format, max size
+2. **Client-side validation ก่อน upload** — ตรวจ file size และ image dimension ใน browser ก่อนส่งขึ้น Firebase Storage
+3. **Warning เมื่อ ratio ไม่ตรง** — แจ้งว่า "ภาพจะถูก crop เป็น X:Y อัตโนมัติ" พร้อม highlight แดงบน item
+4. **Error เมื่อ file size เกิน** — block upload ทันที แสดง inline error
+5. **Preview หลัง upload** — แสดง thumbnail ในสัดส่วนจริงของประเภทนั้น ไม่ใช่ square ทุกอัน
+
+### Component: `VeeFileInput.vue` ต้องรับ props เพิ่ม
+
+```ts
+interface ImageConstraint {
+  width: number       // expected width px
+  height: number      // expected height px
+  maxSizeKB: number   // max file size
+  formats: string[]   // ['image/jpeg', 'image/png', 'image/webp']
+  label: string       // แสดงใน UI เช่น "1920 × 600 px · ≤500 KB"
+}
+```
+
+ใช้งาน:
+```vue
+<!-- Banner upload -->
+<form-vee-file-input
+  name="bannerImage"
+  :constraint="{ width: 1920, height: 600, maxSizeKB: 500, formats: ['image/jpeg','image/png'], label: '1920 × 600 px · JPG/PNG · ≤500 KB' }"
+/>
+
+<!-- Product image upload -->
+<form-vee-file-input
+  name="productImage"
+  :constraint="{ width: 800, height: 600, maxSizeKB: 300, formats: ['image/jpeg','image/png'], label: '800 × 600 px · JPG/PNG · ≤300 KB' }"
+/>
+```
 
 ---
 
