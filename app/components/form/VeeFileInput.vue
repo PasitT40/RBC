@@ -56,7 +56,7 @@ const progress = ref<number[]>([])
 const previewDialog = ref(false)
 const activePreviewIndex = ref(0)
 const dragIndex = ref<number | null>(null)
-const processing = ref(false)
+const processingCount = ref(0)
 const constraintWarning = ref<string | undefined>(undefined)
 const constraintError = ref<string | undefined>(undefined)
 
@@ -160,56 +160,62 @@ async function handleFiles(files: File | File[] | FileList | null) {
   constraintWarning.value = undefined
   constraintError.value = undefined
 
-  processing.value = props.constraint !== undefined && fileArray.length > 0
-
-  for (const [index, file] of fileArray.entries()) {
-    // Skip size check when constraint is provided — processImage handles sizing
-    if (!props.constraint && file.size > props.maxSize) {
-      appToast.error(`${file.name} มีขนาดใหญ่เกินไป ระบบรองรับไม่เกิน ${formatBytes(props.maxSize)}`)
-      continue
-    }
-
-    if (props.constraint) {
-      // Process via constraint — resize, crop, convert
-      const result = await processImage(file, props.constraint)
-      if (!result.ok || !result.blob) {
-        constraintError.value = result.error ?? "ประมวลผลรูปภาพไม่สำเร็จ"
-        setErrors(constraintError.value)
-        processing.value = false
-        return
-      }
-      if (result.warning) {
-        constraintWarning.value = result.warning
-      }
-      selectedFiles.value.push(file)
-      selectedBlobs.value.push(result.blob)
-      const previewUrl = URL.createObjectURL(result.blob)
-      previews.value.push(previewUrl)
-      progress.value.push(0)
-    } else {
-      if (props.aspectRatio) {
-        try {
-          const { width, height } = await getImageDimensions(file)
-          if (!isAspectRatioAllowed(width, height)) {
-            const ratioLabel = props.aspectRatioLabel || props.aspectRatio.toFixed(2)
-            appToast.error(`${file.name} สัดส่วนภาพไม่ถูกต้อง กรุณาใช้สัดส่วน ${ratioLabel}`)
-            continue
-          }
-        } catch {
-          appToast.error(`${file.name} ไม่สามารถอ่านขนาดรูปได้ กรุณาเลือกไฟล์ภาพใหม่`)
-          continue
-        }
-      }
-      selectedFiles.value.push(file)
-      previews.value.push(URL.createObjectURL(file))
-      progress.value.push(0)
-    }
-
-    simulateUpload(index)
+  if (props.constraint !== undefined && fileArray.length > 0) {
+    processingCount.value++
   }
 
-  processing.value = false
-  emitSelectedFiles()
+  try {
+    for (const [index, file] of fileArray.entries()) {
+      // Skip size check when constraint is provided — processImage handles sizing
+      if (!props.constraint && file.size > props.maxSize) {
+        appToast.error(`${file.name} มีขนาดใหญ่เกินไป ระบบรองรับไม่เกิน ${formatBytes(props.maxSize)}`)
+        continue
+      }
+
+      if (props.constraint) {
+        // Process via constraint — resize, crop, convert
+        const result = await processImage(file, props.constraint)
+        if (!result.ok || !result.blob) {
+          constraintError.value = result.error ?? "ประมวลผลรูปภาพไม่สำเร็จ"
+          setErrors(constraintError.value)
+          return
+        }
+        if (result.warning) {
+          constraintWarning.value = result.warning
+        }
+        selectedFiles.value.push(file)
+        selectedBlobs.value.push(result.blob)
+        const previewUrl = URL.createObjectURL(result.blob)
+        previews.value.push(previewUrl)
+        progress.value.push(0)
+      } else {
+        if (props.aspectRatio) {
+          try {
+            const { width, height } = await getImageDimensions(file)
+            if (!isAspectRatioAllowed(width, height)) {
+              const ratioLabel = props.aspectRatioLabel || props.aspectRatio.toFixed(2)
+              appToast.error(`${file.name} สัดส่วนภาพไม่ถูกต้อง กรุณาใช้สัดส่วน ${ratioLabel}`)
+              continue
+            }
+          } catch {
+            appToast.error(`${file.name} ไม่สามารถอ่านขนาดรูปได้ กรุณาเลือกไฟล์ภาพใหม่`)
+            continue
+          }
+        }
+        selectedFiles.value.push(file)
+        previews.value.push(URL.createObjectURL(file))
+        progress.value.push(0)
+      }
+
+      simulateUpload(index)
+    }
+
+    emitSelectedFiles()
+  } finally {
+    if (props.constraint !== undefined && fileArray.length > 0) {
+      processingCount.value--
+    }
+  }
 }
 
 function simulateUpload(index:number) {
@@ -298,6 +304,9 @@ function removePreview(index: number) {
   if (previews.value.length) {
     const [removedPreview] = previews.value.splice(index, 1)
     selectedFiles.value.splice(index, 1)
+    if (selectedBlobs.value.length > index) {
+      selectedBlobs.value.splice(index, 1)
+    }
     progress.value.splice(index, 1)
     if (removedPreview) URL.revokeObjectURL(removedPreview)
     emitSelectedFiles()
@@ -333,29 +342,29 @@ onBeforeUnmount(() => {
     :accept="accept"
     :multiple="multiple"
     :error-messages="errorMessage"
-    :disabled="processing"
+    :disabled="processingCount > 0"
     @update:model-value="handleFiles"
   />
 
   <!-- Processing spinner -->
-  <div v-if="processing" class="processing-state">
+  <div v-if="processingCount > 0" class="processing-state">
     <v-progress-circular indeterminate color="primary" size="24" />
     <span class="processing-label">กำลังประมวลผลรูปภาพ...</span>
   </div>
 
   <!-- Constraint warning (orange, non-blocking) -->
-  <div v-if="constraintWarning && !processing" class="constraint-warning">
+  <div v-if="constraintWarning && processingCount === 0" class="constraint-warning">
     <v-icon size="16" color="warning">mdi-alert</v-icon>
     {{ constraintWarning }}
   </div>
 
   <!-- Constraint error (red, blocking) -->
-  <div v-if="constraintError && !processing" class="constraint-error">
+  <div v-if="constraintError && processingCount === 0" class="constraint-error">
     <v-icon size="16" color="error">mdi-alert-circle</v-icon>
     {{ constraintError }}
   </div>
 
-  <div v-if="displayItems.length && !processing" class="preview-grid">
+  <div v-if="displayItems.length && processingCount === 0" class="preview-grid">
     <div
       v-for="(item, i) in displayItems"
       :key="`${item.source}-${item.src}-${i}`"
