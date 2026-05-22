@@ -341,12 +341,12 @@
 
 /* Table body cells */
 .rbc-table-wrap .v-data-table__td {
-  font-size: 13px !important;
+  font-size: 14px !important;
   color: var(--rbc-slate-700) !important;
   vertical-align: middle !important;
   border-bottom: 1px solid var(--rbc-slate-100) !important;
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
 }
 
 .rbc-table-wrap .v-data-table__tr:hover .v-data-table__td {
@@ -362,18 +362,27 @@
 
 /* Table thumbnail */
 .rbc-table-thumb {
-  width: 44px;
-  height: 44px;
+  width: 52px !important;
+  height: 52px !important;
+  min-width: 52px;
   border-radius: 8px;
-  object-fit: cover;
-  display: block;
+  background: var(--rbc-slate-50);
+  border: 1px solid var(--rbc-slate-200);
+}
+
+/* Force contain so logos aren't cropped */
+.rbc-table-thumb :deep(img),
+.rbc-table-thumb img {
+  object-fit: contain !important;
 }
 
 .rbc-table-thumb--empty {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
   border-radius: 8px;
   background: var(--rbc-slate-100);
+  border: 1px solid var(--rbc-slate-200);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,14 +533,10 @@
 
 /* ===== Section header ===== */
 .rbc-section-label {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--rbc-orange-700);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border-bottom: 1px solid var(--rbc-orange-100);
-  padding-bottom: 6px;
-  margin-bottom: 14px;
+  color: var(--rbc-slate-700);
+  letter-spacing: 0.01em;
 }
 
 /* ===== Vuetify nav-list active item override ===== */

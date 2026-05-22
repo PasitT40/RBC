@@ -457,12 +457,10 @@ onMounted(loadProducts);
                 v-if="item.cover_image"
                 :src="item.cover_image"
                 width="52" height="52"
-                cover
-                rounded="lg"
+                contain
                 class="rbc-table-thumb"
-                style="width:52px;height:52px"
               />
-              <div v-else class="rbc-table-thumb--empty" style="width:52px;height:52px">
+              <div v-else class="rbc-table-thumb--empty">
                 <v-icon size="20" color="grey-lighten-1">mdi-image-off</v-icon>
               </div>
             </div>

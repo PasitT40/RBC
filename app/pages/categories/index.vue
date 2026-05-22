@@ -594,19 +594,18 @@ onMounted(loadPageData);
                 <v-img
                   v-if="item.image_url"
                   :src="item.image_url"
-                  width="44" height="44"
-                  cover
-                  rounded="lg"
+                  width="52" height="52"
+                  contain
                   class="rbc-table-thumb"
                 />
                 <div v-else class="rbc-table-thumb--empty">
-                  <v-icon size="18" color="grey-lighten-1">mdi-image-off</v-icon>
+                  <v-icon size="20" color="grey-lighten-1">mdi-image-off</v-icon>
                 </div>
               </div>
             </template>
 
             <template #item.name="{ item }">
-              <span class="tw:text-sm tw:font-semibold tw:text-slate-800">{{ item.name || "-" }}</span>
+              <span class="tw:text-[14px] tw:font-semibold tw:text-slate-800">{{ item.name || "-" }}</span>
             </template>
 
             <template #item.slug="{ item }">
@@ -614,7 +613,7 @@ onMounted(loadPageData);
             </template>
 
             <template #item.order="{ item }">
-              <span class="tw:text-sm tw:font-semibold tw:text-slate-700">{{ item.order ?? "-" }}</span>
+              <span class="tw:text-[14px] tw:font-semibold tw:text-slate-700">{{ item.order ?? "-" }}</span>
             </template>
 
             <template #item.updated_at="{ item }">
@@ -685,19 +684,18 @@ onMounted(loadPageData);
                 <v-img
                   v-if="item.image_url"
                   :src="item.image_url"
-                  width="44" height="44"
-                  cover
-                  rounded="lg"
+                  width="52" height="52"
+                  contain
                   class="rbc-table-thumb"
                 />
                 <div v-else class="rbc-table-thumb--empty">
-                  <v-icon size="18" color="grey-lighten-1">mdi-image-off</v-icon>
+                  <v-icon size="20" color="grey-lighten-1">mdi-image-off</v-icon>
                 </div>
               </div>
             </template>
 
             <template #item.name="{ item }">
-              <span class="tw:text-sm tw:font-semibold tw:text-slate-800">{{ item.name || "-" }}</span>
+              <span class="tw:text-[14px] tw:font-semibold tw:text-slate-800">{{ item.name || "-" }}</span>
             </template>
 
             <template #item.slug="{ item }">
@@ -705,11 +703,11 @@ onMounted(loadPageData);
             </template>
 
             <template #item.category_name="{ item }">
-              <span class="tw:text-sm tw:font-semibold tw:text-slate-800">{{ item.category_name || "-" }}</span>
+              <span class="tw:text-[14px] tw:font-semibold tw:text-slate-800">{{ item.category_name || "-" }}</span>
             </template>
 
             <template #item.category_brand_order="{ item }">
-              <span class="tw:text-sm tw:font-semibold tw:text-slate-700">{{ item.category_brand_order ?? "-" }}</span>
+              <span class="tw:text-[14px] tw:font-semibold tw:text-slate-700">{{ item.category_brand_order ?? "-" }}</span>
             </template>
 
             <template #item.updated_at="{ item }">
