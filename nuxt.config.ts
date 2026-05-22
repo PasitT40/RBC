@@ -29,7 +29,6 @@ export default defineNuxtConfig({
       defaults: {
         VBtn: {
           rounded: "lg",
-          style: "text-transform: none; letter-spacing: 0; font-weight: 600;",
         },
         VCard: { rounded: "xl" },
         VTextField: { variant: "outlined", density: "comfortable", rounded: "lg" },

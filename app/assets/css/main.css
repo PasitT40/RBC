@@ -44,7 +44,7 @@
   flex-direction: column;
   background: #ffffff;
   border-right: 1px solid var(--rbc-slate-200);
-  height: 100vh;
+  max-height: 100vh;
   position: sticky;
   top: 0;
   overflow-y: auto;
@@ -279,7 +279,7 @@
 }
 
 /* Override Vuetify data-table header */
-.rbc-table-wrap .v-data-table-header th {
+.rbc-table-wrap .v-data-table__th {
   background: var(--rbc-orange-50) !important;
   color: var(--rbc-orange-800) !important;
   font-size: 11px !important;
