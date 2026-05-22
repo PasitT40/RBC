@@ -483,8 +483,8 @@ onMounted(loadPageData);
     </template>
     <template #actions>
       <div class="tw:flex tw:justify-end tw:gap-2">
-        <v-btn color="black" variant="outlined" @click="closeCategoryDialog">ยกเลิก</v-btn>
-        <v-btn color="#f5962f" class="text-white" @click="submit()">บันทึก</v-btn>
+        <v-btn variant="outlined" color="grey-darken-1" @click="closeCategoryDialog">ยกเลิก</v-btn>
+        <v-btn class="rbc-btn-primary" @click="submit()">บันทึก</v-btn>
       </div>
     </template>
     </ModalCategory>
@@ -527,32 +527,27 @@ onMounted(loadPageData);
     </template>
     <template #actions>
       <div class="tw:flex tw:justify-end tw:gap-2">
-        <v-btn color="black" variant="outlined" @click="closeSubcategoryDialog">ยกเลิก</v-btn>
-        <v-btn color="#f5962f" class="text-white" @click="submit()">บันทึก</v-btn>
+        <v-btn variant="outlined" color="grey-darken-1" @click="closeSubcategoryDialog">ยกเลิก</v-btn>
+        <v-btn class="rbc-btn-primary" @click="submit()">บันทึก</v-btn>
       </div>
     </template>
     </ModalCategory>
+
+    <template #topbar-subtitle>
+      <span>{{ itemCategory.length }} หมวดหมู่ · {{ itemSubCategory.length }} แบรนด์</span>
+    </template>
+    <template #topbar-actions>
+      <v-btn variant="outlined" color="primary" class="mr-2" prepend-icon="mdi-plus" @click="openCreateSubcategory()">
+        เพิ่มแบรนด์
+      </v-btn>
+      <v-btn class="rbc-btn-primary" prepend-icon="mdi-plus" @click="openCreateCategory()">
+        เพิ่มหมวดหมู่
+      </v-btn>
+    </template>
+
     <v-row class="tw:mt-1">
-      <v-col cols="12" >
-        <v-row>
-          <v-col cols="6">
-            <div class="tw:text-3xl tw:font-black tw:text-black">หมวดหมู่</div>
-          </v-col>
-          <v-col cols="6" class="d-flex tw:justify-end">
-            <v-btn
-            color="#f5962f"
-            rounded="pill"
-            size="large"
-            class="tw:self-start tw:px-7 tw:font-bold tw:normal-case tw:text-white! md:tw:self-auto"
-            @click="openCreateCategory()"
-          >
-            <v-icon start>mdi-plus</v-icon>
-            เพิ่มหมวดหมู่
-          </v-btn>
-        </v-col>
-        </v-row>
-      </v-col>
       <v-col cols="12">
+        <div class="rbc-section-label mb-3">หมวดหมู่</div>
         <v-text-field
           v-model="categorySearch"
           variant="outlined"
@@ -564,14 +559,8 @@ onMounted(loadPageData);
           class="tw:mb-4"
         />
 
-        <v-card
-          rounded="xl"
-          elevation="2"
-          class=" tw:overflow-hidden tw:border tw:border-black/5 mt-5"
-        >
-        
+        <div class="rbc-table-wrap">
           <v-data-table
-            class="elevation-2 tw:shadow-none"
             :headers="headers"
             :items="itemCategory"
             :search="categorySearch"
@@ -635,29 +624,11 @@ onMounted(loadPageData);
               </div>
             </template>
           </v-data-table>
-        </v-card>
+        </div>
       </v-col>
 
-      <v-col cols="12" class="tw:mt-6">
-        <v-row>
-          <v-col cols="6">
-            <div class="tw:text-3xl tw:font-black tw:text-black">แบรนด์</div>
-          </v-col>
-          <v-col cols="6" class="d-flex tw:justify-end">
-          <v-btn
-            color="#f5962f"
-            rounded="pill"
-            size="large"
-            class="tw:self-start tw:px-7 tw:font-bold tw:normal-case tw:text-white! md:tw:self-auto"
-            @click="openCreateSubcategory()"
-          >
-            <v-icon start>mdi-plus</v-icon>
-            เพิ่มแบรนด์
-          </v-btn>
-          </v-col>
-        </v-row>
-      </v-col>
       <v-col cols="12">
+        <div class="rbc-section-label mb-3 mt-6">แบรนด์</div>
         <v-text-field
           v-model="brandSearch"
           variant="outlined"
@@ -668,13 +639,8 @@ onMounted(loadPageData);
           clearable
           class="tw:mb-4"
         />
-                <v-card
-          rounded="xl"
-          elevation="2"
-          class="tw:overflow-hidden tw:border tw:border-black/5 mt-5"
-        >
+        <div class="rbc-table-wrap">
           <v-data-table
-            class="elevation-0 tw:shadow-none"
             :headers="subcategoryHeaders"
             :items="itemSubCategory"
             :search="brandSearch"
@@ -742,7 +708,7 @@ onMounted(loadPageData);
               </div>
             </template>
           </v-data-table>
-        </v-card>
+        </div>
       </v-col>
     </v-row>
 
@@ -750,23 +716,23 @@ onMounted(loadPageData);
 
   <!-- Delete Confirm Dialog -->
   <v-dialog v-model="showCategoryDeleteDialog" max-width="400" persistent>
-    <v-card>
+    <v-card rounded="xl">
       <v-card-title>ยืนยันการลบ</v-card-title>
       <v-card-text>คุณต้องการลบหมวดหมู่นี้และรูปภาพทั้งหมดใช่หรือไม่?</v-card-text>
       <v-card-actions class="justify-end">
         <v-btn @click="deleteCategoryId = null">ยกเลิก</v-btn>
-        <v-btn color="error" @click="handleDeleteCategory()">ลบ</v-btn>
+        <v-btn color="error" variant="flat" @click="handleDeleteCategory()">ยืนยันลบ</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
   <v-dialog v-model="showSubcategoryDeleteDialog" max-width="400" persistent>
-    <v-card>
+    <v-card rounded="xl">
       <v-card-title>ยืนยันการลบ</v-card-title>
       <v-card-text>คุณต้องการลบแบรนด์นี้และรูปภาพทั้งหมดใช่หรือไม่?</v-card-text>
       <v-card-actions class="justify-end">
         <v-btn @click="deleteSubcategoryId = null">ยกเลิก</v-btn>
-        <v-btn color="error" @click="handleDeleteSubcategory()">ลบ</v-btn>
+        <v-btn color="error" variant="flat" @click="handleDeleteSubcategory()">ยืนยันลบ</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
