@@ -18,6 +18,7 @@ const { value, handleChange } =
   v-bind="$attrs"
   :model-value="value"
   @update:model-value="handleChange"
+  color="primary"
 />
 
 </template>

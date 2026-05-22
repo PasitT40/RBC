@@ -65,12 +65,12 @@ const increment = () => {
 
 <template>
   <div class="vee-number-stepper">
-    <div v-if="props.label" class="text-body-2 font-weight-medium mb-2">{{ props.label }}</div>
+    <div v-if="props.label" class="rbc-section-label mb-2">{{ props.label }}</div>
     <div class="vee-number-stepper__controls">
       <v-btn
         icon="mdi-minus"
-        variant="outlined"
-        color="grey-darken-1"
+        variant="tonal"
+        color="primary"
         :disabled="decrementDisabled"
         @click="decrement"
       />
@@ -85,8 +85,8 @@ const increment = () => {
       />
       <v-btn
         icon="mdi-plus"
-        variant="outlined"
-        color="grey-darken-1"
+        variant="tonal"
+        color="primary"
         :disabled="incrementDisabled"
         @click="increment"
       />

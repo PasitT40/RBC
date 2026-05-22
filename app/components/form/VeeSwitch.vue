@@ -44,6 +44,7 @@ const errorMessage = computed(() => {
   v-bind="$attrs"
   v-model="switchValue"
   :error-messages="errorMessage"
+  color="primary"
 />
 
 </template>

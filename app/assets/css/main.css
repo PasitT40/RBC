@@ -515,3 +515,53 @@
 .iziToast .iziToast-message {
   white-space: pre-line;
 }
+
+/* ===== Form Fields ===== */
+
+/* Input background and default border */
+.v-field--variant-outlined .v-field__outline__start,
+.v-field--variant-outlined .v-field__outline__notch,
+.v-field--variant-outlined .v-field__outline__end {
+  border-color: #e2e8f0;
+}
+
+.v-field--variant-outlined .v-field__overlay {
+  background-color: #f8fafc;
+  border-radius: var(--rbc-radius-input, 8px);
+}
+
+/* Focus state — orange ring */
+.v-field--focused.v-field--variant-outlined .v-field__outline__start,
+.v-field--focused.v-field--variant-outlined .v-field__outline__notch,
+.v-field--focused.v-field--variant-outlined .v-field__outline__end {
+  border-color: #fb923c;
+  border-width: 2px;
+}
+
+.v-field--focused.v-field--variant-outlined {
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.10);
+}
+
+/* Error state */
+.v-field--error.v-field--variant-outlined .v-field__outline__start,
+.v-field--error.v-field--variant-outlined .v-field__outline__notch,
+.v-field--error.v-field--variant-outlined .v-field__outline__end {
+  border-color: #f87171;
+}
+
+.v-field--error.v-field--variant-outlined .v-field__overlay {
+  background-color: #fff5f5;
+}
+
+/* Error message */
+.v-messages__message {
+  color: #dc2626;
+  font-size: 11px;
+}
+
+/* Label */
+.v-label {
+  font-size: 11px !important;
+  font-weight: 600;
+  color: #64748b;
+}
