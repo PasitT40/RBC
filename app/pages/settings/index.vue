@@ -182,46 +182,32 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <template #topbar-subtitle>
+    <span>{{ banners.length }} แบนเนอร์ · {{ credits.length }} โลโก้</span>
+  </template>
+  <template #topbar-actions>
+    <v-btn variant="outlined" color="grey-darken-1" :disabled="saving" @click="onCancel()">
+      ยกเลิกการแก้ไข
+    </v-btn>
+    <v-btn class="rbc-btn-primary ml-2" :loading="saving" @click="onSave()">
+      บันทึกการเปลี่ยนแปลง
+    </v-btn>
+  </template>
+
   <v-container fluid class="pa-6">
     <v-row>
-      <v-col cols="7">
-        <div class="text-h4 font-weight-bold">ตั้งค่าหน้าเว็บ</div>
-        <div class="text-subtitle-1 text-medium-emphasis">
-          จัดการแบนเนอร์หน้าแรก โลโก้เครดิต และจังหวะการเลื่อนอัตโนมัติ
-        </div>
-      </v-col>
-      <v-col cols="5">
-        <v-row justify="end">
-          <v-col cols="auto">
-            <v-btn variant="outlined" rounded="pill" size="large" :disabled="saving" @click="onCancel()">
-              ยกเลิกการแก้ไข
-            </v-btn>
-          </v-col>
-          <v-col cols="auto">
-            <v-btn color="#f5962f" rounded="pill" size="large" class="text-white" :loading="saving" @click="onSave()">
-              บันทึกการเปลี่ยนแปลง
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-col>
-
-      <v-col v-if="loading" cols="12">
-        <v-sheet border rounded="lg" class="pa-8">
-          <div class="text-h6">กำลังโหลดการตั้งค่าหน้าเว็บ...</div>
-          <div class="text-body-2 text-medium-emphasis">
-            รอสักครู่ ระบบกำลังดึงข้อมูลล่าสุดมาให้
-          </div>
-        </v-sheet>
+      <v-col v-if="loading" cols="12" class="d-flex justify-center py-16">
+        <v-progress-circular indeterminate color="primary" size="48" />
       </v-col>
 
       <template v-else>
         <v-col cols="12">
-          <v-card rounded="lg" elevation="2">
-            <v-card-item>
-              <v-card-title>แบนเนอร์หน้าแรก</v-card-title>
-              <v-card-subtitle>ตั้งค่ารูปหลักด้านบนหน้าแรก พร้อมลำดับและสถานะการแสดงผล</v-card-subtitle>
-            </v-card-item>
-            <v-card-text>
+          <div class="rbc-card mb-6">
+            <div class="rbc-card__header">
+              <div class="rbc-card__title">แบนเนอร์หน้าแรก</div>
+              <div class="text-caption text-slate-400">ตั้งค่ารูปหลักด้านบนหน้าแรก พร้อมลำดับและสถานะการแสดงผล</div>
+            </div>
+            <div class="rbc-card__body">
               <v-row>
                 <v-col cols="4">
                   <form-vee-text-field
@@ -235,7 +221,7 @@ onBeforeUnmount(() => {
                 <v-col cols="8">
                   <v-row justify="end">
                     <v-col cols="auto">
-                      <v-btn color="#f5962f" rounded="pill" variant="outlined" @click="addBanner()">เพิ่มแบนเนอร์</v-btn>
+                      <v-btn color="primary" variant="outlined" @click="addBanner()">เพิ่มแบนเนอร์</v-btn>
                     </v-col>
                   </v-row>
                 </v-col>
@@ -254,114 +240,116 @@ onBeforeUnmount(() => {
                   :key="`banner-${item.id}-${index}`"
                   cols="12"
                 >
-                  <v-sheet border rounded="lg" class="pa-6">
-                    <v-row>
-                      <v-col cols="5">
-                        <div class="text-h6">แบนเนอร์ {{ index + 1 }}</div>
-                        <div class="text-body-2 text-medium-emphasis">
-                          ภาพนี้จะแสดงในส่วนบนของหน้าแรก เลือกรูปที่เห็นตัวสินค้าเด่นและไม่แน่นเกินไป
-                        </div>
-                        <v-sheet
-                          border
-                          rounded="lg"
-                          color="grey-lighten-5"
-                          height="280"
-                          class="mt-4 d-flex align-center justify-center"
-                        >
-                          <v-img
-                            v-if="item.preview_url"
-                            :src="item.preview_url"
-                            :alt="`banner-${index + 1}`"
-                            cover
+                  <div class="rbc-card mb-4">
+                    <div class="rbc-card__body">
+                      <v-row>
+                        <v-col cols="5">
+                          <div class="text-h6">แบนเนอร์ {{ index + 1 }}</div>
+                          <div class="text-body-2 text-medium-emphasis">
+                            ภาพนี้จะแสดงในส่วนบนของหน้าแรก เลือกรูปที่เห็นตัวสินค้าเด่นและไม่แน่นเกินไป
+                          </div>
+                          <v-sheet
+                            border
+                            rounded="lg"
+                            color="grey-lighten-5"
                             height="280"
-                          />
-                          <div v-else class="text-body-2 text-medium-emphasis">ยังไม่ได้เลือกรูปแบนเนอร์</div>
-                        </v-sheet>
-                      </v-col>
-                      <v-col cols="7">
-                        <v-row>
-                          <v-col cols="12">
-                            <v-sheet border rounded="lg" color="grey-lighten-5" class="pa-5">
-                              <div class="text-subtitle-1 font-weight-bold">การตั้งค่าการแสดงผล</div>
-                              <div class="text-body-2 text-medium-emphasis">
-                                เลือกลำดับและกำหนดว่าจะให้แบนเนอร์นี้แสดงบนหน้าเว็บหรือยัง
-                              </div>
-                              <v-row class="mt-2">
-                                <v-col cols="4">
-                                  <form-vee-text-field
-                                    v-model="item.order"
-                                    label="ลำดับการแสดง"
-                                    type="number"
-                                    min="1"
-                                    variant="outlined"
-                                  />
-                                </v-col>
-                                <v-col cols="8">
-                                  <v-sheet border rounded="lg" class="pa-4">
-                                    <div class="text-body-1 font-weight-medium">
-                                      {{ item.active ? "แบนเนอร์นี้เปิดใช้งานอยู่" : "แบนเนอร์นี้ยังไม่แสดงบนหน้าเว็บ" }}
-                                    </div>
-                                    <div class="text-body-2 text-medium-emphasis">
-                                      {{ item.active ? "บันทึกแล้วจะเห็นบนหน้าแรกตามลำดับที่ตั้งไว้" : "บันทึกได้เลย แต่ระบบจะยังไม่แสดงภาพนี้บนหน้าแรก" }}
-                                    </div>
-                                    <form-vee-switch
-                                      v-model="item.active"
-                                      color="primary"
-                                      hide-details
-                                      inset
-                                      label="เปิดแสดงบนหน้าเว็บ"
+                            class="mt-4 d-flex align-center justify-center"
+                          >
+                            <v-img
+                              v-if="item.preview_url"
+                              :src="item.preview_url"
+                              :alt="`banner-${index + 1}`"
+                              cover
+                              height="280"
+                            />
+                            <div v-else class="text-body-2 text-medium-emphasis">ยังไม่ได้เลือกรูปแบนเนอร์</div>
+                          </v-sheet>
+                        </v-col>
+                        <v-col cols="7">
+                          <v-row>
+                            <v-col cols="12">
+                              <v-sheet border rounded="lg" color="grey-lighten-5" class="pa-5">
+                                <div class="text-subtitle-1 font-weight-bold">การตั้งค่าการแสดงผล</div>
+                                <div class="text-body-2 text-medium-emphasis">
+                                  เลือกลำดับและกำหนดว่าจะให้แบนเนอร์นี้แสดงบนหน้าเว็บหรือยัง
+                                </div>
+                                <v-row class="mt-2">
+                                  <v-col cols="4">
+                                    <form-vee-text-field
+                                      v-model="item.order"
+                                      label="ลำดับการแสดง"
+                                      type="number"
+                                      min="1"
+                                      variant="outlined"
                                     />
-                                  </v-sheet>
+                                  </v-col>
+                                  <v-col cols="8">
+                                    <v-sheet border rounded="lg" class="pa-4">
+                                      <div class="text-body-1 font-weight-medium">
+                                        {{ item.active ? "แบนเนอร์นี้เปิดใช้งานอยู่" : "แบนเนอร์นี้ยังไม่แสดงบนหน้าเว็บ" }}
+                                      </div>
+                                      <div class="text-body-2 text-medium-emphasis">
+                                        {{ item.active ? "บันทึกแล้วจะเห็นบนหน้าแรกตามลำดับที่ตั้งไว้" : "บันทึกได้เลย แต่ระบบจะยังไม่แสดงภาพนี้บนหน้าแรก" }}
+                                      </div>
+                                      <form-vee-switch
+                                        v-model="item.active"
+                                        color="primary"
+                                        hide-details
+                                        inset
+                                        label="เปิดแสดงบนหน้าเว็บ"
+                                      />
+                                    </v-sheet>
+                                  </v-col>
+                                </v-row>
+                              </v-sheet>
+                            </v-col>
+
+                            <v-col cols="12">
+                              <v-sheet border rounded="lg" class="pa-5">
+                                <div class="text-subtitle-1 font-weight-bold">อัปโหลดรูปแบนเนอร์</div>
+                                <div class="text-body-2 text-medium-emphasis">
+                                  รองรับไฟล์ PNG, JPG และ WebP
+                                </div>
+                                <form-vee-file-input
+                                  :name="`banner_file_${index}`"
+                                  label="เลือกรูปแบนเนอร์ใหม่"
+                                  accept="image/png,image/jpeg,image/webp"
+                                  variant="outlined"
+                                  :max-size="8000000"
+                                  :constraint="{ width: 1920, height: 600, maxSizeKB: 500, label: '1920 × 600 px · ≤500 KB · JPG/PNG' }"
+                                  class="mt-4"
+                                  @update:model-value="updateBannerFile(item, normalizeSingleFile($event))"
+                                />
+                              </v-sheet>
+                            </v-col>
+
+                            <v-col cols="12">
+                              <v-row justify="end">
+                                <v-col cols="auto">
+                                  <v-btn size="small" variant="text" color="error" @click="removeBanner(index)">
+                                    ลบแบนเนอร์นี้
+                                  </v-btn>
                                 </v-col>
                               </v-row>
-                            </v-sheet>
-                          </v-col>
-
-                          <v-col cols="12">
-                            <v-sheet border rounded="lg" class="pa-5">
-                              <div class="text-subtitle-1 font-weight-bold">อัปโหลดรูปแบนเนอร์</div>
-                              <div class="text-body-2 text-medium-emphasis">
-                                รองรับไฟล์ PNG, JPG และ WebP
-                              </div>
-                              <form-vee-file-input
-                                :name="`banner_file_${index}`"
-                                label="เลือกรูปแบนเนอร์ใหม่"
-                                hint="ถ้าอัปโหลดรูปใหม่ ระบบจะใช้รูปใหม่แทนรูปเดิมทันทีหลังบันทึก แนะนำความละเอียดไม่เกิน 1600 x 900 px และขนาดไฟล์ไม่เกิน 8 MB"
-                                accept="image/png,image/jpeg,image/webp"
-                                variant="outlined"
-                                :max-size="8000000"
-                                class="mt-4"
-                                @update:model-value="updateBannerFile(item, normalizeSingleFile($event))"
-                              />
-                            </v-sheet>
-                          </v-col>
-
-                          <v-col cols="12">
-                            <v-row justify="end">
-                              <v-col cols="auto">
-                                <v-btn size="small" variant="text" color="error" @click="removeBanner(index)">
-                                  ลบแบนเนอร์นี้
-                                </v-btn>
-                              </v-col>
-                            </v-row>
-                          </v-col>
-                        </v-row>
-                      </v-col>
-                    </v-row>
-                  </v-sheet>
+                            </v-col>
+                          </v-row>
+                        </v-col>
+                      </v-row>
+                    </div>
+                  </div>
                 </v-col>
               </v-row>
-            </v-card-text>
-          </v-card>
+            </div>
+          </div>
         </v-col>
 
         <v-col cols="12">
-          <v-card rounded="lg" elevation="2">
-            <v-card-item>
-              <v-card-title>โลโก้และเครดิต</v-card-title>
-              <v-card-subtitle>ตั้งค่าภาพโลโก้หรือเครดิตที่แสดงใต้หมวดหมู่บนหน้าแรก</v-card-subtitle>
-            </v-card-item>
-            <v-card-text>
+          <div class="rbc-card mb-6">
+            <div class="rbc-card__header">
+              <div class="rbc-card__title">โลโก้และเครดิต</div>
+              <div class="text-caption text-slate-400">ตั้งค่าภาพโลโก้หรือเครดิตที่แสดงใต้หมวดหมู่บนหน้าแรก</div>
+            </div>
+            <div class="rbc-card__body">
               <v-row>
                 <v-col cols="8">
                   <div class="text-body-2 text-medium-emphasis">
@@ -371,7 +359,7 @@ onBeforeUnmount(() => {
                 <v-col cols="4">
                   <v-row justify="end">
                     <v-col cols="auto">
-                      <v-btn color="#f5962f" rounded="pill" variant="outlined" @click="addCredit()">เพิ่มโลโก้หรือเครดิต</v-btn>
+                      <v-btn color="primary" variant="outlined" @click="addCredit()">เพิ่มโลโก้หรือเครดิต</v-btn>
                     </v-col>
                   </v-row>
                 </v-col>
@@ -390,69 +378,71 @@ onBeforeUnmount(() => {
                   :key="`credit-${item.id}-${index}`"
                   cols="6"
                 >
-                  <v-sheet border rounded="lg" class="pa-6">
-                    <v-row>
-                      <v-col cols="12">
-                        <div class="text-h6">เครดิต {{ index + 1 }}</div>
-                        <div class="text-body-2 text-medium-emphasis">
-                          ใช้กับโลโก้พาร์ตเนอร์หรือภาพเครดิตด้านล่างหน้าแรก
-                        </div>
-                      </v-col>
-                      <v-col cols="12">
-                        <v-sheet
-                          border
-                          rounded="lg"
-                          color="grey-lighten-5"
-                          height="220"
-                          class="d-flex align-center justify-center"
-                        >
-                          <v-img
-                            v-if="item.preview_url"
-                            :src="item.preview_url"
-                            :alt="`credit-${index + 1}`"
-                            contain
+                  <div class="rbc-card mb-4">
+                    <div class="rbc-card__body">
+                      <v-row>
+                        <v-col cols="12">
+                          <div class="text-h6">เครดิต {{ index + 1 }}</div>
+                          <div class="text-body-2 text-medium-emphasis">
+                            ใช้กับโลโก้พาร์ตเนอร์หรือภาพเครดิตด้านล่างหน้าแรก
+                          </div>
+                        </v-col>
+                        <v-col cols="12">
+                          <v-sheet
+                            border
+                            rounded="lg"
+                            color="grey-lighten-5"
                             height="220"
+                            class="d-flex align-center justify-center"
+                          >
+                            <v-img
+                              v-if="item.preview_url"
+                              :src="item.preview_url"
+                              :alt="`credit-${index + 1}`"
+                              contain
+                              height="220"
+                            />
+                            <div v-else class="text-body-2 text-medium-emphasis">ยังไม่ได้เลือกรูปเครดิต</div>
+                          </v-sheet>
+                        </v-col>
+
+                        <v-col cols="4">
+                          <form-vee-text-field
+                            v-model="item.order"
+                            label="ลำดับการแสดง"
+                            type="number"
+                            min="1"
+                            variant="outlined"
                           />
-                          <div v-else class="text-body-2 text-medium-emphasis">ยังไม่ได้เลือกรูปเครดิต</div>
-                        </v-sheet>
-                      </v-col>
+                        </v-col>
+                        <v-col cols="8">
+                          <form-vee-file-input
+                            :name="`credit_file_${index}`"
+                            label="เลือกรูปเครดิตใหม่"
+                            accept="image/png,image/jpeg,image/webp"
+                            variant="outlined"
+                            :max-size="5000000"
+                            :constraint="{ width: 600, height: 400, maxSizeKB: 300, keepPng: true, label: '600 × 400 px · PNG · ≤300 KB' }"
+                            @update:model-value="updateCreditFile(item, normalizeSingleFile($event))"
+                          />
+                        </v-col>
 
-                      <v-col cols="4">
-                        <form-vee-text-field
-                          v-model="item.order"
-                          label="ลำดับการแสดง"
-                          type="number"
-                          min="1"
-                          variant="outlined"
-                        />
-                      </v-col>
-                      <v-col cols="8">
-                        <form-vee-file-input
-                          :name="`credit_file_${index}`"
-                          label="เลือกรูปเครดิตใหม่"
-                          hint="รองรับไฟล์ PNG, JPG และ WebP แนะนำความละเอียดไม่เกิน 800 x 800 px และขนาดไฟล์ไม่เกิน 5 MB"
-                          accept="image/png,image/jpeg,image/webp"
-                          variant="outlined"
-                          :max-size="5000000"
-                          @update:model-value="updateCreditFile(item, normalizeSingleFile($event))"
-                        />
-                      </v-col>
-
-                      <v-col cols="12">
-                        <v-row justify="end">
-                          <v-col cols="auto">
-                            <v-btn size="small" variant="text" color="error" @click="removeCredit(index)">
-                              ลบรายการนี้
-                            </v-btn>
-                          </v-col>
-                        </v-row>
-                      </v-col>
-                    </v-row>
-                  </v-sheet>
+                        <v-col cols="12">
+                          <v-row justify="end">
+                            <v-col cols="auto">
+                              <v-btn size="small" variant="text" color="error" @click="removeCredit(index)">
+                                ลบรายการนี้
+                              </v-btn>
+                            </v-col>
+                          </v-row>
+                        </v-col>
+                      </v-row>
+                    </div>
+                  </div>
                 </v-col>
               </v-row>
-            </v-card-text>
-          </v-card>
+            </div>
+          </div>
         </v-col>
       </template>
     </v-row>
