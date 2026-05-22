@@ -399,54 +399,6 @@
   margin-top: 5px;
 }
 
-/* ===== Step indicator ===== */
-.rbc-steps {
-  display: flex;
-  align-items: center;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--rbc-slate-100);
-}
-
-.rbc-step {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.rbc-step__dot {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.rbc-step__dot--done   { background: var(--rbc-orange-500); color: #ffffff; }
-.rbc-step__dot--active { background: var(--rbc-orange-100); color: var(--rbc-orange-700); border: 2px solid var(--rbc-orange-500); }
-.rbc-step__dot--pending{ background: var(--rbc-slate-100); color: var(--rbc-slate-400); }
-
-.rbc-step__label {
-  font-size: 11px;
-  color: var(--rbc-slate-500);
-}
-
-.rbc-step__label--active {
-  color: var(--rbc-orange-700);
-  font-weight: 600;
-}
-
-.rbc-step__line {
-  flex: 1;
-  height: 1px;
-  background: var(--rbc-slate-200);
-  margin: 0 6px;
-}
-
-.rbc-step__line--done { background: var(--rbc-orange-300); }
 
 /* ===== Alert / warning boxes ===== */
 .rbc-alert {
