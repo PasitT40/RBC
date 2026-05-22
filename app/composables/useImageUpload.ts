@@ -106,7 +106,7 @@ async function processImage(
   if (constraint.keepPng === true) {
     const blob = await canvasToBlob(canvas, "image/png");
     if (!blob) {
-      return { ok: false, error: "แปลงรูปภาพไม่สำเร็จ" };
+      return { ok: false, error: "แปลงรูปภาพไม่สำเร็จ (canvas ไม่รองรับ)" };
     }
     return { ok: true, blob, warning };
   }
@@ -114,12 +114,19 @@ async function processImage(
   // WebP with quality reduction loop; stop reducing at minQuality = 0.40
   let quality = 0.85;
   const minQuality = 0.4;
+  let lastBlob: Blob | null = null;
 
   while (true) {
     const blob = await canvasToBlob(canvas, "image/webp", quality);
     if (!blob) {
-      return { ok: false, error: "แปลงรูปภาพไม่สำเร็จ" };
+      // Canvas conversion failed; if we never got a blob, return canvas error
+      if (lastBlob === null) {
+        return { ok: false, error: "แปลงรูปภาพไม่สำเร็จ (canvas ไม่รองรับ)" };
+      }
+      // Otherwise break and fall through to size error
+      break;
     }
+    lastBlob = blob;
     if (blob.size <= maxBytes) {
       return { ok: true, blob, warning };
     }
