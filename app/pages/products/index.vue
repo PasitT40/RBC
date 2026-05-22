@@ -611,25 +611,40 @@ onMounted(loadProducts);
     </v-col>
   </v-row>
 
-  <v-dialog v-model="saleDialog" max-width="520" persistent>
-    <v-card rounded="xl">
-      <v-card-title class="tw:px-6 tw:pb-2 tw:pt-6 tw:text-xl tw:font-bold tw:text-slate-900">บันทึกการขาย</v-card-title>
-      <v-card-text class="tw:grid tw:gap-4 tw:px-6 tw:pb-2 tw:pt-2">
-        <div class="rbc-card mb-4" style="background: #f8fafc;">
-          <div class="d-flex align-center gap-3 pa-3">
-            <v-img
-              v-if="saleTarget?.cover_image"
-              :src="saleTarget.cover_image"
-              width="60" height="60"
-              cover
-              rounded="lg"
-            />
-            <v-icon v-else size="48" color="grey-lighten-1">mdi-image-off</v-icon>
-            <div>
-              <div class="font-weight-semibold text-slate-900">{{ saleTarget?.name || '-' }}</div>
-              <div class="text-caption text-slate-500">SKU: {{ saleTarget?.sku || '-' }}</div>
-              <div class="text-caption text-primary font-weight-bold">ราคาตั้ง: {{ formatPrice(saleTarget?.sell_price) }} ฿</div>
-            </div>
+  <v-dialog v-model="saleDialog" max-width="480" persistent>
+    <div class="rbc-modal">
+      <!-- Header -->
+      <div class="rbc-modal__header">
+        <div class="rbc-modal__header-left">
+          <div class="rbc-modal__icon">
+            <v-icon icon="mdi-receipt-text-plus-outline" size="18" color="white" />
+          </div>
+          <span class="rbc-modal__title">บันทึกการขาย</span>
+        </div>
+        <button class="rbc-modal__close" :disabled="saleSubmitting" @click="closeSaleDialog()">
+          <v-icon size="20">mdi-close</v-icon>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="rbc-modal__body tw:flex tw:flex-col tw:gap-4">
+        <!-- Product preview card -->
+        <div class="tw:flex tw:items-center tw:gap-3 tw:rounded-xl tw:bg-slate-50 tw:p-3">
+          <v-img
+            v-if="saleTarget?.cover_image"
+            :src="saleTarget.cover_image"
+            width="64" height="64"
+            cover
+            rounded="lg"
+            class="tw:shrink-0"
+          />
+          <div v-else class="tw:flex tw:h-16 tw:w-16 tw:shrink-0 tw:items-center tw:justify-center tw:rounded-xl tw:bg-slate-200">
+            <v-icon size="28" color="grey-lighten-1">mdi-image-off</v-icon>
+          </div>
+          <div class="tw:min-w-0">
+            <div class="tw:truncate tw:font-semibold tw:text-slate-900">{{ saleTarget?.name || '-' }}</div>
+            <div class="tw:text-xs tw:text-slate-500">SKU: {{ saleTarget?.sku || '-' }}</div>
+            <div class="tw:mt-1 tw:text-xs tw:font-bold tw:text-orange-500">ราคาตั้ง {{ formatPrice(saleTarget?.sell_price) }} ฿</div>
           </div>
         </div>
 
@@ -642,6 +657,7 @@ onMounted(loadProducts);
           density="comfortable"
           hide-details="auto"
           :error-messages="saleErrors.sold_price"
+          prepend-inner-icon="mdi-currency-thb"
         />
 
         <v-text-field
@@ -652,11 +668,12 @@ onMounted(loadProducts);
           density="comfortable"
           hide-details="auto"
           :error-messages="saleErrors.sold_at"
+          prepend-inner-icon="mdi-calendar-outline"
         />
 
         <div>
           <div class="rbc-section-label mb-2">ช่องทางขาย *</div>
-          <div class="d-flex flex-wrap gap-2">
+          <div class="tw:flex tw:flex-wrap tw:gap-2">
             <button
               v-for="ch in saleChannelOptions"
               :key="ch.value"
@@ -666,25 +683,25 @@ onMounted(loadProducts);
               {{ ch.title }}
             </button>
           </div>
-          <div v-if="saleErrors.sold_channel" class="text-caption text-error mt-1">{{ saleErrors.sold_channel }}</div>
+          <div v-if="saleErrors.sold_channel" class="tw:mt-1 tw:text-xs tw:text-red-500">{{ saleErrors.sold_channel }}</div>
         </div>
-      </v-card-text>
-      <v-card-actions class="tw:justify-end tw:gap-2 tw:px-6 tw:pb-6">
-        <v-btn variant="outlined" color="black" rounded="pill" :disabled="saleSubmitting" @click="closeSaleDialog()">
+      </div>
+
+      <!-- Footer -->
+      <div class="rbc-modal__footer">
+        <v-btn variant="outlined" color="grey-darken-1" rounded="lg" :disabled="saleSubmitting" @click="closeSaleDialog()">
           ยกเลิก
         </v-btn>
         <v-btn
-          color="#f5962f"
-          variant="flat"
+          class="rbc-btn-primary"
           :loading="saleSubmitting"
-          rounded="pill"
-          class="tw:font-semibold tw:normal-case tw:text-white"
           @click="onConfirmSale()"
         >
+          <v-icon start size="16">mdi-check</v-icon>
           บันทึกการขาย
         </v-btn>
-      </v-card-actions>
-    </v-card>
+      </div>
+    </div>
   </v-dialog>
   </div>
 </template>

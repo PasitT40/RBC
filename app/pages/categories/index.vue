@@ -26,6 +26,7 @@ const appToast = useAppToast();
 
 const itemCategory = ref<CategoryLikeItem[]>([]);
 const itemSubCategory = ref<CategoryLikeItem[]>([]);
+const loading = ref(false);
 const categorySearch = ref("");
 const brandSearch = ref("");
 const errorMessage = ref<string | null>(null);
@@ -185,8 +186,12 @@ const { handleSubmit, setValues, resetForm } = useForm<CategoryFormValues>({
 });
 
 const loadPageData = async () => {
-  itemCategory.value = await getCategories();
-  itemSubCategory.value = await getSubcategories();
+  loading.value = true;
+  try {
+    [itemCategory.value, itemSubCategory.value] = await Promise.all([getCategories(), getSubcategories()]);
+  } finally {
+    loading.value = false;
+  }
 };
 
 const resetDialogForm = (values: CategoryFormValues) => {
@@ -472,78 +477,85 @@ onMounted(loadPageData);
       v-model="categoryDialog"
       persistent
       :title="isCategoryEditMode ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่'"
+      :icon="isCategoryEditMode ? 'mdi-pencil' : 'mdi-tag-plus-outline'"
     >
-    <template #default>
-      <v-form >
-        <form-vee-text-field variant="outlined" name="name" label="ชื่อหมวดหมู่" />
-        <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
-          ระบบจะสร้าง Slug จากชื่อให้อัตโนมัติ และถ้าไม่ได้กรอก SEO ระบบจะใช้ชื่อและรูปภาพหลักแทน
+      <template #default>
+        <v-form>
+          <form-vee-text-field name="name" label="ชื่อหมวดหมู่" />
+          <p class="tw:mb-4 tw:text-xs tw:text-slate-400">
+            ระบบจะสร้าง Slug จากชื่อให้อัตโนมัติ และถ้าไม่ได้กรอก SEO ระบบจะใช้ชื่อและรูปภาพหลักแทน
+          </p>
+          <form-vee-text-field name="order" label="ลำดับการแสดงผล" type="number" min="1" />
+          <div class="rbc-section-label mb-2 mt-1">SEO</div>
+          <form-vee-text-field name="seo_title" label="ชื่อ SEO" />
+          <form-vee-text-area name="seo_description" label="คำอธิบาย SEO" rows="3" auto-grow />
+          <form-vee-text-field name="seo_image" label="ลิงก์รูป SEO" />
+          <div class="rbc-section-label mb-2 mt-1">รูปภาพ</div>
+          <form-vee-file-input
+            name="image"
+            label="รูปภาพหมวดหมู่"
+            :hint="`แนะนำความละเอียดไม่เกิน 1200 × 1200 px · ไม่เกิน 8 MB`"
+            :max-size="8000000"
+            :preview-url="isCategoryEditMode ? editCategoryItem?.image_url : undefined"
+          />
+        </v-form>
+        <div v-if="errorMessage" class="tw:mt-3 tw:rounded-xl tw:border-l-4 tw:border-red-400 tw:bg-red-50 tw:px-4 tw:py-3 tw:text-sm tw:text-red-700">
+          {{ errorMessage }}
         </div>
-
-        <form-vee-text-field variant="outlined" name="order" label="ลำดับการแสดงผล" type="number" min="1" />
-        <form-vee-text-field variant="outlined" name="seo_title" label="ชื่อ SEO" />
-        <form-vee-text-area variant="outlined" name="seo_description" label="คำอธิบาย SEO" rows="3" auto-grow />
-        <form-vee-text-field variant="outlined" name="seo_image" label="ลิงก์รูป SEO" />
-        <form-vee-file-input
-          variant="outlined"
-          name="image"
-          label="รูปภาพ"
-          :hint="`${bannerImageHint} แนะนำความละเอียดไม่เกิน 1200 x 1200 px และขนาดไฟล์ไม่เกิน 8 MB`"
-          :max-size="8000000"
-          :preview-url="isCategoryEditMode ? editCategoryItem?.image_url : undefined"
-        />
-      </v-form>
-    </template>
-    <template #actions>
-      <div class="tw:flex tw:justify-end tw:gap-2">
-        <v-btn variant="outlined" color="grey-darken-1" @click="closeCategoryDialog">ยกเลิก</v-btn>
-        <v-btn class="rbc-btn-primary" @click="submit()">บันทึก</v-btn>
-      </div>
-    </template>
+      </template>
+      <template #actions>
+        <v-btn variant="outlined" color="grey-darken-1" rounded="lg" @click="closeCategoryDialog">ยกเลิก</v-btn>
+        <v-btn class="rbc-btn-primary" @click="submit()">
+          <v-icon start size="16">mdi-content-save-outline</v-icon>
+          บันทึก
+        </v-btn>
+      </template>
     </ModalCategory>
 
     <ModalCategory
       v-model="subcategoryDialog"
       persistent
       :title="isSubcategoryEditMode ? 'แก้ไขแบรนด์' : 'เพิ่มแบรนด์'"
+      :icon="isSubcategoryEditMode ? 'mdi-pencil' : 'mdi-store-plus-outline'"
     >
-    <template #default>
-      <v-form>
-        <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
-          หน้านี้จะบันทึกข้อมูลไปที่ `brands/{brandId}` และ `category_brands/{categoryId__brandId}` เท่านั้น โดยไม่ได้เก็บแบรนด์เป็น subcollection ใต้หมวดหมู่
+      <template #default>
+        <v-form>
+          <form-vee-text-field name="name" label="ชื่อแบรนด์" />
+          <form-vee-select
+            name="category_id"
+            label="หมวดหมู่"
+            item-title="title"
+            item-value="value"
+            :items="categoryOptions"
+          />
+          <form-vee-text-field name="category_brand_order" label="ลำดับในหมวดหมู่" type="number" min="1" />
+          <p class="tw:mb-4 tw:text-xs tw:text-slate-400">
+            รายการแบรนด์ในหน้าสินค้าจะเรียงตาม <code class="tw:rounded tw:bg-slate-100 tw:px-1">category_brands.order</code>
+          </p>
+          <div class="rbc-section-label mb-2 mt-1">SEO</div>
+          <form-vee-text-field name="seo_title" label="ชื่อ SEO" />
+          <form-vee-text-area name="seo_description" label="คำอธิบาย SEO" rows="3" auto-grow />
+          <form-vee-text-field name="seo_image" label="ลิงก์รูป SEO" />
+          <div class="rbc-section-label mb-2 mt-1">รูปภาพ</div>
+          <form-vee-file-input
+            name="image"
+            label="รูปภาพแบรนด์"
+            :hint="`แนะนำความละเอียดไม่เกิน 1200 × 1200 px · ไม่เกิน 8 MB`"
+            :max-size="8000000"
+            :preview-url="isSubcategoryEditMode ? editSubcategoryItem?.image_url : undefined"
+          />
+        </v-form>
+        <div v-if="errorMessage" class="tw:mt-3 tw:rounded-xl tw:border-l-4 tw:border-red-400 tw:bg-red-50 tw:px-4 tw:py-3 tw:text-sm tw:text-red-700">
+          {{ errorMessage }}
         </div>
-        <form-vee-text-field variant="outlined" name="name" label="ชื่อแบรนด์" />
-        <form-vee-text-field variant="outlined" name="seo_title" label="ชื่อ SEO" />
-        <form-vee-text-area variant="outlined" name="seo_description" label="คำอธิบาย SEO" rows="3" auto-grow />
-        <form-vee-text-field variant="outlined" name="seo_image" label="ลิงก์รูป SEO" />
-        <form-vee-select
-          variant="outlined"
-          name="category_id"
-          label="หมวดหมู่"
-          item-title="title"
-          item-value="value"
-          :items="categoryOptions"
-        />
-        <form-vee-text-field variant="outlined" name="category_brand_order" label="ลำดับในหมวดหมู่" type="number" min="1" />
-        <div class="tw:mb-3 tw:text-xs tw:text-neutral-500">
-          รายการแบรนด์ในหน้าสินค้าจะอ้างอิงจาก `category_brands` เท่านั้น และเรียงตาม `category_brands.order`
-        </div>
-        <form-vee-file-input
-          variant="outlined"
-          name="image"
-          label="รูปภาพ"
-          :hint="`${bannerImageHint} แนะนำความละเอียดไม่เกิน 1200 x 1200 px และขนาดไฟล์ไม่เกิน 8 MB`"
-          :max-size="8000000"
-          :preview-url="isSubcategoryEditMode ? editSubcategoryItem?.image_url : undefined"
-        />
-      </v-form>
-    </template>
-    <template #actions>
-      <div class="tw:flex tw:justify-end tw:gap-2">
-        <v-btn variant="outlined" color="grey-darken-1" @click="closeSubcategoryDialog">ยกเลิก</v-btn>
-        <v-btn class="rbc-btn-primary" @click="submit()">บันทึก</v-btn>
-      </div>
-    </template>
+      </template>
+      <template #actions>
+        <v-btn variant="outlined" color="grey-darken-1" rounded="lg" @click="closeSubcategoryDialog">ยกเลิก</v-btn>
+        <v-btn class="rbc-btn-primary" @click="submit()">
+          <v-icon start size="16">mdi-content-save-outline</v-icon>
+          บันทึก
+        </v-btn>
+      </template>
     </ModalCategory>
 
     <v-row class="tw:mt-1">
@@ -566,6 +578,7 @@ onMounted(loadPageData);
             :items="itemCategory"
             :search="categorySearch"
             :items-per-page="10"
+            :loading="loading"
             no-data-text="ไม่พบข้อมูลหมวดหมู่"
             hover
           >
@@ -646,6 +659,7 @@ onMounted(loadPageData);
             :items="itemSubCategory"
             :search="brandSearch"
             :items-per-page="10"
+            :loading="loading"
             no-data-text="ไม่พบข้อมูลแบรนด์"
             hover
           >
@@ -715,27 +729,43 @@ onMounted(loadPageData);
 
   </div>
 
-  <!-- Delete Confirm Dialog -->
-  <v-dialog v-model="showCategoryDeleteDialog" max-width="400" persistent>
-    <v-card rounded="xl">
-      <v-card-title>ยืนยันการลบ</v-card-title>
-      <v-card-text>คุณต้องการลบหมวดหมู่นี้และรูปภาพทั้งหมดใช่หรือไม่?</v-card-text>
-      <v-card-actions class="justify-end">
-        <v-btn @click="deleteCategoryId = null">ยกเลิก</v-btn>
-        <v-btn color="error" variant="flat" @click="handleDeleteCategory()">ยืนยันลบ</v-btn>
-      </v-card-actions>
-    </v-card>
+  <!-- Delete Confirm Dialogs -->
+  <v-dialog v-model="showCategoryDeleteDialog" max-width="380" persistent>
+    <div class="rbc-danger-dialog">
+      <div class="rbc-danger-dialog__icon-wrap">
+        <v-icon color="#dc2626" size="28">mdi-trash-can-outline</v-icon>
+      </div>
+      <div class="rbc-danger-dialog__title">ลบหมวดหมู่?</div>
+      <div class="rbc-danger-dialog__text">
+        การลบหมวดหมู่จะลบรูปภาพทั้งหมดที่เกี่ยวข้องด้วย<br>และไม่สามารถกู้คืนได้
+      </div>
+      <div class="rbc-danger-dialog__actions">
+        <v-btn variant="outlined" color="slate" rounded="lg" @click="deleteCategoryId = null">ยกเลิก</v-btn>
+        <v-btn color="error" variant="flat" rounded="lg" @click="handleDeleteCategory()">
+          <v-icon start size="16">mdi-delete</v-icon>
+          ยืนยันลบ
+        </v-btn>
+      </div>
+    </div>
   </v-dialog>
 
-  <v-dialog v-model="showSubcategoryDeleteDialog" max-width="400" persistent>
-    <v-card rounded="xl">
-      <v-card-title>ยืนยันการลบ</v-card-title>
-      <v-card-text>คุณต้องการลบแบรนด์นี้และรูปภาพทั้งหมดใช่หรือไม่?</v-card-text>
-      <v-card-actions class="justify-end">
-        <v-btn @click="deleteSubcategoryId = null">ยกเลิก</v-btn>
-        <v-btn color="error" variant="flat" @click="handleDeleteSubcategory()">ยืนยันลบ</v-btn>
-      </v-card-actions>
-    </v-card>
+  <v-dialog v-model="showSubcategoryDeleteDialog" max-width="380" persistent>
+    <div class="rbc-danger-dialog">
+      <div class="rbc-danger-dialog__icon-wrap">
+        <v-icon color="#dc2626" size="28">mdi-trash-can-outline</v-icon>
+      </div>
+      <div class="rbc-danger-dialog__title">ลบแบรนด์?</div>
+      <div class="rbc-danger-dialog__text">
+        การลบแบรนด์จะลบรูปภาพทั้งหมดที่เกี่ยวข้องด้วย<br>และไม่สามารถกู้คืนได้
+      </div>
+      <div class="rbc-danger-dialog__actions">
+        <v-btn variant="outlined" color="slate" rounded="lg" @click="deleteSubcategoryId = null">ยกเลิก</v-btn>
+        <v-btn color="error" variant="flat" rounded="lg" @click="handleDeleteSubcategory()">
+          <v-icon start size="16">mdi-delete</v-icon>
+          ยืนยันลบ
+        </v-btn>
+      </div>
+    </div>
   </v-dialog>
 
   </div>
