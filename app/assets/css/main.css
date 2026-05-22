@@ -565,3 +565,63 @@
   font-weight: 600;
   color: #64748b;
 }
+
+/* ===== Step Indicator ===== */
+.rbc-steps {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.rbc-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.rbc-step--clickable {
+  cursor: pointer;
+}
+
+.rbc-step__dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.rbc-step__dot--done {
+  background: var(--rbc-orange-500);
+  color: #fff;
+}
+
+.rbc-step__dot--active {
+  background: var(--rbc-orange-500);
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
+}
+
+.rbc-step__dot--pending {
+  background: #e2e8f0;
+  color: #94a3b8;
+}
+
+.rbc-step__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.rbc-step__line {
+  flex: 1;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 8px;
+}

@@ -24,6 +24,9 @@ const props = defineProps<{
   coverPreviewUrl?: string;
   coverPreviewAlt?: string;
   previewUrls?: string[];
+  currentStep?: 1 | 2 | 3;
+  costPrice?: number;
+  sellPrice?: number;
 }>();
 
 const emit = defineEmits<{
@@ -33,7 +36,10 @@ const emit = defineEmits<{
   (e: "select-images", value: File | File[] | null): void;
   (e: "reorder-previews", value: string[]): void;
   (e: "remove-preview", index: number): void;
+  (e: "go-step", step: number): void;
 }>();
+
+const steps = ['ข้อมูลทั่วไป', 'รูปภาพ & ราคา', 'ตรวจสอบ'];
 
 const hasWarning = computed(() => Boolean(props.publishActive && props.publicReadinessIssues?.length));
 const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(props.hiddenInfoMessage));
@@ -50,6 +56,30 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
           </v-col>
 
         </v-row>
+
+        <div class="rbc-steps mb-6">
+          <div
+            v-for="(step, i) in steps"
+            :key="i"
+            class="rbc-step"
+            :class="{ 'rbc-step--clickable': i + 1 < (currentStep ?? 1) }"
+            @click="i + 1 < (currentStep ?? 1) ? emit('go-step', i + 1) : undefined"
+          >
+            <div
+              class="rbc-step__dot"
+              :class="{
+                'rbc-step__dot--done': i + 1 < (currentStep ?? 1),
+                'rbc-step__dot--active': i + 1 === (currentStep ?? 1),
+                'rbc-step__dot--pending': i + 1 > (currentStep ?? 1),
+              }"
+            >
+              <v-icon v-if="i + 1 < (currentStep ?? 1)" size="14">mdi-check</v-icon>
+              <span v-else>{{ i + 1 }}</span>
+            </div>
+            <div class="rbc-step__label">{{ step }}</div>
+            <div v-if="i < steps.length - 1" class="rbc-step__line" />
+          </div>
+        </div>
 
         <div v-if="pageLoading" class="py-16 d-flex justify-center">
           <v-progress-circular indeterminate color="#f5962f" />
@@ -208,6 +238,26 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                         min="0"
                         hide-details="auto"
                       />
+                    </v-col>
+
+                    <v-col cols="12" v-if="typeof costPrice === 'number' && typeof sellPrice === 'number' && costPrice >= 0 && sellPrice >= 0">
+                      <div class="d-flex align-center gap-4 pa-3 rounded-lg" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                        <div>
+                          <div class="rbc-section-label">กำไรโดยประมาณ</div>
+                          <div
+                            class="text-h6 font-weight-bold mt-1"
+                            :style="{ color: sellPrice - costPrice >= 0 ? '#16a34a' : '#dc2626' }"
+                          >
+                            {{ sellPrice - costPrice >= 0 ? '+' : '' }}{{ (sellPrice - costPrice).toLocaleString('th-TH') }} ฿
+                          </div>
+                        </div>
+                        <div v-if="costPrice > 0">
+                          <div class="rbc-section-label">margin</div>
+                          <div class="text-body-2 font-weight-bold mt-1" style="color: #64748b;">
+                            {{ ((sellPrice - costPrice) / costPrice * 100).toFixed(1) }}%
+                          </div>
+                        </div>
+                      </div>
                     </v-col>
 
                   </v-row>

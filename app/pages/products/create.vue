@@ -308,6 +308,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <template #topbar-subtitle>
+    <span>กรอกข้อมูลสินค้าใหม่</span>
+  </template>
+  <template #topbar-actions>
+    <v-btn variant="text" color="slate" @click="goBack">ยกเลิก</v-btn>
+    <v-btn class="rbc-btn-primary" :loading="loading" @click="submit()">บันทึก</v-btn>
+  </template>
   <product-editor-form
     title="เพิ่มสินค้าใหม่"
     :save-loading="loading"
@@ -322,6 +329,9 @@ onBeforeUnmount(() => {
     :hidden-info-message="'สินค้านี้จะถูกบันทึกแบบซ่อนไว้ก่อน และค่อยเปิดแสดงบนเว็บไซต์ภายหลังได้'"
     :publish-active="values.show"
     :image-hint="`รูปแรกจะถูกใช้เป็นรูปปกอัตโนมัติ${derivedCoverImageLabel ? ` ตอนนี้รูปปกคือ ${derivedCoverImageLabel}` : ''}`"
+    :current-step="1"
+    :cost-price="typeof values.cost_price === 'number' ? values.cost_price : undefined"
+    :sell-price="typeof values.sell_price === 'number' ? values.sell_price : undefined"
     @cancel="goBack"
     @submit="submit()"
     @refresh-taxonomy="refreshTaxonomy"
