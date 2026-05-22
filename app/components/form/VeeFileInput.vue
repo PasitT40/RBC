@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue"
 import { useField } from "vee-validate"
+import type { ImageConstraint } from "~/composables/useImageUpload"
+import { useImageUpload } from "~/composables/useImageUpload"
 
 interface Props {
   name: string
@@ -17,6 +19,7 @@ interface Props {
   sortable?: boolean
   removable?: boolean
   variant?:  "outlined" | "filled" | "plain" | "solo" | "solo-filled" | "solo-inverted" | "underlined" | undefined
+  constraint?: ImageConstraint
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -30,25 +33,39 @@ const props = withDefaults(defineProps<Props>(), {
   previewUrls: () => [],
   sortable: false,
   removable: false,
-  variant: "outlined"
+  variant: "outlined",
+  constraint: undefined,
 })
 
 const emit = defineEmits<{
-  (e: "update:model-value", value: File | File[] | null): void
+  (e: "update:model-value", value: File | Blob | File[] | null): void
   (e: "reorder-previews", value: string[]): void
   (e: "remove-preview", index: number): void
 }>()
 
 const appToast = useAppToast()
-const { errorMessage, handleChange } = useField(() => props.name)
+const { errorMessage, handleChange, setErrors } = useField(() => props.name)
+
+const { processImage } = useImageUpload()
 
 const selectedFiles = ref<File[]>([])
+const selectedBlobs = ref<(Blob | null)[]>([])
 const previews = ref<string[]>([])
 const existingPreviews = ref<string[]>([])
 const progress = ref<number[]>([])
 const previewDialog = ref(false)
 const activePreviewIndex = ref(0)
 const dragIndex = ref<number | null>(null)
+const processing = ref(false)
+const constraintWarning = ref<string | undefined>(undefined)
+const constraintError = ref<string | undefined>(undefined)
+
+// Compute preview aspect ratio from constraint if provided
+const previewAspectRatio = computed(() => {
+  if (props.constraint) return props.constraint.width / props.constraint.height
+  if (props.aspectRatio) return props.aspectRatio
+  return 1
+})
 
 const normalizedExistingPreviews = computed(() => {
   const urls = props.previewUrls.length ? props.previewUrls : props.previewUrl ? [props.previewUrl] : []
@@ -84,9 +101,17 @@ function revokePreviews() {
 }
 
 function emitSelectedFiles() {
-  const nextValue = props.multiple ? [...selectedFiles.value] : (selectedFiles.value[0] ?? null)
-  handleChange(nextValue)
-  emit("update:model-value", nextValue)
+  if (props.constraint) {
+    // Emit blobs (processed WebP/PNG) when constraint is provided
+    const blobs = selectedBlobs.value.filter((b): b is Blob => b !== null)
+    const nextValue = props.multiple ? blobs : (blobs[0] ?? null)
+    handleChange(nextValue)
+    emit("update:model-value", nextValue)
+  } else {
+    const nextValue = props.multiple ? [...selectedFiles.value] : (selectedFiles.value[0] ?? null)
+    handleChange(nextValue)
+    emit("update:model-value", nextValue)
+  }
 }
 
 const getImageDimensions = (file: File): Promise<{ width: number; height: number }> =>
@@ -131,34 +156,59 @@ async function handleFiles(files: File | File[] | FileList | null) {
   previews.value = []
   progress.value = []
   selectedFiles.value = []
+  selectedBlobs.value = []
+  constraintWarning.value = undefined
+  constraintError.value = undefined
+
+  processing.value = props.constraint !== undefined && fileArray.length > 0
 
   for (const [index, file] of fileArray.entries()) {
-    if (file.size > props.maxSize) {
+    // Skip size check when constraint is provided — processImage handles sizing
+    if (!props.constraint && file.size > props.maxSize) {
       appToast.error(`${file.name} มีขนาดใหญ่เกินไป ระบบรองรับไม่เกิน ${formatBytes(props.maxSize)}`)
       continue
     }
 
-    if (props.aspectRatio) {
-      try {
-        const { width, height } = await getImageDimensions(file)
-        if (!isAspectRatioAllowed(width, height)) {
-          const ratioLabel = props.aspectRatioLabel || props.aspectRatio.toFixed(2)
-          appToast.error(`${file.name} สัดส่วนภาพไม่ถูกต้อง กรุณาใช้สัดส่วน ${ratioLabel}`)
+    if (props.constraint) {
+      // Process via constraint — resize, crop, convert
+      const result = await processImage(file, props.constraint)
+      if (!result.ok || !result.blob) {
+        constraintError.value = result.error ?? "ประมวลผลรูปภาพไม่สำเร็จ"
+        setErrors(constraintError.value)
+        processing.value = false
+        return
+      }
+      if (result.warning) {
+        constraintWarning.value = result.warning
+      }
+      selectedFiles.value.push(file)
+      selectedBlobs.value.push(result.blob)
+      const previewUrl = URL.createObjectURL(result.blob)
+      previews.value.push(previewUrl)
+      progress.value.push(0)
+    } else {
+      if (props.aspectRatio) {
+        try {
+          const { width, height } = await getImageDimensions(file)
+          if (!isAspectRatioAllowed(width, height)) {
+            const ratioLabel = props.aspectRatioLabel || props.aspectRatio.toFixed(2)
+            appToast.error(`${file.name} สัดส่วนภาพไม่ถูกต้อง กรุณาใช้สัดส่วน ${ratioLabel}`)
+            continue
+          }
+        } catch {
+          appToast.error(`${file.name} ไม่สามารถอ่านขนาดรูปได้ กรุณาเลือกไฟล์ภาพใหม่`)
           continue
         }
-      } catch {
-        appToast.error(`${file.name} ไม่สามารถอ่านขนาดรูปได้ กรุณาเลือกไฟล์ภาพใหม่`)
-        continue
       }
+      selectedFiles.value.push(file)
+      previews.value.push(URL.createObjectURL(file))
+      progress.value.push(0)
     }
-
-    selectedFiles.value.push(file)
-    previews.value.push(URL.createObjectURL(file))
-    progress.value.push(0)
 
     simulateUpload(index)
   }
 
+  processing.value = false
   emitSelectedFiles()
 }
 
@@ -270,6 +320,11 @@ onBeforeUnmount(() => {
   @dragover="onDragOver"
 >
 
+  <!-- Constraint label shown inside the upload zone -->
+  <div v-if="constraint" class="constraint-label">
+    {{ constraint.label }}
+  </div>
+
   <v-file-input
     :variant="variant"
     :label="label"
@@ -278,10 +333,29 @@ onBeforeUnmount(() => {
     :accept="accept"
     :multiple="multiple"
     :error-messages="errorMessage"
+    :disabled="processing"
     @update:model-value="handleFiles"
   />
 
-  <div v-if="displayItems.length" class="preview-grid">
+  <!-- Processing spinner -->
+  <div v-if="processing" class="processing-state">
+    <v-progress-circular indeterminate color="primary" size="24" />
+    <span class="processing-label">กำลังประมวลผลรูปภาพ...</span>
+  </div>
+
+  <!-- Constraint warning (orange, non-blocking) -->
+  <div v-if="constraintWarning && !processing" class="constraint-warning">
+    <v-icon size="16" color="warning">mdi-alert</v-icon>
+    {{ constraintWarning }}
+  </div>
+
+  <!-- Constraint error (red, blocking) -->
+  <div v-if="constraintError && !processing" class="constraint-error">
+    <v-icon size="16" color="error">mdi-alert-circle</v-icon>
+    {{ constraintError }}
+  </div>
+
+  <div v-if="displayItems.length && !processing" class="preview-grid">
     <div
       v-for="(item, i) in displayItems"
       :key="`${item.source}-${item.src}-${i}`"
@@ -289,11 +363,19 @@ onBeforeUnmount(() => {
       @dragover.prevent.stop
       @drop.stop="onPreviewDrop(i, $event)"
     >
-      <button type="button" class="preview-button" @click="openPreview(i)">
-        <img 
+      <button
+        type="button"
+        class="preview-button"
+        :style="{ aspectRatio: String(previewAspectRatio), height: 'auto' }"
+        @click="openPreview(i)"
+      >
+        <img
           draggable="true"
           @dragstart="onPreviewDragStart(i)"
-          class="preview-image" :src="item.src" />
+          class="preview-image"
+          :style="{ aspectRatio: String(previewAspectRatio), height: 'auto' }"
+          :src="item.src"
+        />
       </button>
     </div>
   </div>
@@ -337,6 +419,43 @@ onBeforeUnmount(() => {
   position:relative;
 }
 
+.constraint-label {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.processing-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: #555;
+}
+
+.processing-label {
+  font-size: 13px;
+}
+
+.constraint-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #e65100;
+}
+
+.constraint-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #c62828;
+}
+
 .preview-button{
   display:block;
   width:120px;
@@ -344,6 +463,7 @@ onBeforeUnmount(() => {
   background:transparent;
   padding:0;
   cursor:pointer;
+  /* aspect-ratio set via inline style when constraint present */
 }
 
 .preview-item img{
@@ -351,6 +471,7 @@ onBeforeUnmount(() => {
   height:120px;
   object-fit:cover;
   border-radius:8px;
+  /* aspect-ratio set via inline style when constraint present; height auto-follows */
 }
 
 .preview-meta{
