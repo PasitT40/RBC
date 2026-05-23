@@ -104,7 +104,7 @@ export function serializeBrandForCategory(
   const mapping = mappingDoc.data() ?? {};
   return {
     id: brandDoc.id,
-    name: String(brand.name ?? mapping.brand_name ?? ""),
+    name: String(brand.name || mapping.brand_name || ""),
     slug: String(brand.slug ?? ""),
     image_url: asTrimmedString(brand.image_url ?? mapping.brand_image_url),
     order: asNumber(mapping.order) ?? 0,

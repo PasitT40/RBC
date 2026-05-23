@@ -3,6 +3,10 @@ import { signOut } from "firebase/auth";
 export default defineNuxtRouteMiddleware(async (to, from) => {
   if (import.meta.server) return;
 
+  if (import.meta.client && import.meta.dev) {
+    if (localStorage.getItem("__test_auth_bypass__") === "true") return;
+  }
+
   if (to.path === "/public" || to.path.startsWith("/public/")) return;
 
   const { user, waitUntilReady } = useAuthSession();
