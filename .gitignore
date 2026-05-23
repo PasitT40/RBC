@@ -27,3 +27,15 @@ logs
 # Local Firebase/Admin credentials
 serviceAccountKey.json
 serviceAccountKey.*.json
+
+# Firebase build cache
+.firebase/
+
+# Claude Code artifacts
+.claude/
+.superpowers/
+docs/superpowers/
+
+# Playwright artifacts
+.playwright-cli/
+.playwright-mcp/
