@@ -402,7 +402,7 @@ onBeforeUnmount(() => {
       :key="`${item.source}-${item.src}-${i}`"
       class="preview-item"
       @dragover.prevent.stop
-      @drop.stop="onPreviewDrop(i, $event)"
+      @drop.prevent.stop="onPreviewDrop(i, $event)"
     >
       <button
         type="button"
@@ -457,7 +457,6 @@ onBeforeUnmount(() => {
   text-align: center;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
-  overflow: hidden;
 }
 
 .rbc-upload-zone--error {
@@ -490,8 +489,16 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   opacity: 0;
-  cursor: pointer;
   z-index: 1;
+}
+
+.rbc-upload-zone__input :deep(input[type="file"]) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .rbc-upload-zone__error-msg {
