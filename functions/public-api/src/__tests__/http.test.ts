@@ -236,7 +236,7 @@ describe("sendNoContent", () => {
   it("does not set Content-Type", () => {
     const res = makeRes();
     sendNoContent(res as any, 204);
-    const calls = res.set.mock.calls.map(([key]: [string]) => key);
+    const calls = res.set.mock.calls.map((args: any[]) => args[0] as string);
     expect(calls).not.toContain("Content-Type");
   });
 
