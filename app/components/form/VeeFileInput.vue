@@ -38,7 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  (e: "update:model-value", value: File | Blob | File[] | null): void
+  (e: "update:model-value", value: File | File[] | null): void
   (e: "reorder-previews", value: string[]): void
   (e: "remove-preview", index: number): void
 }>()
@@ -49,7 +49,7 @@ const { errorMessage, handleChange, setErrors } = useField(() => props.name)
 const { processImage } = useImageUpload()
 
 const selectedFiles = ref<File[]>([])
-const selectedBlobs = ref<(Blob | null)[]>([])
+const processedFiles = ref<File[]>([])
 const previews = ref<string[]>([])
 const existingPreviews = ref<string[]>([])
 const progress = ref<number[]>([])
@@ -102,9 +102,7 @@ function revokePreviews() {
 
 function emitSelectedFiles() {
   if (props.constraint) {
-    // Emit blobs (processed WebP/PNG) when constraint is provided
-    const blobs = selectedBlobs.value.filter((b): b is Blob => b !== null)
-    const nextValue = props.multiple ? blobs : (blobs[0] ?? null)
+    const nextValue = props.multiple ? [...processedFiles.value] : (processedFiles.value[0] ?? null)
     handleChange(nextValue)
     emit("update:model-value", nextValue)
   } else {
@@ -112,6 +110,21 @@ function emitSelectedFiles() {
     handleChange(nextValue)
     emit("update:model-value", nextValue)
   }
+}
+
+function createProcessedFile(sourceFile: File, blob: Blob) {
+  const fileStem = sourceFile.name.replace(/\.[^.]+$/, "") || "image"
+  const extension =
+    blob.type === "image/png"
+      ? "png"
+      : blob.type === "image/webp"
+        ? "webp"
+        : sourceFile.name.split(".").pop() || "jpg"
+
+  return new File([blob], `${fileStem}.${extension}`, {
+    type: blob.type || sourceFile.type,
+    lastModified: sourceFile.lastModified,
+  })
 }
 
 const getImageDimensions = (file: File): Promise<{ width: number; height: number }> =>
@@ -156,7 +169,7 @@ async function handleFiles(files: File | File[] | FileList | null) {
   previews.value = []
   progress.value = []
   selectedFiles.value = []
-  selectedBlobs.value = []
+  processedFiles.value = []
   constraintWarning.value = undefined
   constraintError.value = undefined
 
@@ -184,7 +197,7 @@ async function handleFiles(files: File | File[] | FileList | null) {
           constraintWarning.value = result.warning
         }
         selectedFiles.value.push(file)
-        selectedBlobs.value.push(result.blob)
+        processedFiles.value.push(createProcessedFile(file, result.blob))
         const previewUrl = URL.createObjectURL(result.blob)
         previews.value.push(previewUrl)
         progress.value.push(0)
@@ -266,22 +279,33 @@ function onPreviewDrop(index: number, e: DragEvent) {
 
   if (previews.value.length) {
     const nextFiles = [...selectedFiles.value]
+    const nextProcessedFiles = [...processedFiles.value]
     const nextPreviews = [...previews.value]
     const nextProgress = [...progress.value]
     const [movedFile] = nextFiles.splice(fromIndex, 1)
+    const [movedProcessedFile] = nextProcessedFiles.splice(fromIndex, 1)
     const [movedPreview] = nextPreviews.splice(fromIndex, 1)
     const [movedProgress] = nextProgress.splice(fromIndex, 1)
 
-    if (!movedFile || movedPreview === undefined || movedProgress === undefined) {
+    if (
+      !movedFile ||
+      movedPreview === undefined ||
+      movedProgress === undefined ||
+      (props.constraint && !movedProcessedFile)
+    ) {
       dragIndex.value = null
       return
     }
 
     nextFiles.splice(index, 0, movedFile)
+    if (movedProcessedFile) {
+      nextProcessedFiles.splice(index, 0, movedProcessedFile)
+    }
     nextPreviews.splice(index, 0, movedPreview)
     nextProgress.splice(index, 0, movedProgress)
 
     selectedFiles.value = nextFiles
+    processedFiles.value = nextProcessedFiles
     previews.value = nextPreviews
     progress.value = nextProgress
     emitSelectedFiles()
@@ -304,8 +328,8 @@ function removePreview(index: number) {
   if (previews.value.length) {
     const [removedPreview] = previews.value.splice(index, 1)
     selectedFiles.value.splice(index, 1)
-    if (selectedBlobs.value.length > index) {
-      selectedBlobs.value.splice(index, 1)
+    if (processedFiles.value.length > index) {
+      processedFiles.value.splice(index, 1)
     }
     progress.value.splice(index, 1)
     if (removedPreview) URL.revokeObjectURL(removedPreview)
@@ -323,47 +347,55 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-<div
-  class="vee-file-drop"
-  @drop="onDrop"
-  @dragover="onDragOver"
->
+<div class="rbc-form-field">
+  <label v-if="label" class="rbc-form-field__label">{{ label }}</label>
 
-  <!-- Constraint label shown inside the upload zone -->
-  <div v-if="constraint" class="constraint-label">
-    {{ constraint.label }}
+  <div
+    class="rbc-upload-zone"
+    :class="{ 'rbc-upload-zone--error': errorMessage }"
+    @drop="onDrop"
+    @dragover="onDragOver"
+  >
+    <!-- Constraint label -->
+    <div v-if="constraint" class="rbc-upload-zone__constraint">{{ constraint.label }}</div>
+
+    <!-- Custom visible zone content -->
+    <div class="rbc-upload-zone__body">
+      <v-icon size="32" color="#ea580c">mdi-camera</v-icon>
+      <div class="rbc-upload-zone__cta">คลิกเลือก หรือลากรูปมาวาง</div>
+      <div class="rbc-upload-zone__hint">{{ hint || `PNG, JPG · สูงสุด ${formatBytes(maxSize)} ต่อไฟล์` }}</div>
+    </div>
+
+    <!-- Invisible file input covering the entire zone for click-to-browse -->
+    <v-file-input
+      class="rbc-upload-zone__input"
+      :accept="accept"
+      :multiple="multiple"
+      :disabled="processingCount > 0"
+      hide-details
+      @update:model-value="handleFiles"
+    />
+
+    <!-- Processing spinner -->
+    <div v-if="processingCount > 0" class="processing-state">
+      <v-progress-circular indeterminate color="primary" size="24" />
+      <span class="processing-label">กำลังประมวลผลรูปภาพ...</span>
+    </div>
+
+    <!-- Constraint warning -->
+    <div v-if="constraintWarning && processingCount === 0" class="constraint-warning">
+      <v-icon size="16" color="warning">mdi-alert</v-icon>
+      {{ constraintWarning }}
+    </div>
+
+    <!-- Constraint error -->
+    <div v-if="constraintError && processingCount === 0" class="constraint-error">
+      <v-icon size="16" color="error">mdi-alert-circle</v-icon>
+      {{ constraintError }}
+    </div>
   </div>
 
-  <v-file-input
-    :variant="variant"
-    :label="label"
-    :hint="hint"
-    :persistent-hint="Boolean(hint)"
-    :accept="accept"
-    :multiple="multiple"
-    :error-messages="errorMessage"
-    :disabled="processingCount > 0"
-    @update:model-value="handleFiles"
-  />
-
-  <!-- Processing spinner -->
-  <div v-if="processingCount > 0" class="processing-state">
-    <v-progress-circular indeterminate color="primary" size="24" />
-    <span class="processing-label">กำลังประมวลผลรูปภาพ...</span>
-  </div>
-
-  <!-- Constraint warning (orange, non-blocking) -->
-  <div v-if="constraintWarning && processingCount === 0" class="constraint-warning">
-    <v-icon size="16" color="warning">mdi-alert</v-icon>
-    {{ constraintWarning }}
-  </div>
-
-  <!-- Constraint error (red, blocking) -->
-  <div v-if="constraintError && processingCount === 0" class="constraint-error">
-    <v-icon size="16" color="error">mdi-alert-circle</v-icon>
-    {{ constraintError }}
-  </div>
-
+  <!-- Preview grid lives outside the drop zone -->
   <div v-if="displayItems.length && processingCount === 0" class="preview-grid">
     <div
       v-for="(item, i) in displayItems"
@@ -386,23 +418,28 @@ onBeforeUnmount(() => {
           :src="item.src"
         />
       </button>
+      <button
+        v-if="removable"
+        type="button"
+        class="remove-overlay-btn"
+        @click.stop="removePreview(i)"
+      >
+        <v-icon size="14" color="white">mdi-close</v-icon>
+      </button>
     </div>
   </div>
 
+  <!-- Field error message -->
+  <div v-if="errorMessage" class="rbc-upload-zone__error-msg">{{ errorMessage }}</div>
+
   <v-dialog v-model="previewDialog" max-width="960">
     <v-card rounded="xl">
-      <div class="dialog-toolbar">
-        <div class="dialog-title">Image Preview</div>
-        <v-btn icon variant="text" color="black" @click="closePreview">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
+      <div class="tw:flex tw:items-center tw:justify-between tw:px-6 tw:py-4 tw:border-b tw:border-slate-100">
+        <div class="tw:text-[15px] tw:font-semibold tw:text-slate-800">ดูรูปภาพ</div>
+        <v-btn icon variant="text" @click="closePreview"><v-icon>mdi-close</v-icon></v-btn>
       </div>
-      <div class="dialog-body">
-        <img
-          v-if="activePreviewItem"
-          :src="activePreviewItem.src"
-          class="dialog-image"
-        >
+      <div class="tw:flex tw:justify-center tw:items-center tw:p-4 tw:bg-slate-900" style="min-height: 360px;">
+        <img v-if="activePreviewItem" :src="activePreviewItem.src" class="dialog-image">
       </div>
     </v-card>
   </v-dialog>
@@ -411,28 +448,87 @@ onBeforeUnmount(() => {
 
 <style scoped>
 
-.vee-file-drop{
-  border:2px dashed #ddd;
-  padding:16px;
-  border-radius:8px;
+.rbc-upload-zone {
+  position: relative;
+  border: 2px dashed var(--rbc-orange-200);
+  border-radius: 12px;
+  background: var(--rbc-orange-50);
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  overflow: hidden;
 }
 
-.preview-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,120px);
-  gap:12px;
-  margin-top:12px;
+.rbc-upload-zone--error {
+  border-color: var(--rbc-red-600);
+  background: #fef2f2;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.10);
 }
 
-.preview-item{
-  position:relative;
+.rbc-upload-zone__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
 }
 
-.constraint-label {
+.rbc-upload-zone__cta {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rbc-orange-600);
+}
+
+.rbc-upload-zone__hint {
   font-size: 12px;
-  color: #555;
-  margin-bottom: 8px;
-  font-weight: 500;
+  color: var(--rbc-slate-400);
+}
+
+/* Invisible v-file-input overlay — captures clicks anywhere on the zone */
+.rbc-upload-zone__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.rbc-upload-zone__error-msg {
+  font-size: 12px;
+  color: var(--rbc-red-600);
+  margin-top: 4px;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 84px);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.preview-item {
+  position: relative;
+}
+
+.remove-overlay-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 2;
+}
+.remove-overlay-btn:hover {
+  background: rgba(220, 38, 38, 0.85);
 }
 
 .processing-state {
@@ -452,7 +548,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   margin-top: 6px;
-  font-size: 13px;
+  font-size: 12px;
   color: #e65100;
 }
 
@@ -461,94 +557,30 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   margin-top: 6px;
-  font-size: 13px;
+  font-size: 12px;
   color: #c62828;
 }
 
-.preview-button{
-  display:block;
-  width:120px;
-  border:0;
-  background:transparent;
-  padding:0;
-  cursor:pointer;
-  /* aspect-ratio set via inline style when constraint present */
+.preview-button {
+  display: block;
+  width: 84px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
 }
 
-.preview-item img{
-  width:120px;
-  height:120px;
-  object-fit:cover;
-  border-radius:8px;
-  /* aspect-ratio set via inline style when constraint present; height auto-follows */
+.preview-item img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
-.preview-meta{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  margin-top:4px;
-}
-
-.preview-meta-left{
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-
-.current-label {
-  font-size: 11px;
-  color: #888;
-}
-
-.drag-handle{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:24px;
-  height:24px;
-  border:0;
-  border-radius:999px;
-  background:#f1f1f1;
-  color:#333;
-  cursor:grab;
-}
-
-.drag-handle:active{
-  cursor:grabbing;
-}
-
-.remove-btn{
-  flex-shrink:0;
-}
-
-.dialog-toolbar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:12px 16px;
-  border-bottom:1px solid rgba(0,0,0,.08);
-}
-
-.dialog-title{
-  font-size:16px;
-  font-weight:600;
-}
-
-.dialog-body{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  padding:16px;
-  background:#111;
-  min-height:360px;
-}
-
-.dialog-image{
-  max-width:100%;
-  max-height:70vh;
-  object-fit:contain;
+.dialog-image {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
 }
 
 </style>
