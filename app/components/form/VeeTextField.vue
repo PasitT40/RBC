@@ -2,13 +2,17 @@
 import { computed } from "vue"
 import { useField } from "vee-validate"
 
-defineOptions({ inheritAttrs:false })
+defineOptions({ inheritAttrs: false })
 
 const props = defineProps({
   name: {
     type: String,
-    required: false
-  }
+    required: false,
+  },
+  label: {
+    type: String,
+    default: "",
+  },
 })
 
 const modelValue = defineModel<string | number | null>({
@@ -43,11 +47,15 @@ const errorMessage = computed(() => {
 </script>
 
 <template>
-
-<v-text-field
-  v-bind="$attrs"
-  v-model="inputValue"
-  :error-messages="errorMessage"
-/>
-
+<div class="rbc-form-field">
+  <label v-if="label" class="rbc-form-field__label">{{ label }}</label>
+  <v-text-field
+    v-bind="$attrs"
+    v-model="inputValue"
+    :error-messages="errorMessage"
+    variant="outlined"
+    hide-details="auto"
+    density="compact"
+  />
+</div>
 </template>
