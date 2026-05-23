@@ -82,18 +82,20 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--rbc-orange-500), var(--rbc-orange-600));
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
 }
 
 .rbc-sidebar__logo-icon img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 4px;
 }
 
 .rbc-sidebar__logo-name {
@@ -599,7 +601,7 @@
   border-radius: var(--rbc-radius-input, 8px);
 }
 
-/* Focus state — orange ring */
+/* Focus state */
 .v-field--focused.v-field--variant-outlined .v-field__outline {
   --v-field-border-width: 2px;
 }
@@ -938,10 +940,10 @@
 
 /* Outlined border — default */
 .rbc-form-field .v-field--variant-outlined .v-field__outline__start,
-.rbc-form-field .v-field--variant-outlined .v-field__outline__notch,
+.rbc-form-field .v-field--variant-outlined .v-field__outline__notch::before,
+.rbc-form-field .v-field--variant-outlined .v-field__outline__notch::after,
 .rbc-form-field .v-field--variant-outlined .v-field__outline__end {
   border-color: var(--rbc-slate-200);
-  border-width: 2px;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -955,7 +957,8 @@
 
 /* Outlined border — focused */
 .rbc-form-field .v-field--variant-outlined.v-field--focused .v-field__outline__start,
-.rbc-form-field .v-field--variant-outlined.v-field--focused .v-field__outline__notch,
+.rbc-form-field .v-field--variant-outlined.v-field--focused .v-field__outline__notch::before,
+.rbc-form-field .v-field--variant-outlined.v-field--focused .v-field__outline__notch::after,
 .rbc-form-field .v-field--variant-outlined.v-field--focused .v-field__outline__end {
   border-color: var(--rbc-orange-500);
 }
@@ -967,7 +970,8 @@
 
 /* Outlined border — error */
 .rbc-form-field .v-field--variant-outlined.v-field--error .v-field__outline__start,
-.rbc-form-field .v-field--variant-outlined.v-field--error .v-field__outline__notch,
+.rbc-form-field .v-field--variant-outlined.v-field--error .v-field__outline__notch::before,
+.rbc-form-field .v-field--variant-outlined.v-field--error .v-field__outline__notch::after,
 .rbc-form-field .v-field--variant-outlined.v-field--error .v-field__outline__end {
   border-color: var(--rbc-red-600);
 }
@@ -996,4 +1000,3 @@
 .rbc-form-field .v-messages__message {
   font-size: 12px;
 }
-

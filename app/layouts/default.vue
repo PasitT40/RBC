@@ -45,7 +45,7 @@ const pageTitle = computed(() => {
       <!-- Logo section -->
       <div class="rbc-sidebar__logo">
         <div class="rbc-sidebar__logo-icon">
-          <v-icon icon="mdi-camera" color="white" size="22" />
+          <img src="/img/logo.png" alt="RB Camera" />
         </div>
         <div>
           <div class="rbc-sidebar__logo-name">RBC Camera</div>

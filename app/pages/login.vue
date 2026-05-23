@@ -24,7 +24,7 @@ onMounted(() => {
       <!-- Brand -->
       <div class="login-card__brand">
         <div class="login-card__brand-icon">
-          <v-icon icon="mdi-camera" color="white" size="28" />
+          <img src="/img/logo.png" alt="RB Camera" />
         </div>
         <span class="login-card__brand-name">RBC Camera</span>
       </div>
@@ -85,11 +85,19 @@ onMounted(() => {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.20);
+  overflow: hidden;
+}
+
+.login-card__brand-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 5px;
 }
 
 .login-card__brand-name {
