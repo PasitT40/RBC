@@ -4,6 +4,8 @@ import { useField } from "vee-validate"
 import type { ImageConstraint } from "~/composables/useImageUpload"
 import { useImageUpload } from "~/composables/useImageUpload"
 
+defineOptions({ inheritAttrs: false })
+
 interface Props {
   name: string
   label?: string
@@ -18,7 +20,6 @@ interface Props {
   previewUrls?: string[]
   sortable?: boolean
   removable?: boolean
-  variant?:  "outlined" | "filled" | "plain" | "solo" | "solo-filled" | "solo-inverted" | "underlined" | undefined
   constraint?: ImageConstraint
 }
 
@@ -33,7 +34,6 @@ const props = withDefaults(defineProps<Props>(), {
   previewUrls: () => [],
   sortable: false,
   removable: false,
-  variant: "outlined",
   constraint: undefined,
 })
 

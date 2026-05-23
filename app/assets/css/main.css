@@ -504,28 +504,6 @@
 }
 
 /* ===== Upload zone ===== */
-.rbc-upload-zone {
-  border: 2px dashed var(--rbc-orange-200);
-  background: var(--rbc-orange-50);
-  border-radius: 10px;
-  padding: 20px 16px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.rbc-upload-zone:hover {
-  border-color: var(--rbc-orange-500);
-  background: var(--rbc-orange-100);
-}
-
-.rbc-upload-zone__text {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--rbc-orange-700);
-  margin-top: 4px;
-}
-
 .rbc-upload-zone__constraint {
   font-size: 10px;
   color: var(--rbc-slate-500);
