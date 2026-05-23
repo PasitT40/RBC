@@ -22,14 +22,32 @@
   --rbc-slate-700: #334155;
   --rbc-slate-900: #0f172a;
 
-  --rbc-shadow-card: 0 4px 20px rgba(249, 115, 22, 0.10);
-  --rbc-shadow-modal: 0 20px 60px rgba(15, 23, 42, 0.18);
+  /* Typography scale */
+  --rbc-text-xs: 11px;
+  --rbc-text-sm: 13px;
+  --rbc-text-base: 14px;
+  --rbc-text-md: 15px;
+  --rbc-text-lg: 16px;
+  --rbc-text-xl: 20px;
+  --rbc-text-2xl: 28px;
+
+  /* Updated shadows — warmer */
+  --rbc-shadow-card: 0 4px 24px rgba(249, 115, 22, 0.12);
+  --rbc-shadow-modal: 0 24px 64px rgba(15, 23, 42, 0.20);
   --rbc-shadow-soft: 0 2px 12px rgba(15, 23, 42, 0.06);
 
-  --rbc-radius-card: 14px;
-  --rbc-radius-btn: 8px;
-  --rbc-radius-badge: 20px;
-  --rbc-radius-input: 8px;
+  /* Updated radii */
+  --rbc-radius-card: 16px;
+  --rbc-radius-btn: 10px;
+  --rbc-radius-badge: 99px;
+  --rbc-radius-input: 10px;
+}
+
+/* Page content container — prevents full 1680px stretch at 1920px */
+.rbc-page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* ===== Page shell ===== */
@@ -174,6 +192,11 @@
   text-transform: none !important;
   font-weight: 600 !important;
   letter-spacing: 0 !important;
+  transition: filter 0.15s;
+}
+
+.rbc-btn-primary:hover {
+  filter: brightness(1.08);
 }
 
 .rbc-btn-ghost {
@@ -195,21 +218,25 @@
 }
 
 .rbc-card__header {
-  padding: 14px 18px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--rbc-slate-100);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-left: 4px solid var(--rbc-orange-500);
 }
 
 .rbc-card__title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--rbc-slate-900);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .rbc-card__body {
-  padding: 16px 18px;
+  padding: 18px 20px;
 }
 
 /* ===== Stat cards ===== */
@@ -217,54 +244,61 @@
   background: #ffffff;
   border-radius: var(--rbc-radius-card);
   box-shadow: var(--rbc-shadow-card);
-  padding: 16px 18px;
+  padding: 20px 22px 16px;
   position: relative;
   overflow: hidden;
+  min-height: 110px;
 }
 
 .rbc-stat-card::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 3px;
-}
-
-.rbc-stat-card--orange::after { background: linear-gradient(90deg, var(--rbc-orange-500), var(--rbc-orange-300)); }
-.rbc-stat-card--green::after  { background: linear-gradient(90deg, #22c55e, #86efac); }
-.rbc-stat-card--blue::after   { background: linear-gradient(90deg, #3b82f6, #93c5fd); }
-.rbc-stat-card--purple::after { background: linear-gradient(90deg, #a855f7, #d8b4fe); }
-
-.rbc-stat-card__label {
-  font-size: 11px;
-  color: var(--rbc-slate-400);
-  margin-bottom: 6px;
-}
-
-.rbc-stat-card__value {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--rbc-slate-900);
-  line-height: 1;
-}
-
-.rbc-stat-card__delta {
-  font-size: 10px;
-  color: #16a34a;
-  margin-top: 5px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color, #f97316) 0%, color-mix(in srgb, var(--color, #f97316) 60%, white) 100%);
+  border-radius: 0 0 var(--rbc-radius-card) var(--rbc-radius-card);
 }
 
 .rbc-stat-card__icon {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  top: 18px;
+  right: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: color-mix(in srgb, var(--color, #f97316) 12%, white);
+}
+
+.rbc-stat-card__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rbc-slate-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.rbc-stat-card__value {
+  font-size: var(--rbc-text-2xl);
+  font-weight: 800;
+  color: var(--rbc-slate-900);
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.rbc-stat-card__delta {
+  font-size: 11px;
+  font-weight: 600;
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 2px 8px;
+  border-radius: 99px;
+  display: inline-block;
 }
 
 /* ===== Table section header ===== */
@@ -308,12 +342,17 @@
   border-radius: 99px !important;
 }
 
+.rbc-search .v-field__outline {
+  border-radius: 99px !important;
+}
+
 /* ===== Data table wrapper ===== */
 .rbc-table-wrap {
   background: #ffffff;
   border-radius: var(--rbc-radius-card);
   box-shadow: var(--rbc-shadow-card);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .rbc-table-toolbar {
@@ -329,7 +368,7 @@
 .rbc-table-wrap .v-data-table__th {
   background: var(--rbc-slate-50) !important;
   color: var(--rbc-slate-500) !important;
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
   letter-spacing: 0.05em !important;
   text-transform: uppercase !important;
@@ -417,28 +456,29 @@
 
 /* ===== Filter chips ===== */
 .rbc-filter-chip {
-  padding: 5px 14px;
+  padding: 7px 16px;
   border-radius: var(--rbc-radius-badge);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
-  cursor: pointer;
-  border: 1px solid var(--rbc-slate-200);
-  background: #ffffff;
   color: var(--rbc-slate-500);
+  background: #ffffff;
+  border: 1.5px solid var(--rbc-slate-200);
+  cursor: pointer;
   transition: all 0.15s;
-  user-select: none;
+  white-space: nowrap;
 }
 
 .rbc-filter-chip:hover {
-  border-color: var(--rbc-orange-200);
-  color: var(--rbc-orange-700);
+  border-color: var(--rbc-orange-300);
+  color: var(--rbc-orange-600);
+  background: var(--rbc-orange-50);
 }
 
 .rbc-filter-chip--active {
   background: var(--rbc-orange-50);
-  border-color: var(--rbc-orange-200);
+  border-color: var(--rbc-orange-300);
   color: var(--rbc-orange-700);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* ===== Form fields ===== */
@@ -539,6 +579,10 @@
   letter-spacing: 0.01em;
 }
 
+.rbc-table-section__title .rbc-section-label {
+  font-size: 15px;
+}
+
 /* ===== Vuetify nav-list active item override ===== */
 .rbc-sidebar .v-list-item--active {
   background: var(--rbc-orange-50) !important;
@@ -571,7 +615,8 @@
 
 /* Input background and default border */
 .v-field--variant-outlined .v-field__outline__start,
-.v-field--variant-outlined .v-field__outline__notch,
+.v-field--variant-outlined .v-field__outline__notch::before,
+.v-field--variant-outlined .v-field__outline__notch::after,
 .v-field--variant-outlined .v-field__outline__end {
   border-color: #e2e8f0;
 }
@@ -582,11 +627,15 @@
 }
 
 /* Focus state — orange ring */
+.v-field--focused.v-field--variant-outlined .v-field__outline {
+  --v-field-border-width: 2px;
+}
+
 .v-field--focused.v-field--variant-outlined .v-field__outline__start,
-.v-field--focused.v-field--variant-outlined .v-field__outline__notch,
+.v-field--focused.v-field--variant-outlined .v-field__outline__notch::before,
+.v-field--focused.v-field--variant-outlined .v-field__outline__notch::after,
 .v-field--focused.v-field--variant-outlined .v-field__outline__end {
   border-color: #fb923c;
-  border-width: 2px;
 }
 
 .v-field--focused.v-field--variant-outlined {
@@ -595,13 +644,26 @@
 
 /* Error state */
 .v-field--error.v-field--variant-outlined .v-field__outline__start,
-.v-field--error.v-field--variant-outlined .v-field__outline__notch,
+.v-field--error.v-field--variant-outlined .v-field__outline__notch::before,
+.v-field--error.v-field--variant-outlined .v-field__outline__notch::after,
 .v-field--error.v-field--variant-outlined .v-field__outline__end {
   border-color: #f87171;
 }
 
 .v-field--error.v-field--variant-outlined .v-field__overlay {
   background-color: #fff5f5;
+}
+
+/* Remove native browser artifacts from Vuetify inputs */
+.v-field__input,
+.v-field__input:focus {
+  outline: none !important;
+  resize: none !important;
+}
+
+/* Hide underline element completely in outlined variant — it belongs to underlined/filled only */
+.v-field--variant-outlined .v-field__underline {
+  display: none !important;
 }
 
 /* Error message */
@@ -612,7 +674,7 @@
 
 /* Label */
 .v-label {
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 600;
   color: #64748b;
 }
@@ -680,7 +742,7 @@
 /* ===== RBC Modal ===== */
 .rbc-modal {
   background: #ffffff;
-  border-radius: 18px;
+  border-radius: 20px;
   overflow: hidden;
   box-shadow: var(--rbc-shadow-modal);
   display: flex;
@@ -759,7 +821,7 @@
 /* ===== RBC Danger Dialog ===== */
 .rbc-danger-dialog {
   background: #ffffff;
-  border-radius: 18px;
+  border-radius: 20px;
   overflow: hidden;
   box-shadow: var(--rbc-shadow-modal);
   padding: 32px 28px 24px;
@@ -800,4 +862,178 @@
   gap: 10px;
   width: 100%;
   justify-content: center;
+}
+
+@media (max-width: 959px) {
+  .rbc-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rbc-sidebar {
+    position: static;
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--rbc-slate-200);
+    overflow: visible;
+  }
+
+  .rbc-sidebar__logo {
+    padding: 14px 12px 10px;
+  }
+
+  .rbc-sidebar__nav {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 8px 8px 10px;
+  }
+
+  .rbc-sidebar__nav-label {
+    display: none;
+  }
+
+  .rbc-sidebar__nav .v-list-item {
+    flex: 0 0 auto;
+    min-width: max-content;
+  }
+
+  .rbc-sidebar__footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 8px;
+  }
+
+  .rbc-sidebar__footer .v-btn {
+    flex: 1 1 180px;
+  }
+
+  .rbc-sidebar__meta {
+    margin-top: 0;
+  }
+
+  .rbc-topbar {
+    position: static;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .rbc-topbar__actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .rbc-page {
+    padding: 16px 12px;
+  }
+
+  .rbc-search {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  .rbc-table-section__header {
+    align-items: stretch;
+  }
+
+  .rbc-table-wrap .v-table {
+    min-width: 720px;
+  }
+}
+
+/* ===== RBC Form Fields ===== */
+
+.rbc-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.rbc-form-field__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rbc-slate-500);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Outlined border — default */
+.rbc-form-field .v-field--variant-outlined .v-field__outline__start,
+.rbc-form-field .v-field--variant-outlined .v-field__outline__notch,
+.rbc-form-field .v-field--variant-outlined .v-field__outline__end {
+  border-color: var(--rbc-slate-200);
+  border-width: 2px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.rbc-form-field .v-field--variant-outlined .v-field__outline__start {
+  border-radius: var(--rbc-radius-input) 0 0 var(--rbc-radius-input);
+}
+
+.rbc-form-field .v-field--variant-outlined .v-field__outline__end {
+  border-radius: 0 var(--rbc-radius-input) var(--rbc-radius-input) 0;
+}
+
+/* Outlined border — focused */
+.rbc-form-field .v-field--variant-outlined.v-field--focused .v-field__outline__start,
+.rbc-form-field .v-field--variant-outlined.v-field--focused .v-field__outline__notch,
+.rbc-form-field .v-field--variant-outlined.v-field--focused .v-field__outline__end {
+  border-color: var(--rbc-orange-500);
+}
+
+.rbc-form-field .v-field--variant-outlined.v-field--focused {
+  border-radius: var(--rbc-radius-input);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
+}
+
+/* Outlined border — error */
+.rbc-form-field .v-field--variant-outlined.v-field--error .v-field__outline__start,
+.rbc-form-field .v-field--variant-outlined.v-field--error .v-field__outline__notch,
+.rbc-form-field .v-field--variant-outlined.v-field--error .v-field__outline__end {
+  border-color: var(--rbc-red-600);
+}
+
+.rbc-form-field .v-field--variant-outlined.v-field--error {
+  border-radius: var(--rbc-radius-input);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.10);
+}
+
+.rbc-form-field .v-field--variant-outlined.v-field--error .v-field__overlay {
+  background-color: #fef2f2;
+  opacity: 1;
+  border-radius: var(--rbc-radius-input);
+}
+
+/* Input text size */
+.rbc-form-field .v-field__input {
+  font-size: 16px;
+  color: var(--rbc-slate-900);
+  padding-top: 10px;
+  padding-bottom: 10px;
+  min-height: unset;
+}
+
+/* Hint + error message text */
+.rbc-form-field .v-messages__message {
+  font-size: 12px;
+}
+
+/* ===== RBC Upload Zone ===== */
+
+.rbc-upload-zone .rbc-upload-zone__cta {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rbc-orange-600);
+  margin-bottom: 4px;
+}
+
+.rbc-upload-zone .rbc-upload-zone__hint {
+  font-size: 12px;
+  color: var(--rbc-slate-400);
 }
