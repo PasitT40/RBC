@@ -230,77 +230,106 @@ onMounted(loadReport);
       </v-btn>
     </Teleport>
 
-    <v-container fluid class="pa-6">
-    <v-row class="mb-6" align="center">
-      <v-col cols="auto">
-        <div class="rbc-section-label mb-1">ช่วงเวลา</div>
-      </v-col>
-      <v-col cols="3">
-        <v-text-field
-          v-model="fromMonth"
-          type="month"
-          label="เดือนเริ่มต้น"
-          variant="outlined"
-          hide-details
-          density="comfortable"
-          clearable
-        />
-      </v-col>
-      <v-col cols="3">
-        <v-text-field
-          v-model="toMonth"
-          type="month"
-          label="เดือนสิ้นสุด"
-          variant="outlined"
-          hide-details
-          density="comfortable"
-          clearable
-        />
-      </v-col>
-      <v-col cols="auto">
-        <span class="text-caption text-slate-400">{{ rows.length }} รายการ</span>
-      </v-col>
-    </v-row>
+    <div class="rbc-page-container tw:py-6">
 
-    <v-row class="mb-6">
-      <v-col cols="9">
-        <div class="rbc-card mb-6">
-          <div class="rbc-card__header">
-            <div>
-              <div class="text-subtitle-2 font-weight-bold">ยอดขายแยกตามแบรนด์</div>
-              <div class="text-caption text-slate-400">ดูว่าแต่ละแบรนด์ทำยอดขายได้มากน้อยแค่ไหนในช่วงเวลาที่เลือก</div>
-            </div>
-          </div>
-          <div class="rbc-card__body">
-            <BrandBarChart :data="chartData" metric="amount" :height="320" />
+      <!-- Date filter card -->
+      <div class="rbc-card tw:mb-5">
+        <div class="rbc-card__header">
+          <div class="rbc-card__title">
+            <v-icon size="16" color="primary">mdi-calendar-range</v-icon>
+            กรองตามช่วงเวลา
           </div>
         </div>
-      </v-col>
+        <div class="rbc-card__body">
+          <div class="tw:flex tw:flex-wrap tw:items-end tw:gap-3">
+            <v-text-field
+              v-model="fromMonth"
+              type="month"
+              label="จาก"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="max-width: 200px;"
+            />
+            <v-text-field
+              v-model="toMonth"
+              type="month"
+              label="ถึง"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="max-width: 200px;"
+            />
+            <v-btn variant="outlined" color="grey-darken-1" size="small" rounded="lg" @click="fromMonth = ''; toMonth = ''">
+              <v-icon start size="14">mdi-close</v-icon>
+              ล้างช่วง
+            </v-btn>
+          </div>
+        </div>
+      </div>
 
-      <v-col cols="3">
-        <v-row>
-          <v-col
-            v-for="card in summaryCards"
-            :key="card.title"
-            cols="12"
-          >
-            <div class="rbc-stat-card" style="--color: var(--rbc-orange-500)">
-              <div class="rbc-section-label">{{ card.title }}</div>
-              <div :class="card.valueClass" class="text-h5 font-weight-bold mt-1">{{ card.value }}</div>
+      <!-- Stat cards -->
+      <v-row class="tw:mb-5">
+        <v-col cols="12" sm="4">
+          <div class="rbc-stat-card" style="--color: #64748b">
+            <div class="rbc-stat-card__icon">
+              <v-icon size="22" color="#64748b">mdi-wallet-outline</v-icon>
             </div>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
+            <div class="rbc-stat-card__label">ต้นทุนทั้งหมด</div>
+            <div class="rbc-stat-card__value">{{ formatNumber(stats?.total_cost_amount ?? 0) }}</div>
+          </div>
+        </v-col>
+        <v-col cols="12" sm="4">
+          <div class="rbc-stat-card" style="--color: #f97316">
+            <div class="rbc-stat-card__icon">
+              <v-icon size="22" color="#f97316">mdi-cash-multiple</v-icon>
+            </div>
+            <div class="rbc-stat-card__label">ยอดขายทั้งหมด</div>
+            <div class="rbc-stat-card__value">{{ formatNumber(stats?.total_sales_amount ?? 0) }}</div>
+          </div>
+        </v-col>
+        <v-col cols="12" sm="4">
+          <div class="rbc-stat-card" :style="(stats?.total_profit_amount ?? 0) >= 0 ? '--color: #22c55e' : '--color: #ef4444'">
+            <div class="rbc-stat-card__icon">
+              <v-icon size="22" :color="(stats?.total_profit_amount ?? 0) >= 0 ? '#22c55e' : '#ef4444'">mdi-trending-up</v-icon>
+            </div>
+            <div class="rbc-stat-card__label">กำไรสุทธิ</div>
+            <div class="rbc-stat-card__value">{{ formatNumber(stats?.total_profit_amount ?? 0) }}</div>
+          </div>
+        </v-col>
+      </v-row>
 
-    <v-row>
-      <v-col cols="12">
-        <div class="rbc-table-section__header tw:mb-3">
+      <!-- Chart card -->
+      <div class="rbc-card tw:mb-5">
+        <div class="rbc-card__header">
+          <div class="rbc-card__title">
+            <v-icon size="16" color="primary">mdi-chart-bar</v-icon>
+            ยอดขายตามแบรนด์
+          </div>
+        </div>
+        <div class="rbc-card__body">
+          <BrandBarChart :data="chartData" metric="amount" :height="320" />
+        </div>
+      </div>
+
+      <!-- Table section -->
+      <div class="rbc-table-section">
+        <div class="rbc-table-section__header">
           <div class="rbc-table-section__title">
             <span class="rbc-section-label">รายการขาย</span>
             <span class="rbc-table-section__count">{{ rows.length }} รายการ</span>
           </div>
-          <span class="tw:text-xs tw:text-slate-400">ต้นทุน · ราคาขาย · กำไร ทีละรายการ</span>
+          <v-btn
+            variant="outlined"
+            color="primary"
+            size="small"
+            rounded="lg"
+            prepend-icon="mdi-download"
+            :loading="exporting"
+            @click="exportCsv()"
+          >
+            Export CSV
+          </v-btn>
         </div>
         <div class="rbc-table-wrap">
           <v-data-table
@@ -361,9 +390,9 @@ onMounted(loadReport);
             </template>
           </v-data-table>
         </div>
-      </v-col>
-    </v-row>
-    </v-container>
+      </div>
+
+    </div>
   </div>
 </template>
 

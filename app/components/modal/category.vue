@@ -18,7 +18,7 @@ const modelValue = defineModel('modelValue', {
 })
 
 function close() {
-  if (!props.persistent) modelValue.value = false
+  modelValue.value = false
 }
 </script>
 

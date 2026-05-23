@@ -71,6 +71,7 @@ const increment = () => {
         icon="mdi-minus"
         variant="tonal"
         color="primary"
+        size="36"
         :disabled="decrementDisabled"
         @click="decrement"
       />
@@ -81,17 +82,18 @@ const increment = () => {
         hide-details
         variant="outlined"
         density="comfortable"
-        class="vee-number-stepper__field"
+        class="vee-number-stepper__display"
       />
       <v-btn
         icon="mdi-plus"
         variant="tonal"
         color="primary"
+        size="36"
         :disabled="incrementDisabled"
         @click="increment"
       />
     </div>
-    <div class="text-caption text-medium-emphasis mt-2">
+    <div class="tw:text-xs tw:text-slate-400 tw:mt-2">
       ปรับได้ตั้งแต่ {{ props.min.toFixed(1) }} ถึง {{ props.max.toFixed(1) }} ทีละ {{ props.step.toFixed(1) }}
     </div>
     <div v-if="errorMessage" class="text-caption text-error mt-1">{{ errorMessage }}</div>
@@ -102,12 +104,13 @@ const increment = () => {
 .vee-number-stepper__controls {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
 }
 
-.vee-number-stepper__field :deep(input) {
+.vee-number-stepper__display :deep(input) {
   text-align: center;
+  font-size: 18px;
   font-weight: 700;
 }
 </style>

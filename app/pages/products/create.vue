@@ -312,10 +312,6 @@ onBeforeUnmount(() => {
     <Teleport to="#rbc-topbar-subtitle">
       <span>กรอกข้อมูลสินค้าใหม่</span>
     </Teleport>
-    <Teleport to="#rbc-topbar-actions">
-      <v-btn variant="text" color="slate" @click="goBack">ยกเลิก</v-btn>
-      <v-btn class="rbc-btn-primary" :loading="loading" @click="submit()">บันทึก</v-btn>
-    </Teleport>
     <product-editor-form
     title="เพิ่มสินค้าใหม่"
     :save-loading="loading"
@@ -341,11 +337,11 @@ onBeforeUnmount(() => {
     <template #top-aside>
       <v-sheet rounded="lg" color="grey-lighten-5" class="pa-4 fill-height">
         <v-row align="center">
-          <v-col cols="8">
+          <v-col cols="12" sm="8">
             <div class="text-body-2 font-weight-medium">แสดงสินค้านี้บนเว็บไซต์</div>
             <div class="text-caption text-medium-emphasis">ถ้ายังเตรียมข้อมูลไม่ครบ สามารถซ่อนไว้ก่อนได้</div>
           </v-col>
-          <v-col cols="4" class="d-flex justify-end">
+          <v-col cols="12" sm="4" class="d-flex justify-end">
             <form-vee-switch
               name="show"
               color="primary"

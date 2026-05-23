@@ -21,6 +21,7 @@ const appToast = useAppToast();
 
 const loading = ref(false);
 const saving = ref(false);
+const activeTab = ref('banners');
 const bannerAutoSlideSec = ref(5);
 const banners = ref<EditableBanner[]>([]);
 const credits = ref<EditableCredit[]>([]);
@@ -195,258 +196,575 @@ onBeforeUnmount(() => {
       </v-btn>
     </Teleport>
 
-    <v-container fluid class="pa-6">
-    <v-row>
-      <v-col v-if="loading" cols="12" class="d-flex justify-center py-16">
+    <div class="settings-page rbc-page-container">
+      <div v-if="loading" class="settings-loading">
         <v-progress-circular indeterminate color="primary" size="48" />
-      </v-col>
+      </div>
 
       <template v-else>
-        <v-col cols="12">
-          <div class="rbc-card mb-6">
-            <div class="rbc-card__header">
-              <div class="rbc-card__title">แบนเนอร์หน้าแรก</div>
-              <div class="text-caption text-slate-400">ตั้งค่ารูปหลักด้านบนหน้าแรก พร้อมลำดับและสถานะการแสดงผล</div>
-            </div>
-            <div class="rbc-card__body">
-              <v-row>
-                <v-col cols="4">
-                  <form-vee-text-field
-                    v-model="bannerAutoSlideSec"
-                    label="เลื่อนอัตโนมัติทุกกี่วินาที"
-                    type="number"
-                    min="1"
-                    variant="outlined"
-                  />
-                </v-col>
-                <v-col cols="8">
-                  <v-row justify="end">
-                    <v-col cols="auto">
-                      <v-btn color="primary" variant="outlined" @click="addBanner()">เพิ่มแบนเนอร์</v-btn>
-                    </v-col>
-                  </v-row>
-                </v-col>
+        <div class="settings-tabs-container">
+          <v-tabs v-model="activeTab" color="primary" class="settings-tabs">
+            <v-tab value="banners">แบนเนอร์ ({{ banners.length }})</v-tab>
+            <v-tab value="credits">โลโก้ ({{ credits.length }})</v-tab>
+          </v-tabs>
+        </div>
 
-                <v-col cols="12">
-                  <v-alert
-                    type="info"
-                    variant="tonal"
-                    density="comfortable"
-                    text="แนะนำให้ใช้ภาพแนวนอนที่คมชัด เพื่อให้ส่วนบนหน้าแรกดูเต็มและอ่านง่าย"
-                  />
-                </v-col>
+        <v-window v-model="activeTab" class="settings-window">
+          <v-window-item value="banners">
+            <section class="settings-section">
+              <div class="settings-slide-strip">
+                <span class="settings-slide-strip__label">เลื่อนแบนเนอร์ทุกกี่วินาที</span>
+                <v-text-field
+                  v-model="bannerAutoSlideSec"
+                  class="settings-slide-strip__field"
+                  type="number"
+                  min="1"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                />
+              </div>
 
-                <v-col
-                  v-for="(item, index) in banners"
-                  :key="`banner-${item.id}-${index}`"
-                  cols="12"
-                >
-                  <div class="rbc-card mb-4">
-                    <div class="rbc-card__body">
-                      <v-row>
-                        <v-col cols="5">
-                          <div class="text-h6">แบนเนอร์ {{ index + 1 }}</div>
-                          <div class="text-body-2 text-medium-emphasis">
-                            ภาพนี้จะแสดงในส่วนบนของหน้าแรก เลือกรูปที่เห็นตัวสินค้าเด่นและไม่แน่นเกินไป
-                          </div>
-                          <v-sheet
-                            border
-                            rounded="lg"
-                            color="grey-lighten-5"
-                            height="280"
-                            class="mt-4 d-flex align-center justify-center"
-                          >
-                            <v-img
-                              v-if="item.preview_url"
-                              :src="item.preview_url"
-                              :alt="`banner-${index + 1}`"
-                              cover
-                              height="280"
-                            />
-                            <div v-else class="text-body-2 text-medium-emphasis">ยังไม่ได้เลือกรูปแบนเนอร์</div>
-                          </v-sheet>
-                        </v-col>
-                        <v-col cols="7">
-                          <v-row>
-                            <v-col cols="12">
-                              <v-sheet border rounded="lg" color="grey-lighten-5" class="pa-5">
-                                <div class="text-subtitle-1 font-weight-bold">การตั้งค่าการแสดงผล</div>
-                                <div class="text-body-2 text-medium-emphasis">
-                                  เลือกลำดับและกำหนดว่าจะให้แบนเนอร์นี้แสดงบนหน้าเว็บหรือยัง
-                                </div>
-                                <v-row class="mt-2">
-                                  <v-col cols="4">
-                                    <form-vee-text-field
-                                      v-model="item.order"
-                                      label="ลำดับการแสดง"
-                                      type="number"
-                                      min="1"
-                                      variant="outlined"
-                                    />
-                                  </v-col>
-                                  <v-col cols="8">
-                                    <v-sheet border rounded="lg" class="pa-4">
-                                      <div class="text-body-1 font-weight-medium">
-                                        {{ item.active ? "แบนเนอร์นี้เปิดใช้งานอยู่" : "แบนเนอร์นี้ยังไม่แสดงบนหน้าเว็บ" }}
-                                      </div>
-                                      <div class="text-body-2 text-medium-emphasis">
-                                        {{ item.active ? "บันทึกแล้วจะเห็นบนหน้าแรกตามลำดับที่ตั้งไว้" : "บันทึกได้เลย แต่ระบบจะยังไม่แสดงภาพนี้บนหน้าแรก" }}
-                                      </div>
-                                      <form-vee-switch
-                                        v-model="item.active"
-                                        color="primary"
-                                        hide-details
-                                        inset
-                                        label="เปิดแสดงบนหน้าเว็บ"
-                                      />
-                                    </v-sheet>
-                                  </v-col>
-                                </v-row>
-                              </v-sheet>
-                            </v-col>
+              <header class="settings-section__header">
+                <div class="settings-section__heading">
+                  <div class="settings-section__icon">
+                    <v-icon size="18">mdi-image-multiple-outline</v-icon>
+                  </div>
+                  <div>
+                    <h2>แบนเนอร์หน้าแรก</h2>
+                    <p>1920 x 600 px, JPG/PNG/WebP, ไม่เกิน 500 KB หลังประมวลผล</p>
+                  </div>
+                </div>
+                <v-btn color="primary" variant="outlined" rounded="lg" prepend-icon="mdi-plus" @click="addBanner()">
+                  เพิ่มแบนเนอร์
+                </v-btn>
+              </header>
 
-                            <v-col cols="12">
-                              <v-sheet border rounded="lg" class="pa-5">
-                                <div class="text-subtitle-1 font-weight-bold">อัปโหลดรูปแบนเนอร์</div>
-                                <div class="text-body-2 text-medium-emphasis">
-                                  รองรับไฟล์ PNG, JPG และ WebP
-                                </div>
-                                <form-vee-file-input
-                                  :name="`banner_file_${index}`"
-                                  label="เลือกรูปแบนเนอร์ใหม่"
-                                  accept="image/png,image/jpeg,image/webp"
-                                  variant="outlined"
-                                  :max-size="8000000"
-                                  :constraint="{ width: 1920, height: 600, maxSizeKB: 500, label: '1920 × 600 px · ≤500 KB · JPG/PNG' }"
-                                  class="mt-4"
-                                  @update:model-value="updateBannerFile(item, normalizeSingleFile($event))"
-                                />
-                              </v-sheet>
-                            </v-col>
+              <div class="settings-section__body">
+                <div v-if="!banners.length" class="settings-empty">
+                  <div class="settings-empty__icon">
+                    <v-icon size="22">mdi-image-area</v-icon>
+                  </div>
+                  <div>
+                    <strong>ยังไม่มีแบนเนอร์</strong>
+                    <span>เพิ่มรูปหลักสำหรับหน้าแรกได้จากปุ่มด้านบน</span>
+                  </div>
+                </div>
 
-                            <v-col cols="12">
-                              <v-row justify="end">
-                                <v-col cols="auto">
-                                  <v-btn size="small" variant="text" color="error" @click="removeBanner(index)">
-                                    ลบแบนเนอร์นี้
-                                  </v-btn>
-                                </v-col>
-                              </v-row>
-                            </v-col>
-                          </v-row>
-                        </v-col>
-                      </v-row>
+                <div v-else class="settings-banner-list">
+                  <article
+                    v-for="(item, index) in banners"
+                    :key="`banner-${item.id}-${index}`"
+                    class="settings-banner-item"
+                  >
+                    <div class="settings-banner-preview">
+                      <v-img
+                        v-if="item.preview_url"
+                        :src="item.preview_url"
+                        :alt="`banner-${index + 1}`"
+                        cover
+                      />
+                      <div v-else class="settings-banner-preview__empty">
+                        <v-icon size="24">mdi-image-outline</v-icon>
+                        <span>ยังไม่มีรูปแบนเนอร์</span>
+                      </div>
                     </div>
-                  </div>
-                </v-col>
-              </v-row>
-            </div>
-          </div>
-        </v-col>
 
-        <v-col cols="12">
-          <div class="rbc-card mb-6">
-            <div class="rbc-card__header">
-              <div class="rbc-card__title">โลโก้และเครดิต</div>
-              <div class="text-caption text-slate-400">ตั้งค่าภาพโลโก้หรือเครดิตที่แสดงใต้หมวดหมู่บนหน้าแรก</div>
-            </div>
-            <div class="rbc-card__body">
-              <v-row>
-                <v-col cols="8">
-                  <div class="text-body-2 text-medium-emphasis">
-                    เรียงลำดับจากซ้ายไปขวาตามหมายเลขที่กำหนดไว้
-                  </div>
-                </v-col>
-                <v-col cols="4">
-                  <v-row justify="end">
-                    <v-col cols="auto">
-                      <v-btn color="primary" variant="outlined" @click="addCredit()">เพิ่มโลโก้หรือเครดิต</v-btn>
-                    </v-col>
-                  </v-row>
-                </v-col>
+                    <div class="settings-banner-editor">
+                      <div class="settings-item-title">
+                        <strong>แบนเนอร์ {{ index + 1 }}</strong>
+                        <span :class="{ 'settings-status--muted': !item.active }" class="settings-status">
+                          {{ item.active ? "แสดงบนเว็บ" : "ซ่อนอยู่" }}
+                        </span>
+                      </div>
 
-                <v-col cols="12">
-                  <v-alert
-                    type="info"
-                    variant="tonal"
-                    density="comfortable"
-                    text="ใช้ส่วนนี้กับโลโก้พาร์ตเนอร์หรือภาพเครดิตที่ต้องการให้เห็นใต้หมวดหมู่บนหน้าแรก"
-                  />
-                </v-col>
+                      <div class="settings-inline-controls">
+                        <v-text-field
+                          v-model="item.order"
+                          class="settings-order-field"
+                          type="number"
+                          min="1"
+                          variant="outlined"
+                          density="compact"
+                          label="ลำดับ"
+                          hide-details
+                        />
+                        <v-switch
+                          v-model="item.active"
+                          color="primary"
+                          hide-details
+                          inset
+                          density="compact"
+                          :label="item.active ? 'เปิดแสดง' : 'ซ่อน'"
+                        />
+                      </div>
 
-                <v-col
-                  v-for="(item, index) in credits"
-                  :key="`credit-${item.id}-${index}`"
-                  cols="6"
-                >
-                  <div class="rbc-card mb-4">
-                    <div class="rbc-card__body">
-                      <v-row>
-                        <v-col cols="12">
-                          <div class="text-h6">เครดิต {{ index + 1 }}</div>
-                          <div class="text-body-2 text-medium-emphasis">
-                            ใช้กับโลโก้พาร์ตเนอร์หรือภาพเครดิตด้านล่างหน้าแรก
-                          </div>
-                        </v-col>
-                        <v-col cols="12">
-                          <v-sheet
-                            border
-                            rounded="lg"
-                            color="grey-lighten-5"
-                            height="220"
-                            class="d-flex align-center justify-center"
-                          >
-                            <v-img
-                              v-if="item.preview_url"
-                              :src="item.preview_url"
-                              :alt="`credit-${index + 1}`"
-                              contain
-                              height="220"
-                            />
-                            <div v-else class="text-body-2 text-medium-emphasis">ยังไม่ได้เลือกรูปเครดิต</div>
-                          </v-sheet>
-                        </v-col>
-
-                        <v-col cols="4">
-                          <form-vee-text-field
-                            v-model="item.order"
-                            label="ลำดับการแสดง"
-                            type="number"
-                            min="1"
-                            variant="outlined"
-                          />
-                        </v-col>
-                        <v-col cols="8">
-                          <form-vee-file-input
-                            :name="`credit_file_${index}`"
-                            label="เลือกรูปเครดิตใหม่"
-                            accept="image/png,image/jpeg,image/webp"
-                            variant="outlined"
-                            :max-size="5000000"
-                            :constraint="{ width: 600, height: 400, maxSizeKB: 300, keepPng: true, label: '600 × 400 px · PNG · ≤300 KB' }"
-                            @update:model-value="updateCreditFile(item, normalizeSingleFile($event))"
-                          />
-                        </v-col>
-
-                        <v-col cols="12">
-                          <v-row justify="end">
-                            <v-col cols="auto">
-                              <v-btn size="small" variant="text" color="error" @click="removeCredit(index)">
-                                ลบรายการนี้
-                              </v-btn>
-                            </v-col>
-                          </v-row>
-                        </v-col>
-                      </v-row>
+                      <div class="settings-upload">
+                        <form-vee-file-input
+                          :name="`banner_file_${index}`"
+                          label="เลือกหรือเปลี่ยนรูปแบนเนอร์"
+                          accept="image/png,image/jpeg,image/webp"
+                          variant="outlined"
+                          :max-size="8000000"
+                          :constraint="{ width: 1920, height: 600, maxSizeKB: 500, label: '1920 x 600 px' }"
+                          @update:model-value="updateBannerFile(item, normalizeSingleFile($event))"
+                        />
+                      </div>
                     </div>
+
+                    <v-btn
+                      aria-label="ลบแบนเนอร์"
+                      class="settings-delete"
+                      icon="mdi-trash-can-outline"
+                      variant="text"
+                      color="error"
+                      @click="removeBanner(index)"
+                    />
+                  </article>
+                </div>
+              </div>
+            </section>
+          </v-window-item>
+
+          <v-window-item value="credits">
+            <section class="settings-section">
+              <header class="settings-section__header">
+                <div class="settings-section__heading">
+                  <div class="settings-section__icon settings-section__icon--soft">
+                    <v-icon size="18">mdi-store-outline</v-icon>
                   </div>
-                </v-col>
-              </v-row>
-            </div>
-          </div>
-        </v-col>
+                  <div>
+                    <h2>โลโก้และเครดิต</h2>
+                    <p>600 x 400 px, PNG, ไม่เกิน 300 KB หลังประมวลผล</p>
+                  </div>
+                </div>
+                <v-btn color="primary" variant="outlined" rounded="lg" prepend-icon="mdi-plus" @click="addCredit()">
+                  เพิ่มโลโก้
+                </v-btn>
+              </header>
+
+              <div class="settings-section__body">
+                <div v-if="!credits.length" class="settings-empty">
+                  <div class="settings-empty__icon settings-empty__icon--soft">
+                    <v-icon size="22">mdi-image-multiple-outline</v-icon>
+                  </div>
+                  <div>
+                    <strong>ยังไม่มีโลโก้หรือเครดิต</strong>
+                    <span>เพิ่มภาพที่จะใช้ใต้หมวดหมู่บนหน้าแรก</span>
+                  </div>
+                </div>
+
+                <div v-else class="settings-credit-grid">
+                  <article
+                    v-for="(item, index) in credits"
+                    :key="`credit-${item.id}-${index}`"
+                    class="settings-credit-item"
+                  >
+                    <div class="settings-credit-preview">
+                      <v-img
+                        v-if="item.preview_url"
+                        :src="item.preview_url"
+                        :alt="`credit-${index + 1}`"
+                        contain
+                      />
+                      <div v-else class="settings-credit-preview__empty">
+                        <v-icon size="22">mdi-image-outline</v-icon>
+                        <span>ยังไม่มีรูป</span>
+                      </div>
+                    </div>
+
+                    <div class="settings-item-title">
+                      <strong>เครดิต {{ index + 1 }}</strong>
+                      <v-btn
+                        aria-label="ลบโลโก้"
+                        icon="mdi-trash-can-outline"
+                        size="small"
+                        variant="text"
+                        color="error"
+                        @click="removeCredit(index)"
+                      />
+                    </div>
+
+                    <v-text-field
+                      v-model="item.order"
+                      class="settings-order-field"
+                      type="number"
+                      min="1"
+                      variant="outlined"
+                      density="compact"
+                      label="ลำดับ"
+                      hide-details
+                    />
+
+                    <div class="settings-upload">
+                      <form-vee-file-input
+                        :name="`credit_file_${index}`"
+                        label="เลือกรูป"
+                        accept="image/png,image/jpeg,image/webp"
+                        variant="outlined"
+                        :max-size="5000000"
+                        :constraint="{ width: 600, height: 400, maxSizeKB: 300, keepPng: true, label: '600 x 400 px' }"
+                        @update:model-value="updateCreditFile(item, normalizeSingleFile($event))"
+                      />
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </section>
+          </v-window-item>
+        </v-window>
       </template>
-    </v-row>
-    </v-container>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.settings-page {
+  max-width: 1180px;
+  padding: 28px 0 40px;
+}
+
+.settings-loading {
+  display: flex;
+  min-height: 420px;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-tabs-container {
+  margin-bottom: 14px;
+  overflow: hidden;
+  border: 1px solid var(--rbc-slate-200);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: var(--rbc-shadow-soft);
+}
+
+.settings-tabs :deep(.v-tab) {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.settings-window {
+  overflow: visible;
+}
+
+.settings-slide-strip {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--rbc-slate-100);
+  background: var(--rbc-slate-50);
+}
+
+.settings-slide-strip__label {
+  color: var(--rbc-slate-700);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.settings-slide-strip__field {
+  max-width: 140px;
+}
+
+.settings-section {
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid var(--rbc-slate-200);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: var(--rbc-shadow-soft);
+}
+
+.settings-section__header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--rbc-slate-100);
+}
+
+.settings-section__heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.settings-section__heading h2 {
+  margin: 0;
+  color: var(--rbc-slate-900);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.settings-section__heading p {
+  margin: 3px 0 0;
+  color: var(--rbc-slate-500);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.settings-section__icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--rbc-orange-200);
+  border-radius: 11px;
+  background: var(--rbc-orange-50);
+  color: var(--rbc-orange-600);
+}
+
+.settings-section__icon--soft {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.settings-section__body {
+  padding: 18px 22px 22px;
+}
+
+.settings-empty {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-height: 116px;
+  padding: 22px;
+  border: 1px dashed var(--rbc-slate-200);
+  border-radius: 14px;
+  background: var(--rbc-slate-50);
+  color: var(--rbc-slate-500);
+}
+
+.settings-empty strong,
+.settings-empty span {
+  display: block;
+}
+
+.settings-empty strong {
+  margin-bottom: 3px;
+  color: var(--rbc-slate-900);
+  font-size: 14px;
+}
+
+.settings-empty span {
+  font-size: 13px;
+}
+
+.settings-empty__icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--rbc-orange-100);
+  color: var(--rbc-orange-600);
+}
+
+.settings-empty__icon--soft {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.settings-banner-list {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-banner-item {
+  display: grid;
+  grid-template-columns: minmax(230px, 292px) minmax(0, 1fr) 42px;
+  gap: 16px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--rbc-slate-200);
+  border-radius: 16px;
+  background: var(--rbc-slate-50);
+}
+
+.settings-banner-preview {
+  overflow: hidden;
+  min-height: 164px;
+  border: 1px solid var(--rbc-slate-200);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.settings-banner-preview :deep(.v-img) {
+  height: 164px;
+}
+
+.settings-banner-preview__empty,
+.settings-credit-preview__empty {
+  display: grid;
+  min-height: inherit;
+  place-content: center;
+  gap: 7px;
+  color: var(--rbc-slate-400);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.settings-banner-editor {
+  min-width: 0;
+}
+
+.settings-item-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+  margin-bottom: 8px;
+}
+
+.settings-item-title strong {
+  color: var(--rbc-slate-900);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.settings-status {
+  padding: 4px 9px;
+  border-radius: 99px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.settings-status--muted {
+  background: var(--rbc-slate-100);
+  color: var(--rbc-slate-500);
+}
+
+.settings-inline-controls {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.settings-order-field {
+  width: 96px;
+  flex: 0 0 auto;
+}
+
+.settings-delete {
+  align-self: start;
+}
+
+.settings-upload :deep(.rbc-upload-zone) {
+  padding: 12px;
+  border-color: var(--rbc-slate-200);
+  border-radius: 14px;
+  background: #ffffff;
+  text-align: left;
+}
+
+.settings-upload :deep(.rbc-upload-zone__constraint) {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.settings-upload :deep(.preview-grid) {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 84px));
+}
+
+.settings-upload :deep(.preview-button),
+.settings-upload :deep(.preview-item img) {
+  width: 84px;
+}
+
+.settings-credit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.settings-credit-item {
+  display: grid;
+  gap: 11px;
+  align-content: start;
+  padding: 14px;
+  border: 1px solid var(--rbc-slate-200);
+  border-radius: 16px;
+  background: var(--rbc-slate-50);
+}
+
+.settings-credit-preview {
+  overflow: hidden;
+  min-height: 156px;
+  border: 1px solid var(--rbc-slate-200);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.settings-credit-preview :deep(.v-img) {
+  height: 156px;
+}
+
+@media (max-width: 959px) {
+  .settings-page {
+    padding-top: 18px;
+  }
+
+  .settings-banner-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-banner-preview,
+  .settings-banner-preview :deep(.v-img) {
+    min-height: 188px;
+    height: 188px;
+  }
+
+  .settings-delete {
+    justify-self: end;
+    order: -1;
+  }
+
+  .settings-credit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 599px) {
+  .settings-section__header {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .settings-section__body {
+    padding: 14px;
+  }
+
+  .settings-empty {
+    min-height: 0;
+    padding: 18px;
+  }
+
+  .settings-inline-controls {
+    gap: 8px;
+  }
+
+  .settings-credit-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>

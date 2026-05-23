@@ -472,7 +472,7 @@ onMounted(loadPageData);
       </v-btn>
     </Teleport>
 
-  <div class="pa-6">
+  <div class="pa-5">
     <ModalCategory
       v-model="categoryDialog"
       persistent
@@ -516,7 +516,7 @@ onMounted(loadPageData);
       v-model="subcategoryDialog"
       persistent
       :title="isSubcategoryEditMode ? 'แก้ไขแบรนด์' : 'เพิ่มแบรนด์'"
-      :icon="isSubcategoryEditMode ? 'mdi-pencil' : 'mdi-store-plus-outline'"
+      :icon="isSubcategoryEditMode ? 'mdi-pencil' : 'mdi-store'"
     >
       <template #default>
         <v-form>
@@ -564,6 +564,7 @@ onMounted(loadPageData);
       <div class="rbc-table-section">
         <div class="rbc-table-section__header">
           <div class="rbc-table-section__title">
+            <v-icon size="18" color="primary" class="mr-1">mdi-tag-multiple-outline</v-icon>
             <span class="rbc-section-label">หมวดหมู่</span>
             <span class="rbc-table-section__count">{{ itemCategory.length }} รายการ</span>
           </div>
@@ -605,7 +606,7 @@ onMounted(loadPageData);
             </template>
 
             <template #item.name="{ item }">
-              <span class="tw:text-[14px] tw:font-semibold tw:text-slate-800">{{ item.name || "-" }}</span>
+              <span class="tw:text-[15px] tw:font-semibold tw:text-slate-800">{{ item.name || "-" }}</span>
             </template>
 
             <template #item.slug="{ item }">
@@ -617,7 +618,10 @@ onMounted(loadPageData);
             </template>
 
             <template #item.updated_at="{ item }">
-              <span class="tw:whitespace-nowrap tw:text-xs tw:text-slate-500">{{ formatDate(item.updated_at) }}</span>
+              <div class="tw:flex tw:items-center tw:gap-1">
+                <v-icon size="12" color="grey-lighten-1">mdi-clock-outline</v-icon>
+                <span class="tw:whitespace-nowrap tw:text-xs tw:text-slate-500">{{ formatDate(item.updated_at) }}</span>
+              </div>
             </template>
 
             <template #item.is_active="{ item }">
@@ -654,6 +658,7 @@ onMounted(loadPageData);
       <div class="rbc-table-section">
         <div class="rbc-table-section__header">
           <div class="rbc-table-section__title">
+            <v-icon size="18" color="primary" class="mr-1">mdi-store-outline</v-icon>
             <span class="rbc-section-label">แบรนด์</span>
             <span class="rbc-table-section__count">{{ itemSubCategory.length }} รายการ</span>
           </div>
@@ -695,7 +700,7 @@ onMounted(loadPageData);
             </template>
 
             <template #item.name="{ item }">
-              <span class="tw:text-[14px] tw:font-semibold tw:text-slate-800">{{ item.name || "-" }}</span>
+              <span class="tw:text-[15px] tw:font-semibold tw:text-slate-800">{{ item.name || "-" }}</span>
             </template>
 
             <template #item.slug="{ item }">
@@ -703,7 +708,7 @@ onMounted(loadPageData);
             </template>
 
             <template #item.category_name="{ item }">
-              <span class="tw:text-[14px] tw:font-semibold tw:text-slate-800">{{ item.category_name || "-" }}</span>
+              <span class="tw:text-[15px] tw:font-semibold tw:text-slate-800">{{ item.category_name || "-" }}</span>
             </template>
 
             <template #item.category_brand_order="{ item }">
@@ -711,7 +716,10 @@ onMounted(loadPageData);
             </template>
 
             <template #item.updated_at="{ item }">
-              <span class="tw:whitespace-nowrap tw:text-xs tw:text-slate-500">{{ formatDate(item.updated_at) }}</span>
+              <div class="tw:flex tw:items-center tw:gap-1">
+                <v-icon size="12" color="grey-lighten-1">mdi-clock-outline</v-icon>
+                <span class="tw:whitespace-nowrap tw:text-xs tw:text-slate-500">{{ formatDate(item.updated_at) }}</span>
+              </div>
             </template>
 
             <template #item.is_active="{ item }">

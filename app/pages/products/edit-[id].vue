@@ -433,10 +433,6 @@ onBeforeUnmount(() => {
     <Teleport to="#rbc-topbar-subtitle">
       <span>แก้ไขข้อมูลสินค้า</span>
     </Teleport>
-    <Teleport to="#rbc-topbar-actions">
-      <v-btn variant="text" color="slate" @click="goBack">ยกเลิก</v-btn>
-      <v-btn class="rbc-btn-primary" :loading="loading" @click="submit()">บันทึก</v-btn>
-    </Teleport>
     <product-editor-form
     title="แก้ไขข้อมูลสินค้า"
     :save-loading="loading"
@@ -470,11 +466,11 @@ onBeforeUnmount(() => {
       <v-card rounded="xl" elevation="1" class="mb-6">
         <v-card-item>
           <v-row align="center">
-            <v-col cols="8">
+            <v-col cols="12" sm="8">
               <v-card-title>ข้อมูลที่บันทึกอยู่ตอนนี้</v-card-title>
               <v-card-subtitle>ดูภาพรวมก่อน แล้วค่อยแก้ข้อมูลด้านล่างได้เลย</v-card-subtitle>
             </v-col>
-            <v-col cols="4" class="d-flex justify-end">
+            <v-col cols="12" sm="4" class="d-flex justify-end">
               <v-chip
                 :color="statusMeta.color"
                 variant="tonal"
@@ -487,57 +483,57 @@ onBeforeUnmount(() => {
         </v-card-item>
         <v-card-text>
           <v-row>
-            <v-col cols="8">
+            <v-col cols="12" lg="8">
               <v-row>
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
                     <div class="text-caption text-medium-emphasis">SKU</div>
                     <div class="text-body-2 font-weight-medium">{{ product?.sku || "-" }}</div>
                   </v-sheet>
                 </v-col>
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
                     <div class="text-caption text-medium-emphasis">หมวดหมู่ / แบรนด์</div>
                     <div class="text-body-2 font-weight-medium">{{ product?.category_name || "-" }} / {{ product?.brand_name || "-" }}</div>
                   </v-sheet>
                 </v-col>
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
                     <div class="text-caption text-medium-emphasis">การแสดงผลบนเว็บไซต์</div>
                     <div class="text-body-2 font-weight-medium">{{ product?.show ? "เปิดอยู่" : "ซ่อนอยู่" }}</div>
                   </v-sheet>
                 </v-col>
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
                     <div class="text-caption text-medium-emphasis">ราคาทุน / ราคาขาย</div>
                     <div class="text-body-2 font-weight-medium">{{ formatCurrency(product?.cost_price) }} / {{ formatCurrency(product?.sell_price) }} บาท</div>
                   </v-sheet>
                 </v-col>
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
                     <div class="text-caption text-medium-emphasis">จำนวนรูป</div>
                     <div class="text-body-2 font-weight-medium">{{ currentImageCount }} รูป</div>
                   </v-sheet>
                 </v-col>
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
                     <div class="text-caption text-medium-emphasis">สร้างเมื่อ</div>
                     <div class="text-body-2 font-weight-medium">{{ formatDateTime(product?.created_at) }}</div>
                   </v-sheet>
                 </v-col>
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
                     <div class="text-caption text-medium-emphasis">อัปเดตล่าสุด</div>
                     <div class="text-body-2 font-weight-medium">{{ formatDateTime(product?.updated_at) }}</div>
                   </v-sheet>
                 </v-col>
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
                     <div class="text-caption text-medium-emphasis">วันที่ขาย</div>
                     <div class="text-body-2 font-weight-medium">{{ formatDateTime(product?.sold_at) }}</div>
                   </v-sheet>
                 </v-col>
-                <v-col cols="6">
+                <v-col cols="12" sm="6">
                   <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4">
                     <div class="text-caption text-medium-emphasis">ช่องทาง / ราคาที่ขายได้</div>
                     <div class="text-body-2 font-weight-medium">{{ product?.sold_channel || "-" }} / {{ formatCurrency(product?.sold_price) }} บาท</div>
@@ -546,7 +542,7 @@ onBeforeUnmount(() => {
               </v-row>
             </v-col>
 
-            <v-col cols="4">
+            <v-col cols="12" lg="4">
               <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4 fill-height">
                 <div class="text-body-2 font-weight-medium mb-2">รูปปกตอนนี้</div>
                 <v-sheet

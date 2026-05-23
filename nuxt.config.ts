@@ -34,6 +34,9 @@ export default defineNuxtConfig({
         VTextField: { variant: "outlined", density: "comfortable", rounded: "lg" },
         VSelect: { variant: "outlined", density: "comfortable", rounded: "lg" },
         VTextarea: { variant: "outlined", density: "comfortable", rounded: "lg" },
+        VDataTable: {
+          density: 'comfortable',
+        },
       },
     },
   },

@@ -410,34 +410,35 @@ onMounted(loadProducts);
 
     <div class="tw:px-5 tw:pt-5 tw:pb-6 tw:flex tw:flex-col tw:gap-4">
 
-      <!-- Filter + search row -->
-      <div class="tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-3">
-        <div class="tw:flex tw:flex-wrap tw:gap-2">
-          <button
-            v-for="item in summaryItems"
-            :key="item.label"
-            :class="['rbc-filter-chip', statusFilter === filterKey(item.label) ? 'rbc-filter-chip--active' : '']"
-            @click="statusFilter = filterKey(item.label)"
-          >
-            {{ item.label }}
-            <span class="tw:ml-1 tw:text-xs tw:opacity-70">({{ item.value }})</span>
-          </button>
+      <div class="rbc-table-section">
+        <!-- Filter + search header -->
+        <div class="rbc-table-section__header tw:mb-4">
+          <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
+            <button
+              v-for="item in summaryItems"
+              :key="item.label"
+              :class="['rbc-filter-chip', statusFilter === filterKey(item.label) ? 'rbc-filter-chip--active' : '']"
+              @click="statusFilter = filterKey(item.label)"
+            >
+              {{ item.label }}
+              <span class="tw:ml-1 tw:text-xs tw:opacity-60">({{ item.value }})</span>
+            </button>
+          </div>
+          <v-text-field
+            v-model="search"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-magnify"
+            placeholder="ค้นหาสินค้า / หมวดหมู่ / แบรนด์..."
+            hide-details
+            clearable
+            class="rbc-search"
+            style="max-width: 280px;"
+          />
         </div>
-        <v-text-field
-          v-model="search"
-          variant="outlined"
-          density="compact"
-          prepend-inner-icon="mdi-magnify"
-          placeholder="ค้นหาสินค้า / หมวดหมู่ / แบรนด์..."
-          hide-details
-          clearable
-          class="rbc-search"
-          style="max-width: 320px;"
-        />
-      </div>
 
-      <!-- Table -->
-      <div class="rbc-table-wrap">
+        <!-- Table -->
+        <div class="rbc-table-wrap">
         <v-data-table
           class="product-list-table"
           :headers="headers"
@@ -466,13 +467,14 @@ onMounted(loadProducts);
             </div>
           </template>
         <template #item.name="{ item }">
-          <div>
-            <div class="tw:text-[15px] tw:font-semibold tw:text-slate-900">{{ item.name || "-" }}</div>
-            <div class="tw:text-[12px] tw:font-semibold tw:text-slate-600">SKU: {{ item.sku || "-" }}</div>
-            <div class="tw:text-[12px] tw:text-slate-400">{{ item.slug || "-" }}</div>
-            <div class="tw:text-[12px] tw:text-slate-600">
-              {{ item.category_name || "-" }} / {{ item.brand_name || "-" }}
+          <div class="tw:py-1">
+            <div class="tw:text-[15px] tw:font-semibold tw:text-slate-900 tw:leading-tight">{{ item.name || "-" }}</div>
+            <div class="tw:mt-0.5 tw:flex tw:items-center tw:gap-2">
+              <span class="tw:text-xs tw:font-mono tw:text-slate-400">{{ item.sku || "-" }}</span>
+              <span class="tw:text-slate-300">·</span>
+              <span class="tw:text-xs tw:text-slate-400 tw:truncate tw:max-w-[140px]">{{ item.slug || "-" }}</span>
             </div>
+            <div class="tw:mt-0.5 tw:text-xs tw:text-slate-500">{{ item.category_name || "-" }} / {{ item.brand_name || "-" }}</div>
           </div>
         </template>
 
@@ -481,22 +483,14 @@ onMounted(loadProducts);
         </template>
 
         <template #item.sell_price="{ item }">
-          <div class="tw:flex tw:flex-col tw:items-start tw:gap-0.5">
-            <span
-              v-if="hasSalePriceOverride(item)"
-              class="tw:text-xs tw:text-slate-400 tw:line-through"
-            >
+          <div class="tw:text-right">
+            <div v-if="hasSalePriceOverride(item)" class="tw:text-xs tw:text-slate-400 tw:line-through">
               {{ formatPrice(item.sell_price) }}
-            </span>
-            <span class="tw:text-sm tw:font-semibold tw:text-slate-700">
+            </div>
+            <div class="tw:text-[15px] tw:font-bold tw:text-slate-800">
               {{ formatPrice(hasSalePriceOverride(item) ? Number(item.sold_price) : item.sell_price) }}
-            </span>
-            <span
-              v-if="hasSalePriceOverride(item)"
-              class="tw:text-[11px] tw:font-medium tw:text-emerald-600"
-            >
-              ขายจริง
-            </span>
+            </div>
+            <div v-if="hasSalePriceOverride(item)" class="tw:text-[11px] tw:font-semibold tw:text-emerald-600">ขายจริง</div>
           </div>
         </template>
 
@@ -522,16 +516,16 @@ onMounted(loadProducts);
         </template>
 
         <template #item.actions="{ item }">
-          <v-row no-gutters align="center" class="tw:min-w-[320px]">
-            <v-col cols="9">
-              <div class="tw:flex tw:items-center tw:justify-center tw:gap-2">
+          <div class="tw:flex tw:items-center tw:gap-2 tw:min-w-[220px]">
+            <!-- Primary actions -->
+            <div class="tw:flex tw:gap-1">
               <v-btn
                 v-if="canToggleProductStatus(item)"
-                rounded="pill"
                 variant="outlined"
-                color="black"
                 size="small"
-              class="tw:min-w-[88px] tw:font-semibold tw:normal-case"
+                rounded="pill"
+                color="slate"
+                class="tw:text-[12px] tw:normal-case tw:font-semibold"
                 :loading="statusUpdatingId === item.id"
                 @click="onToggleStatus(item)"
               >
@@ -539,54 +533,44 @@ onMounted(loadProducts);
               </v-btn>
               <v-btn
                 v-if="canMarkSold(item)"
-                rounded="pill"
-                color="#f5962f"
                 size="small"
-                class="tw:min-w-[96px] tw:font-semibold tw:normal-case tw:text-white"
+                rounded="pill"
+                class="rbc-btn-primary tw:text-[12px] tw:normal-case"
                 @click="openSaleDialog(item)"
               >
                 บันทึกการขาย
               </v-btn>
               <v-btn
                 v-else-if="canUndoSold(item)"
-                rounded="pill"
                 variant="outlined"
-                color="#f5962f"
                 size="small"
-                class="tw:min-w-[88px] tw:font-semibold tw:normal-case"
+                rounded="pill"
+                color="primary"
+                class="tw:text-[12px] tw:normal-case"
                 :loading="undoingSaleId === item.id"
                 @click="onUndoSale(item)"
               >
                 ยกเลิกการขาย
               </v-btn>
-              </div>
-            </v-col>
-            
-            <v-col cols="3" class="tw:flex tw:justify-end">
-              <div class="rbc-table-actions">
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  color="primary"
-                  :to="item.id ? `/products/edit-${item.id}` : undefined"
-                  :disabled="!item.id || item.is_deleted"
-                >
-                  <v-icon size="16">mdi-pencil</v-icon>
-                </v-btn>
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  color="error"
-                  :disabled="!canDeleteProduct(item)"
-                  @click="onDeleteProduct(item)"
-                >
-                  <v-icon size="16">mdi-delete</v-icon>
-                </v-btn>
-              </div>
-            </v-col>
-          </v-row>
+            </div>
+            <!-- Edit/Delete -->
+            <div class="rbc-table-actions tw:ml-auto">
+              <v-btn
+                icon variant="text" size="small" color="primary"
+                :to="item.id ? `/products/edit-${item.id}` : undefined"
+                :disabled="!item.id || item.is_deleted"
+              >
+                <v-icon size="16">mdi-pencil</v-icon>
+              </v-btn>
+              <v-btn
+                icon variant="text" size="small" color="error"
+                :disabled="!canDeleteProduct(item)"
+                @click="onDeleteProduct(item)"
+              >
+                <v-icon size="16">mdi-delete</v-icon>
+              </v-btn>
+            </div>
+          </div>
         </template>
 
         <template #item.show="{ item }">
@@ -611,6 +595,7 @@ onMounted(loadProducts);
           <div class="tw:py-8 tw:text-center tw:text-sm tw:text-slate-400">ยังไม่มีข้อมูลสินค้า</div>
         </template>
         </v-data-table>
+        </div>
       </div>
     </div>
 
@@ -620,7 +605,7 @@ onMounted(loadProducts);
       <div class="rbc-modal__header">
         <div class="rbc-modal__header-left">
           <div class="rbc-modal__icon">
-            <v-icon icon="mdi-receipt-text-plus-outline" size="18" color="white" />
+            <v-icon icon="mdi-receipt" size="18" color="white" />
           </div>
           <span class="rbc-modal__title">บันทึกการขาย</span>
         </div>
@@ -660,7 +645,7 @@ onMounted(loadProducts);
           density="comfortable"
           hide-details="auto"
           :error-messages="saleErrors.sold_price"
-          prepend-inner-icon="mdi-currency-thb"
+          prepend-inner-icon="mdi-cash"
         />
 
         <v-text-field
