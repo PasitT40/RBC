@@ -204,13 +204,13 @@ onMounted(loadReport);
 
 <template>
   <div>
-    <Teleport to="#rbc-topbar-subtitle">
+    <TopbarTeleport to="#rbc-topbar-subtitle">
       <span v-if="fromMonth || toMonth">
         {{ fromMonth || '?' }} — {{ toMonth || '?' }}
       </span>
       <span v-else>ทุกช่วงเวลา</span>
-    </Teleport>
-    <Teleport to="#rbc-topbar-actions">
+    </TopbarTeleport>
+    <TopbarTeleport to="#rbc-topbar-actions">
       <v-btn
         variant="outlined"
         color="grey-darken-1"
@@ -228,7 +228,7 @@ onMounted(loadReport);
       >
         Export CSV
       </v-btn>
-    </Teleport>
+    </TopbarTeleport>
 
     <div class="rbc-page-container tw:py-6">
 

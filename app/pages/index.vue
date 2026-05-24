@@ -118,11 +118,11 @@ onMounted(() => {
 
 <template>
   <div>
-    <Teleport to="#rbc-topbar-subtitle">
+    <TopbarTeleport to="#rbc-topbar-subtitle">
       <span>ข้อมูล ณ วันนี้</span>
-    </Teleport>
+    </TopbarTeleport>
 
-    <Teleport to="#rbc-topbar-actions">
+    <TopbarTeleport to="#rbc-topbar-actions">
       <div class="tw:flex tw:items-center tw:gap-2">
         <button
           v-for="p in [{ label: 'เดือนนี้', value: 'month' }, { label: '3 เดือน', value: '3m' }, { label: 'ปีนี้', value: 'year' }]"
@@ -133,7 +133,7 @@ onMounted(() => {
           {{ p.label }}
         </button>
       </div>
-    </Teleport>
+    </TopbarTeleport>
 
     <div class="rbc-page-container">
       <div v-if="!dashboard.loading.value">

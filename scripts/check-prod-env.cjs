@@ -48,6 +48,8 @@ function main() {
   const expectedProjectId = "ratchaburi-camera";
   const expectedDatabaseId = "ratchaburi-camera-prod";
   const expectedBucket = "gs://ratchaburi-camera-prod";
+  const expectedHostingTarget = "backoffice-prod";
+  const expectedHostingSite = "ratchaburi-camera-prod";
 
   assertEqual(env.NUXT_PUBLIC_FIREBASE_PROJECT_ID, expectedProjectId, "NUXT_PUBLIC_FIREBASE_PROJECT_ID");
   assertEqual(env.NUXT_PUBLIC_FIRESTORE_DATABASE_ID, expectedDatabaseId, "NUXT_PUBLIC_FIRESTORE_DATABASE_ID");
@@ -67,9 +69,9 @@ function main() {
 
   if (firebaserc) {
     assertEqual(firebaserc.projects?.default, expectedProjectId, ".firebaserc projects.default");
-    const hostingTargets = firebaserc.targets?.[expectedProjectId]?.hosting?.backoffice || [];
-    if (!Array.isArray(hostingTargets) || hostingTargets.length === 0) {
-      throw new Error('Missing hosting target binding for "backoffice" in .firebaserc');
+    const hostingTargets = firebaserc.targets?.[expectedProjectId]?.hosting?.[expectedHostingTarget] || [];
+    if (!Array.isArray(hostingTargets) || !hostingTargets.includes(expectedHostingSite)) {
+      throw new Error(`Missing hosting target binding for "${expectedHostingTarget}" -> "${expectedHostingSite}" in .firebaserc`);
     }
   }
 
@@ -78,6 +80,8 @@ function main() {
     projectId: expectedProjectId,
     databaseId: expectedDatabaseId,
     storageBucket: expectedBucket,
+    hostingTarget: expectedHostingTarget,
+    hostingSite: expectedHostingSite,
     serviceAccountFile,
     firebasercChecked: Boolean(firebaserc),
   }, null, 2));

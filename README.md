@@ -26,7 +26,7 @@ Use these as the default command set for day-to-day work:
 - `yarn data:cleanup:apply` - execute dev-data cleanup
 - `yarn data:reseed` - reseed the dev dataset
 - `yarn data:reseed:verify` - reseed dev data and run verification steps
-- `yarn deploy:hosting:prod` - build and deploy Hosting
+- `yarn deploy:hosting:prod` - build and deploy Hosting to the separate production site
 - `yarn deploy:backoffice:prod` - build and deploy Hosting + public API + indexes + rules + storage
 - `yarn deploy:hosting:dev` - build and deploy Hosting for the dev environment
 - `yarn deploy:backoffice:dev` - build and deploy Hosting + public API for the dev environment
@@ -63,6 +63,8 @@ Recommended rollout for this repository:
 - use Firestore database `ratchaburi-camera-dev` for development
 - use Storage bucket `gs://ratchaburi-camera-prod` with the prod database
 - use Storage bucket `gs://ratchaburi-camera-dev` with the dev database
+- use Hosting target `backoffice-prod` / site `ratchaburi-camera-prod` for production
+- keep Hosting target `backoffice` / site `ratchaburi-camera` for development until the old dev surface is retired
 
 Security boundary notes:
 - backoffice access is allowlisted from `owners/{uid}`
@@ -102,7 +104,8 @@ Production Hosting deploy builds the static bundle automatically.
 Prepare:
 - copy `.firebaserc.example` to `.firebaserc`
 - set your Firebase project id
-- bind the `backoffice` hosting target to the correct hosting site id
+- create or confirm the production Hosting site `ratchaburi-camera-prod`
+- bind the `backoffice-prod` hosting target to the production Hosting site id
 - fill `.env.production` with the real production Firebase values
 
 Deploy commands:

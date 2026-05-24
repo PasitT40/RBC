@@ -7,6 +7,9 @@
       "hosting": {
         "backoffice": [
           "ratchaburi-camera"
+        ],
+        "backoffice-prod": [
+          "ratchaburi-camera-prod"
         ]
       },
       "storage": {

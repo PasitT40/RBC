@@ -36,12 +36,12 @@
     "data:reseed": "APP_ENV=development node scripts/reseed-dev-dataset.cjs",
     "data:reseed:verify": "APP_ENV=development node scripts/reseed-dev-dataset.cjs --verify",
     "deploy:hosting:dev": "set -a && . ./.env.development && set +a && nuxt generate && npx firebase-tools deploy --only hosting:backoffice",
-    "deploy:hosting:prod": "set -a && . ./.env.production && set +a && nuxt generate && npx firebase-tools deploy --only hosting:backoffice",
+    "deploy:hosting:prod": "set -a && . ./.env.production && set +a && nuxt generate && npx firebase-tools deploy --only hosting:backoffice-prod",
     "deploy:firestore": "npx firebase-tools deploy --only firestore",
     "deploy:indexes": "npx firebase-tools deploy --only firestore:indexes",
     "deploy:public-api": "npm --prefix functions/public-api run build && npx firebase-tools deploy --only functions:public-api",
     "deploy:backoffice:dev": "set -a && . ./.env.development && set +a && nuxt generate && npm --prefix functions/public-api run build && npx firebase-tools deploy --only hosting:backoffice,functions:public-api,firestore",
-    "deploy:backoffice:prod": "set -a && . ./.env.production && set +a && nuxt generate && npm --prefix functions/public-api run build && npx firebase-tools deploy --only hosting:backoffice,functions:public-api,firestore,storage"
+    "deploy:backoffice:prod": "set -a && . ./.env.production && set +a && nuxt generate && npm --prefix functions/public-api run build && npx firebase-tools deploy --only hosting:backoffice-prod,functions:public-api,firestore,storage"
   },
   "type": "module",
   "devDependencies": {

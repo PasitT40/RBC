@@ -6,7 +6,8 @@ Project: Camera Marketplace Backoffice
 
 Recommended current deployment path:
 - static Nuxt build via `nuxt generate`
-- Firebase Hosting target: `backoffice`
+- Firebase Hosting target for development: `backoffice`
+- Firebase Hosting target for production: `backoffice-prod`
 
 Reasoning:
 - the backoffice currently reads and writes directly to Firebase from the client
@@ -26,12 +27,14 @@ Reasoning:
 
 1. Copy `.firebaserc.example` to `.firebaserc`.
 2. Set the default Firebase project id.
-3. Bind hosting target `backoffice` to the intended Firebase Hosting site.
-4. Fill `.env` with the real Firebase values for the target environment.
-5. Make sure the production owner allowlist exists in `owners/{uid}`.
-6. Grant Firebase Auth custom claim `backoffice_owner=true` to each owner account that should upload media.
-7. After granting or revoking the storage-owner claim, force the user to sign out and sign in again so Firebase refreshes the auth token.
-8. Set Firestore database id and storage bucket envs to the explicit environment mapping:
+3. Bind hosting target `backoffice` to the development Firebase Hosting site.
+4. Create or confirm the production Hosting site `ratchaburi-camera-prod`.
+5. Bind hosting target `backoffice-prod` to the production Firebase Hosting site.
+6. Fill `.env` with the real Firebase values for the target environment.
+7. Make sure the production owner allowlist exists in `owners/{uid}`.
+8. Grant Firebase Auth custom claim `backoffice_owner=true` to each owner account that should upload media.
+9. After granting or revoking the storage-owner claim, force the user to sign out and sign in again so Firebase refreshes the auth token.
+10. Set Firestore database id and storage bucket envs to the explicit environment mapping:
    - `ratchaburi-camera-prod` -> `gs://ratchaburi-camera-prod`
    - `ratchaburi-camera-dev` -> `gs://ratchaburi-camera-dev`
 
@@ -41,11 +44,14 @@ Recommended values for this project:
 - Firestore database id for development: `ratchaburi-camera-dev`
 - Storage bucket for production: `gs://ratchaburi-camera-prod`
 - Storage bucket for development: `gs://ratchaburi-camera-dev`
+- Hosting site for production: `ratchaburi-camera-prod`
+- Hosting site for development: `ratchaburi-camera`
 
 Example target binding:
 
 ```bash
 firebase target:apply hosting backoffice your-hosting-site-id
+firebase target:apply hosting backoffice-prod ratchaburi-camera-prod
 ```
 
 ## Build

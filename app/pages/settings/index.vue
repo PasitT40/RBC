@@ -184,17 +184,17 @@ onBeforeUnmount(() => {
 
 <template>
   <div>
-    <Teleport to="#rbc-topbar-subtitle">
+    <TopbarTeleport to="#rbc-topbar-subtitle">
       <span>{{ banners.length }} แบนเนอร์ · {{ credits.length }} โลโก้</span>
-    </Teleport>
-    <Teleport to="#rbc-topbar-actions">
+    </TopbarTeleport>
+    <TopbarTeleport to="#rbc-topbar-actions">
       <v-btn variant="outlined" color="grey-darken-1" :disabled="saving" @click="onCancel()">
         ยกเลิกการแก้ไข
       </v-btn>
       <v-btn class="rbc-btn-primary ml-2" :loading="saving" @click="onSave()">
         บันทึกการเปลี่ยนแปลง
       </v-btn>
-    </Teleport>
+    </TopbarTeleport>
 
     <div class="settings-page rbc-page-container">
       <div v-if="loading" class="settings-loading">

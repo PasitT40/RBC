@@ -430,9 +430,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div>
-    <Teleport to="#rbc-topbar-subtitle">
+    <TopbarTeleport to="#rbc-topbar-subtitle">
       <span>แก้ไขข้อมูลสินค้า</span>
-    </Teleport>
+    </TopbarTeleport>
     <product-editor-form
     title="แก้ไขข้อมูลสินค้า"
     :save-loading="loading"

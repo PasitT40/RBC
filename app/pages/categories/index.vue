@@ -460,17 +460,17 @@ onMounted(loadPageData);
 
 <template>
   <div>
-    <Teleport to="#rbc-topbar-subtitle">
+    <TopbarTeleport to="#rbc-topbar-subtitle">
       <span>{{ itemCategory.length }} หมวดหมู่ · {{ itemSubCategory.length }} แบรนด์</span>
-    </Teleport>
-    <Teleport to="#rbc-topbar-actions">
+    </TopbarTeleport>
+    <TopbarTeleport to="#rbc-topbar-actions">
       <v-btn variant="outlined" color="primary" class="mr-2" prepend-icon="mdi-plus" @click="openCreateSubcategory()">
         เพิ่มแบรนด์
       </v-btn>
       <v-btn class="rbc-btn-primary" prepend-icon="mdi-plus" @click="openCreateCategory()">
         เพิ่มหมวดหมู่
       </v-btn>
-    </Teleport>
+    </TopbarTeleport>
 
   <div class="pa-5">
     <ModalCategory
