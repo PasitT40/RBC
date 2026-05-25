@@ -165,11 +165,10 @@ export async function searchProductsRoute(db: Firestore, req: Request): Promise<
 }
 
 export async function getProductBySlugRoute(db: Firestore, slug: string) {
-  const snap = await db.collection("products").where("slug", "==", slug).limit(1).get();
-  const doc = snap.docs[0];
+  const snap = await db.collection("products").where("slug", "==", slug).limit(5).get();
+  const doc = snap.docs.find((d) => isPublicVisibleProduct(d.data() ?? {}));
 
   if (!doc) throw notFound("Product not found");
-  if (!isPublicVisibleProduct(doc.data() ?? {})) throw notFound("Product not found");
   const context = await buildProductRouteContext(db, [doc]);
 
   return {
