@@ -185,7 +185,7 @@ onBeforeUnmount(() => {
 <template>
   <div>
     <TopbarTeleport to="#rbc-topbar-subtitle">
-      <span>{{ banners.length }} แบนเนอร์ · {{ credits.length }} โลโก้</span>
+      <span>{{ banners.length }} แบนเนอร์ · {{ credits.length }} เครดิต</span>
     </TopbarTeleport>
     <TopbarTeleport to="#rbc-topbar-actions">
       <v-btn variant="outlined" color="grey-darken-1" :disabled="saving" @click="onCancel()">
@@ -205,7 +205,7 @@ onBeforeUnmount(() => {
         <div class="settings-tabs-container">
           <v-tabs v-model="activeTab" color="primary" class="settings-tabs">
             <v-tab value="banners">แบนเนอร์ ({{ banners.length }})</v-tab>
-            <v-tab value="credits">โลโก้ ({{ credits.length }})</v-tab>
+            <v-tab value="credits">เครดิต ({{ credits.length }})</v-tab>
           </v-tabs>
         </div>
 
@@ -334,12 +334,12 @@ onBeforeUnmount(() => {
                     <v-icon size="18">mdi-store-outline</v-icon>
                   </div>
                   <div>
-                    <h2>โลโก้และเครดิต</h2>
+                    <h2>เครดิต</h2>
                     <p>1200 x 1200 px, PNG, ไม่เกิน 300 KB หลังประมวลผล</p>
                   </div>
                 </div>
                 <v-btn color="primary" variant="outlined" rounded="lg" prepend-icon="mdi-plus" @click="addCredit()">
-                  เพิ่มโลโก้
+                  เพิ่มเครดิต
                 </v-btn>
               </header>
 
@@ -349,7 +349,7 @@ onBeforeUnmount(() => {
                     <v-icon size="22">mdi-image-multiple-outline</v-icon>
                   </div>
                   <div>
-                    <strong>ยังไม่มีโลโก้หรือเครดิต</strong>
+                    <strong>ยังไม่มีเครดิต</strong>
                     <span>เพิ่มภาพที่จะใช้ใต้หมวดหมู่บนหน้าแรก</span>
                   </div>
                 </div>
@@ -376,7 +376,7 @@ onBeforeUnmount(() => {
                     <div class="settings-item-title">
                       <strong>เครดิต {{ index + 1 }}</strong>
                       <v-btn
-                        aria-label="ลบโลโก้"
+                        aria-label="ลบเครดิต"
                         icon="mdi-trash-can-outline"
                         size="small"
                         variant="text"
