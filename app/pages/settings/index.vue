@@ -335,7 +335,7 @@ onBeforeUnmount(() => {
                   </div>
                   <div>
                     <h2>โลโก้และเครดิต</h2>
-                    <p>600 x 400 px, PNG, ไม่เกิน 300 KB หลังประมวลผล</p>
+                    <p>1200 x 1200 px, PNG, ไม่เกิน 300 KB หลังประมวลผล</p>
                   </div>
                 </div>
                 <v-btn color="primary" variant="outlined" rounded="lg" prepend-icon="mdi-plus" @click="addCredit()">
