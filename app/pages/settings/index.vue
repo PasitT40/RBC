@@ -232,7 +232,7 @@ onBeforeUnmount(() => {
                   </div>
                   <div>
                     <h2>แบนเนอร์หน้าแรก</h2>
-                    <p>1920 x 1080 px, JPG/PNG/WebP, ไม่เกิน 500 KB หลังประมวลผล</p>
+                    <p>1440 x 800 px, JPG/PNG/WebP, ไม่เกิน 500 KB หลังประมวลผล</p>
                   </div>
                 </div>
                 <v-btn color="primary" variant="outlined" rounded="lg" prepend-icon="mdi-plus" @click="addBanner()">
@@ -306,7 +306,7 @@ onBeforeUnmount(() => {
                           accept="image/png,image/jpeg,image/webp"
                           variant="outlined"
                           :max-size="8000000"
-                          :constraint="{ width: 1920, height: 1080, maxSizeKB: 500, label: '1920 x 1080 px' }"
+                          :constraint="{ width: 1440, height: 800, maxSizeKB: 500, label: '1440 x 800 px' }"
                           @update:model-value="updateBannerFile(item, normalizeSingleFile($event))"
                         />
                       </div>
