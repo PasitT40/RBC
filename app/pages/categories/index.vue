@@ -494,8 +494,8 @@ onMounted(loadPageData);
           <form-vee-file-input
             name="image"
             label="รูปภาพหมวดหมู่"
-            :hint="`แนะนำความละเอียดไม่เกิน 1200 × 1200 px · ไม่เกิน 8 MB`"
             :max-size="8000000"
+            :constraint="{ width: 1200, height: 1200, maxSizeKB: 300, label: '1200 x 1200 px' }"
             :preview-url="isCategoryEditMode ? editCategoryItem?.image_url : undefined"
           />
         </v-form>
@@ -540,8 +540,8 @@ onMounted(loadPageData);
           <form-vee-file-input
             name="image"
             label="รูปภาพแบรนด์"
-            :hint="`แนะนำความละเอียดไม่เกิน 1200 × 1200 px · ไม่เกิน 8 MB`"
             :max-size="8000000"
+            :constraint="{ width: 1200, height: 1200, maxSizeKB: 300, label: '1200 x 1200 px' }"
             :preview-url="isSubcategoryEditMode ? editSubcategoryItem?.image_url : undefined"
           />
         </v-form>

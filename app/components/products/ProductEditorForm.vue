@@ -266,11 +266,10 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                     label="เลือกรูปสินค้า"
                     variant="outlined"
                     accept="image/*"
-                    hint="แนะนำภาพสี่เหลี่ยมจัตุรัส ความละเอียดไม่เกิน 1600 x 1600 px และขนาดไฟล์ไม่เกิน 10 MB"
-                    persistent-hint
                     multiple
                     :max-size="10000000"
                     :max-files="10"
+                    :constraint="{ width: 1200, height: 1200, maxSizeKB: 300, label: '1200 x 1200 px' }"
                     :preview-urls="previewUrls"
                     sortable
                     removable

@@ -403,7 +403,7 @@ onBeforeUnmount(() => {
                         accept="image/png,image/jpeg,image/webp"
                         variant="outlined"
                         :max-size="5000000"
-                        :constraint="{ width: 600, height: 400, maxSizeKB: 300, keepPng: true, label: '600 x 400 px' }"
+                        :constraint="{ width: 1200, height: 1200, maxSizeKB: 300, keepPng: true, label: '1200 x 1200 px' }"
                         @update:model-value="updateCreditFile(item, normalizeSingleFile($event))"
                       />
                     </div>
