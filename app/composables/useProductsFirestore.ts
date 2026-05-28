@@ -247,6 +247,12 @@ export function useProductsFirestore() {
       cover_image: coverImage,
     });
 
+    const orderId = typeof current.sold_ref === "string" ? current.sold_ref : null;
+    const soldPrice = typeof current.sold_price === "number" ? current.sold_price : null;
+    const oldCost = typeof current.cost_price === "number" ? current.cost_price : 0;
+    const newCost = Number(payload.cost_price);
+    const costChanged = orderId !== null && soldPrice !== null && newCost !== oldCost;
+
     const batch = writeBatch($db);
     batch.update(pRef, {
       name: payload.name,
@@ -268,6 +274,39 @@ export function useProductsFirestore() {
       images,
       updated_at: serverTimestamp(),
     });
+
+    if (costChanged) {
+      const costDelta = newCost - oldCost;
+      const newProfit = soldPrice - newCost;
+
+      batch.update(doc($db, "orders", orderId), {
+        cost_price_at_sale: newCost,
+        profit: newProfit,
+        updated_at: serverTimestamp(),
+      });
+
+      batch.set(
+        globalRef($db),
+        {
+          total_cost_amount: increment(costDelta),
+          total_profit_amount: increment(-costDelta),
+          updated_at: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      if (current.brand_id) {
+        batch.set(
+          doc($db, "dashboard_brand_stats", String(current.brand_id)),
+          {
+            cost_amount: increment(costDelta),
+            profit_amount: increment(-costDelta),
+            updated_at: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+    }
 
     await commitWithUploadRollback(() => batch.commit(), uploadedUrls);
     await cleanupUploadedUrls(removedUrls);
