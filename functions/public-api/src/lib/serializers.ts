@@ -66,6 +66,7 @@ export function serializeProductDetail(doc: DocumentSnapshot, context: ProductRo
     shutter: asTrimmedString(product.shutter),
     defect_detail: asTrimmedString(product.defect_detail),
     free_gift_detail: asTrimmedString(product.free_gift_detail),
+    tiktok_url: asTrimmedString(product.tiktok_url),
     seo: resolveProductSeo(product),
   };
 }

@@ -29,6 +29,7 @@ export type ProductDetail = ProductCard & {
   shutter: string | null;
   defect_detail: string | null;
   free_gift_detail: string | null;
+  tiktok_url: string | null;
   seo: {
     title: string;
     description: string;

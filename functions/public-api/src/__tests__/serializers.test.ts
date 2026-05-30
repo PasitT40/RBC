@@ -177,6 +177,24 @@ describe("serializeProductDetail", () => {
     expect(result.seo).toHaveProperty("description");
     expect(result.seo).toHaveProperty("image");
   });
+
+  it("includes tiktok_url when present", () => {
+    const doc = makeDoc("p1", { name: "X", slug: "x", status: "ACTIVE", tiktok_url: "https://vt.tiktok.com/ZSxp4twcS/" });
+    const result = serializeProductDetail(doc, makeContext());
+    expect(result.tiktok_url).toBe("https://vt.tiktok.com/ZSxp4twcS/");
+  });
+
+  it("returns null tiktok_url when missing", () => {
+    const doc = makeDoc("p1", { name: "X", slug: "x", status: "ACTIVE" });
+    const result = serializeProductDetail(doc, makeContext());
+    expect(result.tiktok_url).toBeNull();
+  });
+
+  it("returns null tiktok_url when empty string", () => {
+    const doc = makeDoc("p1", { name: "X", slug: "x", status: "ACTIVE", tiktok_url: "" });
+    const result = serializeProductDetail(doc, makeContext());
+    expect(result.tiktok_url).toBeNull();
+  });
 });
 
 describe("serializeCategory", () => {
