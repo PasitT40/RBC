@@ -20,6 +20,7 @@ type ProductCreateFormValues = {
   seo_title: string;
   seo_description: string;
   seo_image: string;
+  tiktok_url: string;
   category_id: string;
   brand_id: string;
   cost_price: number | undefined;
@@ -58,6 +59,12 @@ const schema = yup.object({
     .string()
     .transform((value, originalValue) => (originalValue === "" || originalValue === null ? undefined : value))
     .url("ลิงก์รูป SEO ยังไม่ถูกต้อง")
+    .nullable()
+    .optional(),
+  tiktok_url: yup
+    .string()
+    .transform((value, originalValue) => (originalValue === "" || originalValue === null ? undefined : value))
+    .url("ลิงก์ TikTok ยังไม่ถูกต้อง")
     .nullable()
     .optional(),
   category_id: yup.string().required("กรุณาเลือกประเภทสินค้า"),
@@ -103,6 +110,7 @@ const { errors, handleSubmit, setFieldValue, values, resetForm } = useForm<Produ
     seo_title: "",
     seo_description: "",
     seo_image: "",
+    tiktok_url: "",
     category_id: "",
     brand_id: "",
     cost_price: undefined,
@@ -273,6 +281,7 @@ const submit = handleSubmit(async (formValues) => {
       seo_title: formValues.seo_title?.trim() || undefined,
       seo_description: formValues.seo_description?.trim() || undefined,
       seo_image: formValues.seo_image?.trim() || undefined,
+      tiktok_url: formValues.tiktok_url?.trim() || undefined,
       cost_price: Number(formValues.cost_price),
       sell_price: Number(formValues.sell_price),
       condition: normalizeProductCondition(formValues.condition),

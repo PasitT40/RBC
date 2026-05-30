@@ -84,7 +84,11 @@ export function useProductsFirestore() {
 
     if (input.categoryId) constraints.push(where("category_id", "==", input.categoryId));
     if (input.brandId) constraints.push(where("brand_id", "==", input.brandId));
-    if (input.status) constraints.push(where("status", "==", input.status));
+    if (input.status) {
+      constraints.push(where("status", "==", input.status));
+    } else if (input.excludeSold) {
+      constraints.push(where("status", "in", ["ACTIVE", "RESERVED"]));
+    }
     if (typeof input.show === "boolean") constraints.push(where("show", "==", input.show));
 
     constraints.push(orderBy("created_at", "desc"));
@@ -163,6 +167,7 @@ export function useProductsFirestore() {
       seo_title: payload.seo_title ?? "",
       seo_description: payload.seo_description ?? "",
       seo_image: payload.seo_image ?? "",
+      tiktok_url: payload.tiktok_url ?? "",
       cost_price: payload.cost_price,
       sell_price: payload.sell_price,
       condition: normalizeProductCondition(payload.condition),
@@ -264,6 +269,7 @@ export function useProductsFirestore() {
       seo_title: payload.seo_title ?? current.seo_title ?? "",
       seo_description: payload.seo_description ?? current.seo_description ?? "",
       seo_image: payload.seo_image ?? current.seo_image ?? "",
+      tiktok_url: payload.tiktok_url ?? current.tiktok_url ?? "",
       cost_price: payload.cost_price,
       sell_price: payload.sell_price,
       condition: normalizeProductCondition(payload.condition ?? current.condition),

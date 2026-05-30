@@ -301,6 +301,18 @@ const hasHiddenInfo = computed(() => props.publishActive === false && Boolean(pr
                 </v-col>
 
                 <v-col cols="12">
+                  <form-vee-text-field
+                    name="tiktok_url"
+                    label="ลิงก์วิดีโอ TikTok"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                    prepend-inner-icon="mdi-video"
+                    placeholder="https://vt.tiktok.com/..."
+                  />
+                </v-col>
+
+                <v-col cols="12">
                   <form-vee-text-area
                     name="defect_detail"
                     label="รายละเอียดตำหนิ *"

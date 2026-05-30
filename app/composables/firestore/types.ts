@@ -22,6 +22,7 @@ export type ProductInput = {
   seo_title?: string;
   seo_description?: string;
   seo_image?: string;
+  tiktok_url?: string;
   cost_price: number;
   sell_price: number;
   condition?: number | string;
@@ -203,6 +204,7 @@ export type ProductsPageInput = {
   categoryId?: string;
   brandId?: string;
   status?: ProductStatus;
+  excludeSold?: boolean;
   show?: boolean;
   includeDeleted?: boolean;
 };
